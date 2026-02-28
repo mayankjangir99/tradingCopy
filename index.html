@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>TradePro AI Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="center-page">
+    <section class="panel login-shell">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">TradePro AI</h1>
+          <p class="brand-sub">Neural market intelligence and live signal console</p>
+        </div>
+      </div>
+
+      <p class="value-line">Track. Analyze. Execute.</p>
+      <p class="login-intro">Sign in with your account or continue using Google.</p>
+
+      <div class="feature-pills" aria-hidden="true">
+        <span class="feature-pill">Live Signals</span>
+        <span class="feature-pill">Risk Heatmap</span>
+        <span class="feature-pill">AI Insights</span>
+      </div>
+
+      <div class="auth-switch" role="tablist" aria-label="Authentication mode">
+        <button class="switch-btn active" id="loginTabBtn" type="button" onclick="switchAuthMode('login')">Login</button>
+        <button class="switch-btn" id="registerTabBtn" type="button" onclick="switchAuthMode('register')">Register</button>
+      </div>
+
+      <form class="auth-grid" id="loginForm" onsubmit="login(event)">
+        <div>
+          <label class="form-label" for="user">Username</label>
+          <input class="input" id="user" placeholder="john_trader" autocomplete="username" required>
+        </div>
+        <div>
+          <label class="form-label" for="pass">Password</label>
+          <input class="input" id="pass" type="password" placeholder="********" autocomplete="current-password" required>
+        </div>
+        <div class="mini-row">
+          <label class="checkline"><input id="remember" type="checkbox"> Remember me</label>
+          <a class="link-quiet" href="#" onclick="event.preventDefault()">Forgot password?</a>
+        </div>
+        <div class="action-grid">
+          <button class="btn" type="submit">Enter Dashboard</button>
+          <button class="btn ghost" type="button" onclick="switchAuthMode('register')">Create Account</button>
+        </div>
+
+        <div class="auth-divider" aria-hidden="true"><span>or continue with</span></div>
+
+        <div class="oauth-grid">
+          <button class="btn ghost oauth-btn" type="button" onclick="socialLogin('google')">Continue with Google</button>
+        </div>
+
+        <p class="helper-note">OAuth requires backend token exchange and Firebase config.</p>
+      </form>
+
+      <form class="auth-grid auth-hidden" id="registerForm" onsubmit="registerUser(event)">
+        <div>
+          <label class="form-label" for="newDisplayName">Display Name</label>
+          <input class="input" id="newDisplayName" placeholder="Mayan Trader" autocomplete="name">
+        </div>
+        <div>
+          <label class="form-label" for="newUser">Username</label>
+          <input class="input" id="newUser" placeholder="mayan_trader" autocomplete="username" required>
+        </div>
+        <div>
+          <label class="form-label" for="newPass">Password</label>
+          <input class="input" id="newPass" type="password" placeholder="at least 8 chars, letter + number" autocomplete="new-password" required>
+        </div>
+        <div>
+          <label class="form-label" for="confirmPass">Confirm Password</label>
+          <input class="input" id="confirmPass" type="password" placeholder="repeat password" autocomplete="new-password" required>
+        </div>
+        <div class="mini-row">
+          <label class="checkline"><input id="registerRemember" type="checkbox"> Stay signed in</label>
+          <span class="helper-note">Username: 3-24 chars, starts with letter</span>
+        </div>
+        <div class="action-grid">
+          <button class="btn" type="submit">Create Account</button>
+          <button class="btn ghost" type="button" onclick="switchAuthMode('login')">Back to Login</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="app-core.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <button class="floating-voice-btn" id="floatingVoiceBtn" type="button" aria-label="Open voice assistant">Assistant</button>
+  <div class="floating-voice-status brand-sub" id="floatingVoiceStatus" aria-live="polite"></div>
+  <script src="voice-assistant.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePro AI Notes</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel app-shell notes-shell">
+    <header class="page-head notes-head">
+      <div>
+        <h2 class="brand-title dashboard-title">Trading Notes Workspace</h2>
+        <p class="brand-sub">Capture setups, risk plans, and review points in one place.</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost btn-auto" type="button" id="clearNotesBtn">Clear</button>
+        <button class="btn ghost btn-auto" type="button" id="downloadNotesBtn">Download .txt</button>
+      </div>
+    </header>
+
+    <main class="page-main notes-main">
+      <section class="card notes-card">
+        <div class="notes-meta-grid">
+          <div>
+            <label class="form-label" for="noteTitle">Title</label>
+            <input class="input" id="noteTitle" placeholder="Pre-market plan - Monday">
+          </div>
+          <div>
+            <label class="form-label" for="noteTag">Tag</label>
+            <input class="input" id="noteTag" placeholder="Scalp, Swing, Earnings">
+          </div>
+        </div>
+
+        <div class="row space notes-status-row">
+          <div class="quick-list notes-chips" id="notesChips"></div>
+          <span class="helper-note" id="notesStatus" aria-live="polite">Ready</span>
+        </div>
+
+        <label class="form-label" for="notesEditor">Workspace</label>
+        <textarea class="notes-editor" id="notesEditor" placeholder="Write your market thesis, entry/exit plan, invalidation level, and post-trade review..."></textarea>
+
+        <div class="notes-grid">
+          <section class="notes-side-card">
+            <h3 class="section-title notes-subtitle">Checklist</h3>
+            <label class="checkline"><input type="checkbox" class="notes-check" value="trend"> Trend confirmed</label>
+            <label class="checkline"><input type="checkbox" class="notes-check" value="risk"> Risk-reward >= 1:2</label>
+            <label class="checkline"><input type="checkbox" class="notes-check" value="size"> Position size fixed</label>
+            <label class="checkline"><input type="checkbox" class="notes-check" value="news"> News/event checked</label>
+            <label class="checkline"><input type="checkbox" class="notes-check" value="stop"> Stop-loss and invalidation set</label>
+          </section>
+          <section class="notes-side-card">
+            <h3 class="section-title notes-subtitle">Quick Metrics</h3>
+            <div class="notes-metric-grid">
+              <div>
+                <label class="form-label" for="entryPrice">Entry</label>
+                <input class="input" id="entryPrice" placeholder="0.00">
+              </div>
+              <div>
+                <label class="form-label" for="stopPrice">Stop</label>
+                <input class="input" id="stopPrice" placeholder="0.00">
+              </div>
+              <div>
+                <label class="form-label" for="targetPrice">Target</label>
+                <input class="input" id="targetPrice" placeholder="0.00">
+              </div>
+              <div>
+                <label class="form-label" for="positionSize">Qty</label>
+                <input class="input" id="positionSize" placeholder="100">
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <script src="notes.js"></script>
+</body>
+</html>

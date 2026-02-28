@@ -1,0 +1,16 @@
+{
+  "name": "TradePro AI",
+  "short_name": "TradePro",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060b14",
+  "theme_color": "#57b6ff",
+  "description": "TradePro AI trading dashboard with analytics, execution lab, and assistant.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%2357b6ff'/%3E%3Cstop offset='1' stop-color='%236cf7d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='26' fill='%230b1220'/%3E%3Cpath d='M64 16l36 20v56l-36 20L28 92V36z' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3Ccircle cx='64' cy='64' r='16' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

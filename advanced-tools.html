@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePro AI Advanced Functions</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel" style="margin: 18px auto; width: min(1200px, calc(100% - 24px));">
+    <header class="page-head">
+      <div class="brand-row" style="margin:0;">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title" style="font-size:22px;">Advanced Functions</h2>
+          <p class="brand-sub">Portfolio, risk, options, alerts, journal, and strategy tools</p>
+        </div>
+      </div>
+      <button class="btn ghost" onclick="window.location='dashboard.html'" style="width:auto;">Back</button>
+    </header>
+
+    <main class="page-main">
+      <div class="tool-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <section class="card">
+          <h3 style="margin-top:0;">1) Portfolio Tracker</h3>
+          <div class="planner-fields">
+            <input class="input" id="ptCost" type="number" placeholder="Total Cost Basis">
+            <input class="input" id="ptCurrent" type="number" placeholder="Current Portfolio Value">
+            <input class="input" id="ptEquity" type="number" placeholder="Equity Value">
+            <input class="input" id="ptDebt" type="number" placeholder="Debt Value">
+            <input class="input" id="ptGold" type="number" placeholder="Gold Value">
+            <input class="input" id="ptCash" type="number" placeholder="Cash Value">
+          </div>
+          <button class="btn" id="ptRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="ptOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">2) Backtesting Lab</h3>
+          <div class="planner-fields">
+            <input class="input" id="btCapital" type="number" placeholder="Starting Capital">
+            <input class="input" id="btTrades" type="number" placeholder="Number of Trades">
+            <input class="input" id="btWinRate" type="number" placeholder="Win Rate (%)">
+            <input class="input" id="btAvgWin" type="number" placeholder="Avg Win (%)">
+            <input class="input" id="btAvgLoss" type="number" placeholder="Avg Loss (%)">
+            <input class="input" id="btYears" type="number" placeholder="Backtest Years">
+          </div>
+          <button class="btn" id="btRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="btOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">3) Alert Engine</h3>
+          <div class="planner-fields">
+            <input class="input" id="aeSymbol" type="text" placeholder="Symbol (e.g., AAPL)">
+            <input class="input" id="aeCurrent" type="number" placeholder="Current Price">
+            <input class="input" id="aeTarget" type="number" placeholder="Target Price">
+            <select id="aeSide">
+              <option value="above">Alert Above</option>
+              <option value="below">Alert Below</option>
+            </select>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="aeAdd" style="width:auto;">Add Alert</button>
+            <button class="btn ghost" id="aeCheck" style="width:auto;">Check Alert</button>
+          </div>
+          <div class="kpis" id="aeOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">4) Options Strategy Builder</h3>
+          <div class="planner-fields">
+            <select id="obType">
+              <option value="call">Call</option>
+              <option value="put">Put</option>
+            </select>
+            <select id="obSide">
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+            </select>
+            <input class="input" id="obStrike" type="number" placeholder="Strike">
+            <input class="input" id="obPremium" type="number" placeholder="Premium">
+            <input class="input" id="obSpot" type="number" placeholder="Spot at Expiry">
+            <input class="input" id="obLots" type="number" placeholder="Lots/Qty">
+          </div>
+          <button class="btn" id="obRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="obOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">5) Rebalancing Assistant</h3>
+          <div class="planner-fields">
+            <input class="input" id="rbTotal" type="number" placeholder="Portfolio Value">
+            <input class="input" id="rbEqCur" type="number" placeholder="Current Equity (%)">
+            <input class="input" id="rbEqTar" type="number" placeholder="Target Equity (%)">
+            <input class="input" id="rbDebtCur" type="number" placeholder="Current Debt (%)">
+            <input class="input" id="rbDebtTar" type="number" placeholder="Target Debt (%)">
+            <input class="input" id="rbGoldCur" type="number" placeholder="Current Gold (%)">
+          </div>
+          <button class="btn" id="rbRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="rbOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">6) Tax Estimator</h3>
+          <div class="planner-fields">
+            <input class="input" id="txStcg" type="number" placeholder="STCG Profit">
+            <input class="input" id="txLtcg" type="number" placeholder="LTCG Profit">
+            <input class="input" id="txStcgRate" type="number" placeholder="STCG Tax Rate (%)">
+            <input class="input" id="txLtcgRate" type="number" placeholder="LTCG Tax Rate (%)">
+          </div>
+          <button class="btn" id="txRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="txOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">7) Risk Controls</h3>
+          <div class="planner-fields">
+            <input class="input" id="rcCapital" type="number" placeholder="Trading Capital">
+            <input class="input" id="rcRiskPct" type="number" placeholder="Risk per Trade (%)">
+            <input class="input" id="rcEntry" type="number" placeholder="Entry Price">
+            <input class="input" id="rcStop" type="number" placeholder="Stop Loss Price">
+          </div>
+          <button class="btn" id="rcRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="rcOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">8) Trade Journal</h3>
+          <div class="planner-fields">
+            <input class="input" id="tjSymbol" type="text" placeholder="Symbol">
+            <input class="input" id="tjPnl" type="number" placeholder="PnL">
+            <input class="input" id="tjSetup" type="text" placeholder="Setup tag">
+            <input class="input" id="tjNote" type="text" placeholder="Note">
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="tjAdd" style="width:auto;">Add Entry</button>
+            <button class="btn ghost" id="tjClear" style="width:auto;">Clear</button>
+          </div>
+          <div class="kpis" id="tjOut" style="margin-top:8px;"></div>
+          <div class="news-list" id="tjList"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">9) Correlation Calculator</h3>
+          <div class="planner-fields" style="grid-template-columns:1fr;">
+            <input class="input" id="coA" type="text" placeholder="Asset A returns comma-separated (e.g., 1,2,-1,3)">
+            <input class="input" id="coB" type="text" placeholder="Asset B returns comma-separated">
+          </div>
+          <button class="btn" id="coRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="coOut" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">10) Scenario Simulator</h3>
+          <div class="planner-fields">
+            <input class="input" id="ssTotal" type="number" placeholder="Portfolio Value">
+            <input class="input" id="ssEqWt" type="number" placeholder="Equity Weight (%)">
+            <input class="input" id="ssDebtWt" type="number" placeholder="Debt Weight (%)">
+            <input class="input" id="ssGoldWt" type="number" placeholder="Gold Weight (%)">
+            <input class="input" id="ssEqShock" type="number" placeholder="Equity Shock (%)">
+            <input class="input" id="ssDebtShock" type="number" placeholder="Debt Shock (%)">
+            <input class="input" id="ssGoldShock" type="number" placeholder="Gold Shock (%)">
+          </div>
+          <button class="btn" id="ssRun" style="width:auto;margin-top:10px;">Run</button>
+          <div class="kpis" id="ssOut" style="margin-top:8px;"></div>
+        </section>
+      </div>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="advanced-tools.js"></script>
+</body>
+</html>

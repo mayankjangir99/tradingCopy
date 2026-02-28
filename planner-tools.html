@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePro AI Planning Tools</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel" style="margin: 18px auto; width: min(980px, calc(100% - 24px));">
+    <header class="page-head">
+      <div class="brand-row" style="margin:0;">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title" style="font-size:22px;">Financial Tool Lab</h2>
+          <p class="brand-sub" id="toolSubtitle">Advanced planning calculators</p>
+        </div>
+      </div>
+      <button class="btn ghost" onclick="window.location='dashboard.html'" style="width:auto;">Back</button>
+    </header>
+
+    <main class="page-main">
+      <section class="card">
+        <div class="row space">
+          <h3 style="margin:0;" id="toolTitle">Tool</h3>
+          <select id="toolSelect" style="width:auto;"></select>
+        </div>
+        <p class="brand-sub" id="toolDescription" style="margin-top:8px;"></p>
+
+        <div class="planner-fields" id="toolFields"></div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="runToolBtn" style="width:auto;">Calculate</button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:14px;">
+        <h3 style="margin:0 0 10px;">Result</h3>
+        <div class="kpis" id="toolResults"></div>
+      </section>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="planner-tools.js"></script>
+</body>
+</html>

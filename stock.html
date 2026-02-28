@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>TradePro AI Market Detail</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://s3.tradingview.com/tv.js"></script>
+</head>
+<body>
+  <section class="panel app-shell app-shell-stock">
+    <header class="page-head">
+      <div class="brand-row brand-row-tight">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title" id="stockName">SYMBOL</h2>
+          <p class="brand-sub" id="subTitle">TradingView market stream + AI analytics engine</p>
+          <div class="page-chips">
+            <span class="page-chip">Live Chart</span>
+            <span class="page-chip">AI Engine</span>
+            <span class="page-chip">News + Signals</span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <span class="currency-badge" data-currency-badge>Currency: USD</span>
+        <button class="btn ghost btn-auto" onclick="window.location='dashboard.html'">Back</button>
+        <button class="btn ghost btn-auto" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="page-main layout">
+      <section class="stack">
+        <div class="card" id="chartCard">
+          <div class="row space section-head">
+            <div class="row row-tight">
+              <label class="form-label form-label-inline">Chart TF</label>
+              <select id="timeframe" class="select-auto" onchange="changeTimeframe()">
+                <option value="1">1m</option>
+                <option value="5">5m</option>
+                <option value="15">15m</option>
+                <option value="60">1h</option>
+                <option value="240">4h</option>
+                <option value="D" selected>1D</option>
+                <option value="W">1W</option>
+              </select>
+            </div>
+            <div class="row row-tight">
+              <button class="btn ghost btn-auto" onclick="refreshStockPageData()">Refresh</button>
+              <button class="btn ghost btn-auto" onclick="toggleFullScreen()">Fullscreen</button>
+            </div>
+          </div>
+          <div id="chart"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">AI Allocation Split</h3>
+          <div id="allocationPie" class="allocation-wrap"></div>
+          <div id="allocationLegend" class="allocation-legend"></div>
+        </div>
+
+        <div class="card">
+          <div class="row space section-head">
+            <h3 class="section-title">Growth Area</h3>
+            <select id="growthChartType" class="select-auto">
+              <option value="area" selected>Area</option>
+              <option value="line">Line</option>
+              <option value="bars">Bars</option>
+            </select>
+          </div>
+          <div id="growthAreaChart" class="area-chart-wrap"></div>
+          <div class="allocation-legend">
+            <span class="legend-item"><span class="dot dot-blue"></span>Price growth %</span>
+            <span class="legend-item"><span class="dot dot-green"></span>EMA-9 growth %</span>
+            <span class="legend-item"><span class="dot dot-orange"></span>EMA-21 growth %</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">TradingView Overview</h3>
+          <div id="tv-overview"></div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="card">
+          <div class="row space section-head">
+            <h3 class="section-title">AI Engine</h3>
+            <select id="strategySelect" class="select-auto">
+              <option value="scalping">Scalping</option>
+              <option value="swing" selected>Swing</option>
+              <option value="long-term">Long-term</option>
+            </select>
+          </div>
+
+          <div class="timeframe-pills" id="aiTfPills"></div>
+
+          <div class="kpis" id="aiPrimary"></div>
+          <div class="kpis" id="aiIndicators"></div>
+
+          <div class="kpis" id="aiSignals"></div>
+
+          <div class="card card-inner">
+            <div class="row space">
+              <div><span class="kpi-label">Confidence Score Engine</span><div class="kpi-value" id="confidenceScore">-</div></div>
+              <div id="marketModeBadge" class="status neutral">Neutral</div>
+            </div>
+            <div class="weight-grid" id="weightGrid"></div>
+          </div>
+
+          <div class="kpis kpis-space-top" id="aiBacktest"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">TradingView Symbol Info</h3>
+          <div id="tv-symbol-info"></div>
+        </div>
+
+        <div class="card">
+          <div class="technical-head">
+            <div>
+              <h3 class="section-title">Technical Analysis</h3>
+              <p class="technical-sub">Momentum, moving averages, and oscillator bias in one panel.</p>
+            </div>
+            <span class="technical-badge">Live View</span>
+          </div>
+          <div class="technical-shell">
+            <div class="technical-meta">
+              <span class="technical-tag">Signal Engine</span>
+              <span class="technical-tag">Fast + Swing Context</span>
+              <span class="technical-tag">Auto Refresh</span>
+            </div>
+            <div id="technical-widget"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">News Feed</h3>
+          <div id="tv-news"></div>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="stock.js"></script>
+  <button class="floating-voice-btn" id="floatingVoiceBtn" type="button" aria-label="Open voice assistant">Assistant</button>
+  <div class="floating-voice-status brand-sub" id="floatingVoiceStatus" aria-live="polite"></div>
+  <script src="voice-assistant.js"></script>
+</body>
+</html>
+
+
+

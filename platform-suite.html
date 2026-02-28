@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>TradePro AI Platform Suite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel app-shell app-shell-dashboard">
+    <header class="page-head">
+      <div>
+        <h2 class="brand-title dashboard-title">Platform Suite</h2>
+        <p class="brand-sub">Live stream, news intelligence, and team watchlists</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost btn-auto" type="button" onclick="window.location='dashboard.html'">Back</button>
+      </div>
+    </header>
+
+    <main class="page-main stack">
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Live Data Streaming</h3>
+          <span class="helper-note" id="streamHealthText">Idle</span>
+        </div>
+        <div class="planner-fields">
+          <input class="input" id="streamSymbols" placeholder="NASDAQ:AAPL,BINANCE:BTCUSDT,FX:EURUSD">
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn btn-auto" id="streamStartBtn" type="button">Start Stream</button>
+          <button class="btn ghost btn-auto" id="streamStopBtn" type="button">Stop</button>
+          <button class="btn ghost btn-auto" id="streamHealthBtn" type="button">Health</button>
+        </div>
+        <div class="news-list" id="streamQuotes" style="margin-top:10px;"></div>
+      </section>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">News Intelligence</h3>
+          <button class="btn ghost btn-auto" id="newsDigestBtn" type="button">Digest</button>
+        </div>
+        <div class="planner-fields">
+          <input class="input" id="newsSymbol" placeholder="NASDAQ:NVDA">
+          <button class="btn btn-auto" id="newsRunBtn" type="button">Analyze News</button>
+        </div>
+        <div class="news-list" id="newsIntelOut" style="margin-top:10px;"></div>
+      </section>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Team Watchlists</h3>
+          <button class="btn ghost btn-auto" id="teamRefreshBtn" type="button">Refresh</button>
+        </div>
+        <div class="planner-fields">
+          <input class="input" id="teamName" placeholder="Create team watchlist name">
+          <button class="btn btn-auto" id="teamCreateBtn" type="button">Create</button>
+        </div>
+        <div class="planner-fields" style="margin-top:10px;">
+          <input class="input" id="teamIdInput" placeholder="Team ID">
+          <input class="input" id="teamSymbolInput" placeholder="Symbol">
+          <button class="btn ghost btn-auto" id="teamAddSymbolBtn" type="button">Add Symbol</button>
+        </div>
+        <div class="planner-fields" style="margin-top:10px;">
+          <input class="input" id="teamMemberUsername" placeholder="Username">
+          <select id="teamMemberRole">
+            <option value="viewer">Viewer</option>
+            <option value="trader">Trader</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn ghost btn-auto" id="teamAddMemberBtn" type="button">Add Member</button>
+        </div>
+        <div class="news-list" id="teamList" style="margin-top:10px;"></div>
+      </section>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="platform-suite.js"></script>
+</body>
+</html>
