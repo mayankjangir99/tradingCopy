@@ -625,7 +625,7 @@
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch((error) => {
+      navigator.serviceWorker.register("./sw.js?v=20260228a").catch((error) => {
         console.log("SW register warning:", error.message);
       });
     });
@@ -700,4 +700,3 @@
   updateCurrencyBadges();
   registerServiceWorker();
 })();
-
