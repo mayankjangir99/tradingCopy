@@ -8,7 +8,7 @@ if (window.TradeProCore && window.TradeProCore.hasSession()) {
 
 const params = new URLSearchParams(window.location.search);
 const SYMBOL = (params.get("symbol") || "NASDAQ:AAPL").toUpperCase();
-const API_BASE = (window.TradeProCore && window.TradeProCore.API_BASE) || "http://localhost:3000";
+const API_BASE = (window.TradeProCore && window.TradeProCore.API_BASE) || "https://tradingcopy-0p0k.onrender.com";
 
 const stockNameEl = document.getElementById("stockName");
 const subTitleEl = document.getElementById("subTitle");

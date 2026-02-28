@@ -1,5 +1,5 @@
 (() => {
-  const API_BASE = "http://localhost:3000";
+  const API_BASE = "https://tradingcopy-0p0k.onrender.com";
   const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
   const WAKE_WORDS = [
     "hey tradepro",
