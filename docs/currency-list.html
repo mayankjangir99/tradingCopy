@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Currency List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel app-shell app-shell-dashboard currency-shell">
+    <header class="page-head currency-head">
+      <div class="brand-row brand-row-tight">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title dashboard-title">Global Currency Directory</h2>
+          <p class="brand-sub">Active ISO 4217 currencies with flags and symbols</p>
+        </div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost btn-auto" type="button" onclick="window.location='dashboard.html'">Back to Dashboard</button>
+      </div>
+    </header>
+
+    <main class="page-main currency-main">
+      <section class="card currency-card">
+        <div class="row space section-head">
+          <h3 class="section-title">Currency List</h3>
+          <span class="helper-note" id="currencyCount">Loading...</span>
+        </div>
+        <div class="currency-search">
+          <input class="input" id="currencySearch" placeholder="Search by country, currency name, or code">
+        </div>
+        <div class="currency-list" id="currencyList" aria-live="polite"></div>
+      </section>
+    </main>
+  </section>
+
+  <script src="currency-list.js"></script>
+</body>
+</html>

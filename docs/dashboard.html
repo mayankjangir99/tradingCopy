@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>TradePro AI Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel app-shell app-shell-dashboard">
+    <header class="page-head">
+      <div class="brand-row brand-row-tight">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title dashboard-title">TradePro AI Console</h2>
+          <p class="brand-sub">Search stocks, forex, crypto, futures, and options</p>
+          <div class="page-chips">
+            <span class="page-chip">Multi-Market Search</span>
+            <span class="page-chip">Risk Heatmap</span>
+            <span class="page-chip">Planning Tools</span>
+          </div>
+        </div>
+      </div>
+      <div class="page-actions">
+        <span class="currency-badge" data-currency-badge>Currency: USD</span>
+        <select id="currencySelect" aria-label="Currency" style="min-width:120px;">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="INR">INR</option>
+          <option value="GBP">GBP</option>
+          <option value="JPY">JPY</option>
+          <option value="AUD">AUD</option>
+          <option value="CAD">CAD</option>
+          <option value="AED">AED</option>
+          <option value="SGD">SGD</option>
+          <option value="CHF">CHF</option>
+        </select>
+        <select id="themeSelect" aria-label="Theme" style="min-width:120px;">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="neon">Neon</option>
+        </select>
+        <button class="btn ghost btn-auto" type="button" onclick="window.location='control-center.html'">Control</button>
+        <button class="btn ghost btn-auto" type="button" onclick="openNotesWindow()">Notes</button>
+        <button class="btn ghost btn-auto" type="button" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <section class="card card-hero">
+        <div class="row space section-head">
+          <h3 class="section-title">Market Search</h3>
+          <span class="helper-note">Tip: Try <span class="mono">AAPL</span>, <span class="mono">EURUSD</span>, <span class="mono">BTCUSDT</span>, <span class="mono">ES1!</span></span>
+        </div>
+        <div class="search-row search-row-wide">
+        <input class="input" id="symbol" placeholder="AAPL, EURUSD, BTCUSDT, ES1!, AAPL240621C00200000">
+        <select id="marketType" aria-label="Market type">
+          <option value="auto" selected>Auto Detect</option>
+          <option value="stock">Stock</option>
+          <option value="forex">Forex</option>
+          <option value="crypto">Crypto</option>
+          <option value="futures">Futures</option>
+          <option value="options">Options</option>
+        </select>
+        <button class="btn" onclick="go()">Analyze</button>
+      </div>
+      </section>
+
+      <div class="quick-list" id="quickSymbols"></div>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Planning Tools</h3>
+          <span class="brand-sub">Open calculators in separate pages</span>
+        </div>
+        <div class="tool-grid tool-grid-spaced">
+          <button class="btn tool-btn" onclick="window.location='execution-lab.html'"> Execution Lab</button>
+          <button class="btn tool-btn" onclick="window.location='platform-suite.html'"> Platform Suite</button>
+          <button class="btn tool-btn" onclick="window.location='control-center.html'"> Audit + Workspace</button>
+          <button class="btn tool-btn" onclick="window.location='sip.html'"> Smart SIP Planner</button>
+          <button class="btn tool-btn" onclick="window.location='advanced-tools.html'"> Advanced Functions</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=lumpsum-fv'">Lumpsum FV</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=stepup-sip'">Step-Up SIP</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=swp'">SWP Duration</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=retirement-corpus'">Retirement Corpus</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=cagr'">CAGR</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=goal-lumpsum'">Goal Lumpsum</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=emergency'">Emergency Fund</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=allocation'">Allocation Split</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=breakeven'">Breakeven Price</button>
+          <button class="btn tool-btn" onclick="window.location='planner-tools.html?tool=rule-72'">Rule of 72</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Risk Heat Map</h3>
+          <span class="brand-sub">Estimated relative risk by watchlist asset</span>
+        </div>
+        <div class="risk-heatmap" id="riskHeatMap"></div>
+      </section>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Watchlist</h3>
+          <button class="btn ghost btn-auto" id="clearListBtn">Clear</button>
+        </div>
+        <div class="wishlist" id="wishlist"></div>
+      </section>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="dashboard.js"></script>
+  <button class="floating-voice-btn" id="floatingVoiceBtn" type="button" aria-label="Open voice assistant">Assistant</button>
+  <div class="floating-voice-status brand-sub" id="floatingVoiceStatus" aria-live="polite"></div>
+  <script src="voice-assistant.js"></script>
+</body>
+</html>
+
+

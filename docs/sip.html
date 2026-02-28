@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePro AI Smart SIP Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .sip-wrap {
+      margin: 18px auto;
+      width: min(1100px, calc(100% - 24px));
+    }
+
+    .sip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .sip-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sip-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .sip-results {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .sip-chart-wrap {
+      height: 340px;
+      margin-top: 6px;
+    }
+
+    .sip-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .sip-target-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 980px) {
+      .sip-grid,
+      .sip-fields,
+      .sip-target-grid,
+      .sip-results {
+        grid-template-columns: 1fr;
+      }
+      .sip-chart-wrap {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel sip-wrap">
+    <header class="page-head">
+      <div class="brand-row" style="margin:0;">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="brand-title" style="font-size:22px;">Smart SIP Planner</h2>
+          <p class="brand-sub">Goal-driven SIP planning with inflation-aware projection</p>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" onclick="window.location='dashboard.html'" style="width:auto;">Back</button>
+      </div>
+    </header>
+
+    <main class="page-main sip-grid">
+      <section class="stack">
+        <div class="card">
+          <h3 style="margin-top:0;">SIP Calculator</h3>
+          <div class="sip-fields">
+            <div>
+              <label class="form-label" for="monthlyInvestment">Monthly Investment</label>
+              <input class="input" id="monthlyInvestment" type="number" min="0" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="annualReturn">Expected Annual Return (%)</label>
+              <input class="input" id="annualReturn" type="number" min="0" step="0.01" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="durationYears">Investment Duration (Years)</label>
+              <input class="input" id="durationYears" type="number" min="0" step="1" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="inflationRate">Inflation Rate (%)</label>
+              <input class="input" id="inflationRate" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <input id="useInflation" type="checkbox">
+            <label class="form-label" for="useInflation" style="margin:0;">Use inflation-adjusted real return</label>
+          </div>
+
+          <div class="sip-actions">
+            <button class="btn" id="calculateSipBtn" style="width:auto;">Calculate SIP</button>
+            <button class="btn ghost" id="downloadSipPdfBtn" style="width:auto;">Download PDF</button>
+          </div>
+
+          <div class="sip-results" id="sipResults"></div>
+          <p class="sip-note" id="sipMeta"></p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Goal Target Calculator</h3>
+          <div class="sip-target-grid">
+            <div>
+              <label class="form-label" for="targetAmount">Target Amount</label>
+              <input class="input" id="targetAmount" type="number" min="0" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="goalAnnualReturn">Expected Return (%)</label>
+              <input class="input" id="goalAnnualReturn" type="number" min="0" step="0.01" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="goalDurationYears">Duration (Years)</label>
+              <input class="input" id="goalDurationYears" type="number" min="0" value="0">
+            </div>
+            <div>
+              <label class="form-label" for="goalInflationRate">Inflation (%)</label>
+              <input class="input" id="goalInflationRate" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <input id="goalUseInflation" type="checkbox">
+            <label class="form-label" for="goalUseInflation" style="margin:0;">Use inflation adjustment</label>
+          </div>
+
+          <div class="sip-actions">
+            <button class="btn" id="calculateGoalBtn" style="width:auto;">Calculate Required SIP</button>
+          </div>
+          <div class="kpis" id="goalResult" style="margin-top:8px;"></div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="card">
+          <div class="row space">
+            <h3 style="margin:0;">Projection Graph</h3>
+            <span class="brand-sub">Year-wise SIP growth</span>
+          </div>
+          <div class="sip-chart-wrap">
+            <canvas id="sipChart"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="sip.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#57b6ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>TradePro AI Control Center</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="panel app-shell app-shell-dashboard">
+    <header class="page-head">
+      <div>
+        <h2 class="brand-title dashboard-title">Control Center</h2>
+        <p class="brand-sub">Theme, workspaces, and audit activity timeline</p>
+      </div>
+      <div class="page-actions">
+        <span class="currency-badge" data-currency-badge>Currency: USD</span>
+        <button class="btn ghost btn-auto" type="button" onclick="window.location='dashboard.html'">Back</button>
+      </div>
+    </header>
+
+    <main class="page-main stack control-center-main">
+      <section class="card control-section">
+        <div class="row space section-head">
+          <h3 class="section-title">Theme</h3>
+          <div class="row">
+            <button class="btn ghost btn-auto" type="button" id="themeLoadBtn">Load Theme</button>
+            <button class="btn ghost btn-auto" type="button" id="themeSaveBtn">Save Theme</button>
+          </div>
+        </div>
+        <div class="planner-fields control-primary-grid">
+          <select id="themePick">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="neon">Neon</option>
+          </select>
+        </div>
+        <div class="planner-fields control-actions-grid">
+          <select id="currencyPick">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="INR">INR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+            <option value="AUD">AUD</option>
+            <option value="CAD">CAD</option>
+            <option value="AED">AED</option>
+            <option value="SGD">SGD</option>
+            <option value="CHF">CHF</option>
+          </select>
+          <button class="btn ghost btn-auto" type="button" id="currencyLoadBtn">Load Currency</button>
+          <button class="btn ghost btn-auto" type="button" id="currencySaveBtn">Save Currency</button>
+          <button class="btn ghost btn-auto" type="button" id="currencyRefreshRatesBtn">Refresh FX Rates</button>
+        </div>
+      </section>
+
+      <section class="card control-section">
+        <div class="row space section-head">
+          <h3 class="section-title">Workspaces</h3>
+          <button class="btn ghost btn-auto" id="workspaceRefreshBtn" type="button">Refresh</button>
+        </div>
+        <div class="planner-fields control-primary-grid">
+          <input class="input" id="workspaceName" placeholder="Workspace name">
+          <button class="btn btn-auto" id="workspaceCreateBtn" type="button">Create</button>
+        </div>
+        <div class="news-list control-feed" id="workspaceList"></div>
+        <div class="planner-fields control-actions-grid">
+          <input class="input" id="workspaceRenameInput" placeholder="Rename active workspace to...">
+          <button class="btn ghost btn-auto" id="workspaceRenameBtn" type="button">Rename Active</button>
+          <button class="btn ghost btn-auto" id="workspaceDuplicateBtn" type="button">Duplicate Active</button>
+        </div>
+        <div class="planner-fields control-actions-grid">
+          <button class="btn ghost btn-auto" id="workspaceExportBtn" type="button">Export Workspaces JSON</button>
+          <button class="btn ghost btn-auto" id="workspaceImportBtn" type="button">Import Workspaces JSON</button>
+          <input class="input" id="workspaceImportInput" placeholder="Paste workspace JSON array/object">
+        </div>
+      </section>
+
+      <section class="card control-section control-section-wide">
+        <div class="row space section-head">
+          <h3 class="section-title">Audit Timeline</h3>
+          <div class="row">
+            <button class="btn ghost btn-auto" type="button" id="auditRefreshBtn">Refresh</button>
+            <button class="btn ghost btn-auto" type="button" id="auditDownloadBtn">Download CSV</button>
+          </div>
+        </div>
+        <div class="planner-fields control-audit-grid">
+          <input class="input" id="auditFilterInput" placeholder="Filter logs by type/path/status text">
+          <button class="btn ghost btn-auto" type="button" id="auditFilterBtn">Apply Filter</button>
+          <button class="btn ghost btn-auto" type="button" id="auditClearFilterBtn">Clear Filter</button>
+        </div>
+        <div class="news-list control-feed control-feed-tall" id="auditList"></div>
+      </section>
+
+    </main>
+  </section>
+
+  <script src="app-core.js"></script>
+  <script src="control-center.js"></script>
+</body>
+</html>
