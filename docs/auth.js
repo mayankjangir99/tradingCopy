@@ -67,8 +67,76 @@ function validateRegisterFields(username, password) {
 }
 
 let firebaseBooted = false;
+let firebaseLoadPromise = null;
+let authSlowTimer = null;
 
-function ensureFirebaseReady() {
+function setAuthStatus(message, type = "info") {
+  const status = document.getElementById("authStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.classList.remove("good", "bad");
+  if (type === "success") status.classList.add("good");
+  if (type === "error") status.classList.add("bad");
+}
+
+function startAuthSlowTimer(message = "Backend is taking longer than usual. Still trying...") {
+  clearTimeout(authSlowTimer);
+  authSlowTimer = window.setTimeout(() => {
+    setAuthStatus(message, "error");
+  }, 5000);
+}
+
+function stopAuthSlowTimer() {
+  clearTimeout(authSlowTimer);
+  authSlowTimer = null;
+}
+
+function setButtonBusy(button, busy, busyLabel) {
+  if (!button) return;
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.textContent || "";
+  }
+  button.disabled = busy;
+  button.textContent = busy ? busyLabel : button.dataset.defaultLabel;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === "true") {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureFirebaseSdkLoaded() {
+  if (firebaseLoadPromise) return firebaseLoadPromise;
+  firebaseLoadPromise = (async () => {
+    await loadScript("https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js");
+    await loadScript("firebase-config.js?v=20260228a");
+  })();
+  return firebaseLoadPromise;
+}
+
+async function ensureFirebaseReady() {
+  await ensureFirebaseSdkLoaded();
   if (firebaseBooted) return firebase.auth();
   if (typeof firebase === "undefined") {
     throw new Error("Firebase SDK not loaded.");
@@ -94,9 +162,13 @@ async function exchangeSocialToken(provider, idToken, persist) {
 async function socialLogin(provider) {
   const remember = document.getElementById("remember");
   const persist = Boolean(remember && remember.checked);
+  const button = document.querySelector(`.oauth-btn[onclick="socialLogin('${provider}')"]`);
 
   try {
-    const auth = ensureFirebaseReady();
+    setButtonBusy(button, true, "Connecting...");
+    setAuthStatus("Opening secure sign-in window...");
+    startAuthSlowTimer("Google login is taking longer than usual. Check popup blocking if nothing opens.");
+    const auth = await ensureFirebaseReady();
     let oauthProvider;
 
     if (provider === "google") {
@@ -114,11 +186,17 @@ async function socialLogin(provider) {
     const result = await auth.signInWithPopup(oauthProvider);
     const idToken = await result.user.getIdToken();
     await exchangeSocialToken(provider, idToken, persist);
+    stopAuthSlowTimer();
+    setAuthStatus("Login successful. Redirecting...", "success");
     showToast("Login successful. Redirecting...", "success");
     window.location = "dashboard.html";
   } catch (error) {
+    stopAuthSlowTimer();
     const message = String(error && error.message ? error.message : "Social login failed.");
+    setAuthStatus(message, "error");
     showToast(message, "error");
+  } finally {
+    setButtonBusy(button, false);
   }
 }
 
@@ -126,23 +204,35 @@ async function login(event) {
   if (event) event.preventDefault();
 
   const username = document.getElementById("user").value.trim();
-  const password = document.getElementById("pass").value.trim();
+  const password = document.getElementById("pass").value;
   const remember = document.getElementById("remember");
   const persist = Boolean(remember && remember.checked);
+  const submitButton = document.querySelector('#loginForm button[type="submit"]');
 
   try {
+    clearFieldError("user");
+    clearFieldError("pass");
+    setButtonBusy(submitButton, true, "Signing in...");
+    setAuthStatus("Signing in...");
+    startAuthSlowTimer();
     if (!window.TradeProCore || typeof window.TradeProCore.login !== "function") {
       throw new Error("Login API is unavailable");
     }
     await window.TradeProCore.login(username, password, persist);
+    stopAuthSlowTimer();
+    setAuthStatus("Login successful. Redirecting...", "success");
     showToast("Login successful. Redirecting...", "success");
     window.location = "dashboard.html";
     return;
   } catch (error) {
+    stopAuthSlowTimer();
     setFieldError("user", "Invalid username or password.");
     setFieldError("pass", "Invalid username or password.");
     const msg = String(error && error.message ? error.message : "Login failed.");
+    setAuthStatus(msg, "error");
     showToast(`Login failed: ${msg}`, "error");
+  } finally {
+    setButtonBusy(submitButton, false);
   }
 }
 
@@ -154,6 +244,7 @@ async function registerUser(event) {
   const password = document.getElementById("newPass").value;
   const confirmPassword = document.getElementById("confirmPass").value;
   const persist = Boolean(document.getElementById("registerRemember")?.checked);
+  const submitButton = document.querySelector('#registerForm button[type="submit"]');
 
   if (password !== confirmPassword) {
     clearFieldError("confirmPass");
@@ -172,23 +263,48 @@ async function registerUser(event) {
   }
 
   try {
+    setButtonBusy(submitButton, true, "Creating...");
+    setAuthStatus("Creating account...");
+    startAuthSlowTimer("Account setup is taking longer than usual. Waiting for backend response...");
     if (!window.TradeProCore || typeof window.TradeProCore.register !== "function") {
       throw new Error("Registration API is unavailable");
     }
     await window.TradeProCore.register(displayName, username, password, persist);
+    stopAuthSlowTimer();
+    setAuthStatus("Account created. Redirecting...", "success");
     showToast("Account created. Redirecting...", "success");
     window.location = "dashboard.html";
   } catch (error) {
+    stopAuthSlowTimer();
     const msg = String(error && error.message ? error.message : "Registration failed.");
+    setAuthStatus(msg, "error");
     showToast(`Registration failed: ${msg}`, "error");
+  } finally {
+    setButtonBusy(submitButton, false);
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (window.TradeProCore && window.TradeProCore.hasSession()) {
+    setAuthStatus("Active session found. Opening dashboard...");
+    window.location = "dashboard.html";
+    return;
+  }
   switchAuthMode("login");
+  setAuthStatus("Sign in to continue.");
   ["user", "pass", "newUser", "newPass", "confirmPass"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener("input", () => clearFieldError(id));
+    el.addEventListener("input", () => {
+      clearFieldError(id);
+      if (id === "user" || id === "pass" || id === "newUser" || id === "newPass" || id === "confirmPass") {
+        setAuthStatus("Ready.");
+      }
+    });
   });
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => {
+      ensureFirebaseSdkLoaded().catch(() => {});
+    }, { timeout: 2500 });
+  }
 });

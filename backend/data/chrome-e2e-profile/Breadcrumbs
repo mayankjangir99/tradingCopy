@@ -1,0 +1,30 @@
+0:00:26 Tab1 StartNav167 #renderer-script #auto_subframe
+0:00:27 Tab1 FinishNav167
+0:00:27 Tab1 PageLoad
+0:00:27 PasswordManager_LoginPassed
+0:00:27 Tab1 PageLoad
+0:00:27 Widget Closed: PasswordSaveUpdateView
+0:00:27 Tab1 StartNav168 #renderer-script #link
+0:00:27 Tab1 StartNav169 #renderer-script #link
+0:00:27 Tab1 FinishNav169 ERR_ABORTED
+0:00:27 Tab1 FinishNav168
+0:00:27 Tab1 StartNav170 #renderer-script #auto_subframe
+0:00:27 Tab1 FinishNav170
+0:00:27 Tab1 PageLoad
+0:00:27 PasswordManager_LoginPassed
+0:00:27 Tab1 PageLoad
+0:00:27 Widget Closed: PasswordSaveUpdateView
+0:00:27 Tab1 StartNav171 #renderer-script #link
+0:00:27 Tab1 StartNav172 #renderer-script #link
+0:00:27 Tab1 FinishNav172 ERR_ABORTED
+0:00:27 Tab1 FinishNav171
+0:00:27 Tab1 StartNav173 #renderer-script #auto_subframe
+0:00:27 Tab1 FinishNav173
+0:00:27 Tab1 PageLoad
+0:00:27 PasswordManager_LoginPassed
+0:00:27 Tab1 PageLoad
+0:00:27 Tab1 RenderProcessGone
+0:00:27 Widget Closed: PasswordSaveUpdateView
+0:00:27 Browser1 Close Tab1 at 0
+0:00:27 Widget Closed: BrowserWidget
+0:00:27 Widget Closed: PasswordSaveUpdateView

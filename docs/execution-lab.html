@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#57b6ff">
+  <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
   <title>TradePro AI Execution Lab</title>
   <link rel="stylesheet" href="style.css">
@@ -45,8 +46,16 @@
           <input class="input" id="alertCooldown" type="number" min="30" value="300" placeholder="Cooldown sec">
         </div>
         <div class="row" style="margin-top:10px;">
+          <label class="toggle-chip" for="alertEmailChannel">
+            <input id="alertEmailChannel" type="checkbox">
+            <span>Email me when triggered</span>
+          </label>
+          <span class="brand-sub" id="alertEmailHint">Email alerts use the email saved on your logged-in account.</span>
+        </div>
+        <div class="row" style="margin-top:10px;">
           <button class="btn btn-auto" type="button" id="createAlertBtn">Create Alert</button>
         </div>
+        <p class="helper-note" id="alertHistoryStatus">Alert history shows trigger price, target, email delivery, and reason.</p>
         <div class="news-list" id="alertsList" style="margin-top:10px;"></div>
       </section>
 

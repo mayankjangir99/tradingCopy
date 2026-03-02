@@ -22,6 +22,13 @@ function kpi(label, value, cls = "") {
   return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div></div>`;
 }
 
+function setAlertHistoryStatus(message, isError = false) {
+  const el = q("alertHistoryStatus");
+  if (!el) return;
+  el.textContent = message || "";
+  el.classList.toggle("bad", Boolean(isError));
+}
+
 async function apiFetchJson(path, options = {}) {
   if (!window.TradeProCore || !window.TradeProCore.hasSession()) {
     window.location = "index.html";
@@ -41,18 +48,36 @@ async function loadAlerts() {
   const data = await apiFetchJson("/api/alerts");
   const alerts = data.alerts || [];
   const events = data.events || [];
+  const notificationEmail = String(data.notificationEmail || "").trim();
+  const emailHint = q("alertEmailHint");
+  const emailToggle = q("alertEmailChannel");
+  if (emailHint) {
+    if (notificationEmail) {
+      emailHint.textContent = data.emailDeliveryReady
+        ? `Email notifications will be sent to ${notificationEmail}.`
+        : `Email recipient is ${notificationEmail}. Backend SMTP is still not configured.`;
+    } else {
+      emailHint.textContent = "Email alerts require an account with a saved email address, such as Google login.";
+    }
+  }
+  if (emailToggle) {
+    emailToggle.disabled = !notificationEmail;
+    if (!notificationEmail) emailToggle.checked = false;
+  }
+  setAlertHistoryStatus(`Loaded ${alerts.length} alerts and ${events.length} recent alert events.`);
   q("alertsList").innerHTML = [
     ...alerts.map((a) => `
       <div class="news-item">
         <h4>${a.name} | ${a.symbol} | ${a.logic}</h4>
-        <p>Conditions: ${a.conditions.map((c) => `${c.type}${Number.isFinite(c.value) ? `(${c.value})` : ""}`).join(", ") || "-"}</p>
-        <p>Cooldown: ${a.cooldownSec}s | Active: ${a.isActive ? "Yes" : "No"} | Last trigger: ${a.lastTriggeredAt ? new Date(a.lastTriggeredAt).toLocaleString() : "-"}</p>
+        <p>Conditions: ${a.conditions.map((c) => `${c.type}${Number.isFinite(c.value) ? ` (${c.value})` : ""}`).join(", ") || "-"}</p>
+        <p>Cooldown: ${a.cooldownSec}s | Active: ${a.isActive ? "Yes" : "No"} | Email: ${a.channels?.email ? "On" : "Off"} | Last trigger: ${a.lastTriggeredAt ? new Date(a.lastTriggeredAt).toLocaleString() : "-"}</p>
       </div>
     `),
     ...events.slice(0, 10).map((e) => `
       <div class="news-item">
         <h4>Triggered: ${e.name} (${e.symbol})</h4>
-        <p>${new Date(e.triggeredAt).toLocaleString()} | inApp=${e.channels?.inApp} email=${e.channels?.email} tg=${e.channels?.telegram} wa=${e.channels?.whatsapp}</p>
+        <p>${new Date(e.triggeredAt).toLocaleString()} | reason=${e.reason || "-"} | email=${e.channels?.email || "disabled"}${e.emailRecipient ? ` (${e.emailRecipient})` : ""}</p>
+        <p>${(e.conditionResults || []).map((item) => `${item.label || item.type}: observed ${item.observedText || item.observedValue} vs target ${Number.isFinite(Number(item.targetValue)) ? item.targetValue : "-"}`).join(" | ") || "No condition details available."}</p>
       </div>
     `)
   ].join("") || "<p class='brand-sub'>No alerts yet.</p>";
@@ -67,7 +92,7 @@ async function createAlert() {
     symbol: q("alertSymbol").value.trim(),
     logic: q("alertLogic").value,
     cooldownSec: Number(q("alertCooldown").value) || 300,
-    channels: { inApp: true, email: false, telegram: false, whatsapp: false },
+    channels: { inApp: true, email: Boolean(q("alertEmailChannel")?.checked), telegram: false, whatsapp: false },
     conditions: [{ type, value: conditionNeedsValue ? val : null }]
   };
   await apiFetchJson("/api/alerts", {
@@ -75,6 +100,7 @@ async function createAlert() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
+  localStorage.setItem("tp_default_alert_cooldown", String(payload.cooldownSec));
   await loadAlerts();
 }
 
@@ -147,6 +173,8 @@ function on(id, event, handler) {
 }
 
 async function bootstrap() {
+  const savedCooldown = localStorage.getItem("tp_default_alert_cooldown");
+  if (savedCooldown && q("alertCooldown")) q("alertCooldown").value = savedCooldown;
   on("createAlertBtn", "click", async () => {
     try { await createAlert(); } catch (error) { alert(error.message); }
   });
@@ -164,4 +192,5 @@ async function bootstrap() {
 
 bootstrap().catch((error) => {
   console.log("Execution Lab bootstrap warning:", error.message);
+  setAlertHistoryStatus(error.message, true);
 });

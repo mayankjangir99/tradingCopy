@@ -1,4 +1,9 @@
-const API_BASE = (window.TradeProCore && window.TradeProCore.API_BASE) || "https://tradingcopy-0p0k.onrender.com";
+const API_BASE =
+  (window.TradeProCore && window.TradeProCore.API_BASE) ||
+  window.TRADEPRO_CONFIG?.API_BASE ||
+  localStorage.getItem("tp_api_base") ||
+  document.querySelector('meta[name="tradepro-api-base"]')?.content ||
+  "https://tradingcopy-0p0k.onrender.com";
 
 if (window.TradeProCore && window.TradeProCore.hasSession()) {
   window.TradeProCore.ensureAuthenticated().catch(() => {
@@ -19,34 +24,16 @@ const quickSymbols = [
   { symbol: "NYSE:KO", market: "stock", label: "KO" },
   { symbol: "AMEX:SPY", market: "stock", label: "SPY ETF" },
   { symbol: "AMEX:QQQ", market: "stock", label: "QQQ ETF" },
-  { symbol: "AMEX:IWM", market: "stock", label: "IWM ETF" },
-  { symbol: "AMEX:GLD", market: "stock", label: "GLD ETF" },
   { symbol: "FX:EURUSD", market: "forex", label: "EUR/USD" },
   { symbol: "FX:GBPUSD", market: "forex", label: "GBP/USD" },
-  { symbol: "FX:USDJPY", market: "forex", label: "USD/JPY" },
-  { symbol: "FX:USDCHF", market: "forex", label: "USD/CHF" },
-  { symbol: "FX:AUDUSD", market: "forex", label: "AUD/USD" },
-  { symbol: "FX:USDCAD", market: "forex", label: "USD/CAD" },
   { symbol: "BINANCE:BTCUSDT", market: "crypto", label: "BTC/USDT" },
   { symbol: "BINANCE:ETHUSDT", market: "crypto", label: "ETH/USDT" },
   { symbol: "BINANCE:SOLUSDT", market: "crypto", label: "SOL/USDT" },
-  { symbol: "BINANCE:XRPUSDT", market: "crypto", label: "XRP/USDT" },
-  { symbol: "BINANCE:BNBUSDT", market: "crypto", label: "BNB/USDT" },
-  { symbol: "BINANCE:ADAUSDT", market: "crypto", label: "ADA/USDT" },
-  { symbol: "BINANCE:DOGEUSDT", market: "crypto", label: "DOGE/USDT" },
   { symbol: "CME_MINI:ES1!", market: "futures", label: "S&P E-mini" },
-  { symbol: "CME_MINI:NQ1!", market: "futures", label: "Nasdaq E-mini" },
-  { symbol: "CBOT_MINI:YM1!", market: "futures", label: "Dow E-mini" },
-  { symbol: "CME_MINI:RTY1!", market: "futures", label: "Russell 2000" },
   { symbol: "NYMEX:CL1!", market: "futures", label: "Crude Oil" },
-  { symbol: "NYMEX:NG1!", market: "futures", label: "Natural Gas" },
   { symbol: "COMEX:GC1!", market: "futures", label: "Gold" },
-  { symbol: "COMEX:SI1!", market: "futures", label: "Silver" },
   { symbol: "OPRA:AAPL240621C00200000", market: "options", label: "AAPL Call" },
-  { symbol: "OPRA:AAPL240621P00180000", market: "options", label: "AAPL Put" },
-  { symbol: "OPRA:MSFT240621C00400000", market: "options", label: "MSFT Call" },
-  { symbol: "OPRA:TSLA240621P00150000", market: "options", label: "TSLA Put" },
-  { symbol: "OPRA:NVDA240621C00900000", market: "options", label: "NVDA Call" }
+  { symbol: "OPRA:TSLA240621P00150000", market: "options", label: "TSLA Put" }
 ];
 
 const CRYPTO_BASE_TOKENS = new Set(["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE", "LTC"]);
@@ -63,17 +50,6 @@ const FUTURES_MAP = {
   ZN: "CBOT:ZN1!",
   ZB: "CBOT:ZB1!"
 };
-
-const quickBox = document.getElementById("quickSymbols");
-const clearListBtn = document.getElementById("clearListBtn");
-const marketTypeEl = document.getElementById("marketType");
-const riskHeatMapEl = document.getElementById("riskHeatMap");
-const symbolInputEl = document.getElementById("symbol");
-const voiceBtnEl = document.getElementById("voiceBtn");
-const voiceStatusEl = document.getElementById("voiceStatus");
-const themeSelectEl = document.getElementById("themeSelect");
-const currencySelectEl = document.getElementById("currencySelect");
-
 const RISK_BASE_BY_MARKET = {
   stock: 48,
   forex: 58,
@@ -81,45 +57,51 @@ const RISK_BASE_BY_MARKET = {
   futures: 74,
   options: 92
 };
+const DASHBOARD_FX_CODES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
 
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-let voiceRecognition = null;
-let voiceListening = false;
+const quickBox = document.getElementById("quickSymbols");
+const clearListBtn = document.getElementById("clearListBtn");
+const marketTypeEl = document.getElementById("marketType");
+const riskHeatMapEl = document.getElementById("riskHeatMap");
+const symbolInputEl = document.getElementById("symbol");
+const themeSelectEl = document.getElementById("themeSelect");
+const currencySelectEl = document.getElementById("currencySelect");
+const searchStatusEl = document.getElementById("searchStatus");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const dashboardSummaryEl = document.getElementById("dashboardSummary");
+const dashboardSummaryStatusEl = document.getElementById("dashboardSummaryStatus");
+const onboardingCardEl = document.getElementById("onboardingCard");
+const onboardingStepsEl = document.getElementById("onboardingSteps");
+const dismissOnboardingBtn = document.getElementById("dismissOnboardingBtn");
+const dashboardFxAmountEl = document.getElementById("dashboardFxAmount");
+const dashboardFxFromEl = document.getElementById("dashboardFxFrom");
+const dashboardFxToEl = document.getElementById("dashboardFxTo");
+const dashboardFxResultEl = document.getElementById("dashboardFxResult");
+const dashboardFxRateEl = document.getElementById("dashboardFxRate");
+const dashboardFxUpdatedEl = document.getElementById("dashboardFxUpdated");
 
-function getStoredWatchlist() {
-  return JSON.parse(localStorage.getItem("wishlist") || "[]");
+let watchlistRenderSeq = 0;
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-async function syncWatchlistToServer(list) {
-  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
-  try {
-    await window.TradeProCore.apiFetch("/api/watchlist", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ watchlist: list })
-    });
-  } catch (error) {
-    console.log("Watchlist sync warning:", error.message);
-  }
+function setSearchStatus(message, isError = false) {
+  if (!searchStatusEl) return;
+  searchStatusEl.textContent = message || "";
+  searchStatusEl.classList.toggle("bad", Boolean(isError));
 }
 
-function setStoredWatchlist(list) {
-  localStorage.setItem("wishlist", JSON.stringify(list));
-  syncWatchlistToServer(list);
-}
-
-async function hydrateWatchlistFromServer() {
-  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
-  try {
-    const response = await window.TradeProCore.apiFetch("/api/watchlist");
-    if (!response.ok) return;
-    const data = await response.json();
-    if (Array.isArray(data.watchlist) && data.watchlist.length) {
-      localStorage.setItem("wishlist", JSON.stringify(data.watchlist.slice(0, 20)));
-    }
-  } catch (error) {
-    console.log("Watchlist hydrate warning:", error.message);
-  }
+function setAnalyzeBusy(busy, label = "Analyze") {
+  if (!analyzeBtn) return;
+  if (!analyzeBtn.dataset.defaultLabel) analyzeBtn.dataset.defaultLabel = analyzeBtn.textContent || label;
+  analyzeBtn.disabled = busy;
+  analyzeBtn.textContent = busy ? label : analyzeBtn.dataset.defaultLabel;
 }
 
 function logout() {
@@ -182,7 +164,7 @@ function normalizeStock(value) {
 }
 
 function normalizeSymbol(raw, marketType = "auto") {
-  const value = raw.trim().toUpperCase();
+  const value = String(raw || "").trim().toUpperCase();
   if (!value) return "";
   if (value.includes(":")) return value;
 
@@ -201,17 +183,89 @@ function normalizeSymbol(raw, marketType = "auto") {
   );
 }
 
-function go(symbolInput, forcedMarketType) {
+function rememberSearchDefaults(symbol, marketType) {
+  localStorage.setItem("tp_recent_symbol", String(symbol || ""));
+  localStorage.setItem("tp_recent_market_type", String(marketType || "auto"));
+}
+
+async function validateSymbolBeforeNavigation(symbol) {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) {
+    return { valid: true, normalizedSymbol: symbol, available: true };
+  }
+  const response = await window.TradeProCore.apiFetch(`/api/symbol/resolve?symbol=${encodeURIComponent(symbol)}`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Symbol validation failed.");
+  }
+  return data;
+}
+
+async function go(symbolInput, forcedMarketType) {
   const input = symbolInput || symbolInputEl.value;
   const marketType = forcedMarketType || marketTypeEl?.value || "auto";
   const symbol = normalizeSymbol(input, marketType);
   if (!symbol) {
-    alert("Enter a valid symbol for stock, forex, crypto, futures, or options.");
+    setSearchStatus("Enter a valid stock, forex, crypto, futures, or options symbol.", true);
     return;
   }
 
-  addToWishlist(symbol);
-  window.location = `stock.html?symbol=${encodeURIComponent(symbol)}`;
+  try {
+    setAnalyzeBusy(true, "Checking...");
+    setSearchStatus(`Validating ${symbol}...`);
+    const result = await validateSymbolBeforeNavigation(symbol);
+    if (!result.valid) {
+      setSearchStatus(result.error || "Symbol validation failed.", true);
+      return;
+    }
+    if (!result.available) {
+      setSearchStatus(result.error || "Live data is temporarily unavailable. Opening fallback stock page.", true);
+    } else {
+      setSearchStatus(`Validated ${result.normalizedSymbol}. Opening stock page...`);
+    }
+    addToWishlist(result.normalizedSymbol || symbol);
+    rememberSearchDefaults(result.normalizedSymbol || symbol, marketType);
+    window.location = `stock.html?symbol=${encodeURIComponent(result.normalizedSymbol || symbol)}`;
+  } catch (error) {
+    setSearchStatus(String(error.message || "Symbol validation failed."), true);
+  } finally {
+    setAnalyzeBusy(false);
+  }
+}
+
+function getStoredWatchlist() {
+  return JSON.parse(localStorage.getItem("wishlist") || "[]");
+}
+
+async function syncWatchlistToServer(list) {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
+  try {
+    await window.TradeProCore.apiFetch("/api/watchlist", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ watchlist: list })
+    });
+  } catch (error) {
+    console.log("Watchlist sync warning:", error.message);
+  }
+}
+
+function setStoredWatchlist(list) {
+  localStorage.setItem("wishlist", JSON.stringify(list));
+  syncWatchlistToServer(list);
+}
+
+async function hydrateWatchlistFromServer() {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
+  try {
+    const response = await window.TradeProCore.apiFetch("/api/watchlist");
+    if (!response.ok) return;
+    const data = await response.json();
+    if (Array.isArray(data.watchlist)) {
+      localStorage.setItem("wishlist", JSON.stringify(data.watchlist.slice(0, 20)));
+    }
+  } catch (error) {
+    console.log("Watchlist hydrate warning:", error.message);
+  }
 }
 
 function addToWishlist(symbol) {
@@ -228,146 +282,8 @@ function removeFromWishlist(symbol) {
   setStoredWatchlist(updated);
   renderWishlist();
   renderRiskHeatMap();
-}
-
-async function renderWishlist() {
-  const list = getStoredWatchlist();
-  const wrap = document.getElementById("wishlist");
-
-  if (list.length === 0) {
-    wrap.innerHTML = "<p class='brand-sub'>Your watchlist is empty.</p>";
-    return;
-  }
-
-  const renderSeq = ++watchlistRenderSeq;
-  wrap.innerHTML = list
-    .map(
-      (symbol) => `
-      <div class="wish-item">
-        <div class="wish-main">
-          <div class="wish-logo-wrap"><div class="wish-logo-fallback">${getLogoInitials(symbol)}</div></div>
-          <div class="wish-meta">
-            <a class="mono" href="stock.html?symbol=${encodeURIComponent(symbol)}">${escapeHtml(symbol)}</a>
-            <p class="brand-sub wish-sub">Loading...</p>
-          </div>
-        </div>
-        <button class="btn ghost" style="width:auto;padding:7px 10px;" onclick="removeFromWishlist('${symbol}')">Remove</button>
-      </div>
-    `
-    )
-    .join("");
-
-  const rows = await Promise.all(list.map((symbol) => buildWishlistItem(symbol)));
-  if (renderSeq !== watchlistRenderSeq) return;
-  wrap.innerHTML = rows.join("");
-}
-
-const symbolProfileCache = new Map();
-let watchlistRenderSeq = 0;
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function getTickerFromSymbol(symbol) {
-  const text = String(symbol || "").toUpperCase();
-  if (!text) return "--";
-  if (!text.includes(":")) return text;
-  return text.split(":").slice(1).join(":") || text;
-}
-
-function getLogoInitials(symbol) {
-  const ticker = getTickerFromSymbol(symbol).replace(/[^A-Z0-9]/g, "");
-  if (!ticker) return "?";
-  return ticker.slice(0, 2);
-}
-
-async function fetchSymbolProfile(symbol) {
-  const marketType = detectMarketFromSymbol(symbol);
-  if (marketType !== "stock") return null;
-
-  if (symbolProfileCache.has(symbol)) {
-    return symbolProfileCache.get(symbol);
-  }
-
-  const endpoint = `/api/profile/${encodeURIComponent(symbol)}`;
-
-  try {
-    const response = window.TradeProCore && window.TradeProCore.hasSession()
-      ? await window.TradeProCore.apiFetch(endpoint)
-      : await fetch(`${API_BASE}${endpoint}`);
-
-    if (!response.ok) {
-      symbolProfileCache.set(symbol, null);
-      return null;
-    }
-
-    const data = await response.json();
-    const profile = {
-      ticker: String(data.ticker || getTickerFromSymbol(symbol)).toUpperCase(),
-      name: String(data.name || "").trim(),
-      logo: String(data.logo || "").trim()
-    };
-
-    symbolProfileCache.set(symbol, profile);
-    return profile;
-  } catch (error) {
-    console.log("Watchlist profile warning:", error.message);
-    symbolProfileCache.set(symbol, null);
-    return null;
-  }
-}
-
-async function buildWishlistItem(symbol) {
-  const marketType = detectMarketFromSymbol(symbol);
-  const profile = await fetchSymbolProfile(symbol);
-  const ticker = escapeHtml(profile?.ticker || getTickerFromSymbol(symbol));
-  const companyName = escapeHtml(profile?.name || marketType.toUpperCase());
-  const logo = String(profile?.logo || "").trim();
-  const logoHtml = logo
-    ? `<img class="wish-logo" src="${logo}" alt="${ticker} logo" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"><div class="wish-logo-fallback" style="display:none;">${getLogoInitials(symbol)}</div>`
-    : `<div class="wish-logo-fallback">${getLogoInitials(symbol)}</div>`;
-
-  return `
-    <div class="wish-item">
-      <div class="wish-main">
-        <div class="wish-logo-wrap">${logoHtml}</div>
-        <div class="wish-meta">
-          <a class="mono" href="stock.html?symbol=${encodeURIComponent(symbol)}">${escapeHtml(symbol)}</a>
-          <p class="brand-sub wish-sub">${companyName}</p>
-        </div>
-      </div>
-      <button class="btn ghost" style="width:auto;padding:7px 10px;" onclick="removeFromWishlist('${symbol}')">Remove</button>
-    </div>
-  `;
-}
-function renderQuickSymbols() {
-  const marketLabels = {
-    stock: "Stocks & ETFs",
-    forex: "Forex",
-    crypto: "Crypto",
-    futures: "Futures",
-    options: "Options"
-  };
-
-  const orderedMarkets = ["stock", "forex", "crypto", "futures", "options"];
-  quickBox.innerHTML = orderedMarkets
-    .map((market) => {
-      const items = quickSymbols.filter((item) => item.market === market);
-      if (items.length === 0) return "";
-      const pills = items
-        .map(
-          (item) => `<button class="pill" onclick="go('${item.symbol}','${item.market}')">${item.label}</button>`
-        )
-        .join("");
-      return `<div style="width:100%;margin-top:2px;"><p class="brand-sub" style="margin:2px 0 8px 0;">${marketLabels[market]}</p>${pills}</div>`;
-    })
-    .join("");
+  loadDashboardSummary();
+  renderOnboarding();
 }
 
 function detectMarketFromSymbol(symbol) {
@@ -427,8 +343,8 @@ function renderRiskHeatMap() {
       return `
         <div class="risk-cell ${riskClass}" style="--risk-pct:${score}; --card-delay:${(index * 55)}ms;">
           <div class="risk-top">
-            <div class="mono risk-symbol">${symbol}</div>
-            <span class="risk-market">${market}</span>
+            <div class="mono risk-symbol">${escapeHtml(symbol)}</div>
+            <span class="risk-market">${escapeHtml(market)}</span>
           </div>
           <div class="risk-body">
             <div class="risk-ring"><span class="risk-score">${score}%</span></div>
@@ -441,146 +357,261 @@ function renderRiskHeatMap() {
     .join("");
 }
 
-function setVoiceStatus(message, isError = false) {
-  if (!voiceStatusEl) return;
-  voiceStatusEl.textContent = message || "";
-  voiceStatusEl.style.color = isError ? "var(--bad)" : "var(--muted)";
+function getTickerFromSymbol(symbol) {
+  const text = String(symbol || "").toUpperCase();
+  if (!text) return "--";
+  if (!text.includes(":")) return text;
+  return text.split(":").slice(1).join(":") || text;
 }
 
-function setVoiceListeningUI(isListening) {
-  voiceListening = isListening;
-  if (voiceBtnEl) voiceBtnEl.classList.toggle("listening", isListening);
-  if (voiceStatusEl) voiceStatusEl.classList.toggle("listening", isListening);
+function getLogoInitials(symbol) {
+  const ticker = getTickerFromSymbol(symbol).replace(/[^A-Z0-9]/g, "");
+  if (!ticker) return "?";
+  return ticker.slice(0, 2);
 }
 
-function cleanSpokenSymbol(raw) {
-  return String(raw || "")
-    .toUpperCase()
-    .replace(/\b(OF|THE|PRICE|SHOW|ANALYZE|COMPARE|AND)\b/g, " ")
-    .replace(/[^A-Z0-9:./!\- ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const symbolProfileCache = new Map();
 
-function normalizeVoiceSymbolCandidate(value) {
-  let symbol = String(value || "").toUpperCase().replace(/\s+/g, "");
-  if (!symbol) return "";
-  symbol = symbol.replace(/[.,!?;:]+$/g, "");
+async function fetchSymbolProfile(symbol) {
+  const marketType = detectMarketFromSymbol(symbol);
+  if (marketType !== "stock") return null;
+  if (symbolProfileCache.has(symbol)) return symbolProfileCache.get(symbol);
 
-  // Common speech-recognition miss for crypto pairs: BTCUSD heard instead of BTCUSDT.
-  if (/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|LTC)USD$/.test(symbol)) {
-    symbol = `${symbol}T`;
-  }
+  const endpoint = `/api/profile/${encodeURIComponent(symbol)}`;
+  try {
+    const response = window.TradeProCore && window.TradeProCore.hasSession()
+      ? await window.TradeProCore.apiFetch(endpoint)
+      : await fetch(`${API_BASE}${endpoint}`);
 
-  // If user says only base token (e.g., "BTC"), default to USDT pair.
-  if (/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|LTC)$/.test(symbol)) {
-    symbol = `${symbol}USDT`;
-  }
-
-  // Format spoken crypto pairs as BASE/QUOTE for clearer input display.
-  const cryptoPairMatch = symbol.match(/^([A-Z0-9]{2,10})(USDT|USDC|BUSD|USD)$/);
-  if (cryptoPairMatch) {
-    const [, base, quote] = cryptoPairMatch;
-    symbol = `${base}/${quote}`;
-  }
-
-  return symbol;
-}
-
-function parseVoiceCommand(transcript) {
-  const text = transcript.trim();
-
-  const compareMatch = text.match(/^compare\s+(.+?)\s+and\s+(.+)$/i);
-  if (compareMatch) {
-    return {
-      type: "compare",
-      first: normalizeVoiceSymbolCandidate(cleanSpokenSymbol(compareMatch[1])),
-      second: normalizeVoiceSymbolCandidate(cleanSpokenSymbol(compareMatch[2]))
-    };
-  }
-
-  const analyzeMatch = text.match(/^analyze\s+(.+)$/i);
-  if (analyzeMatch) {
-    return { type: "analyze", symbol: normalizeVoiceSymbolCandidate(cleanSpokenSymbol(analyzeMatch[1])) };
-  }
-
-  const priceMatch = text.match(/^show\s+price\s+of\s+(.+)$/i);
-  if (priceMatch) {
-    return { type: "price", symbol: normalizeVoiceSymbolCandidate(cleanSpokenSymbol(priceMatch[1])) };
-  }
-
-  return { type: "analyze", symbol: normalizeVoiceSymbolCandidate(cleanSpokenSymbol(text)) };
-}
-
-function runVoiceCommand(transcript) {
-  const parsed = parseVoiceCommand(transcript);
-
-  if (parsed.type === "compare") {
-    if (!parsed.first || !parsed.second) {
-      setVoiceStatus("Could not parse compare command.", true);
-      return;
+    if (!response.ok) {
+      symbolProfileCache.set(symbol, null);
+      return null;
     }
-    symbolInputEl.value = parsed.first;
-    addToWishlist(parsed.second);
-    go(parsed.first);
-    return;
-  }
 
-  const symbol = parsed.symbol;
-  if (!symbol) {
-    setVoiceStatus("Could not detect a valid symbol.", true);
-    return;
-  }
+    const data = await response.json();
+    const profile = {
+      ticker: String(data.ticker || getTickerFromSymbol(symbol)).toUpperCase(),
+      name: String(data.name || "").trim(),
+      logo: String(data.logo || "").trim()
+    };
 
-  symbolInputEl.value = symbol;
-  go(symbol);
+    symbolProfileCache.set(symbol, profile);
+    return profile;
+  } catch (error) {
+    console.log("Watchlist profile warning:", error.message);
+    symbolProfileCache.set(symbol, null);
+    return null;
+  }
 }
 
-function startVoiceRecognition() {
-  if (!SpeechRecognitionAPI) {
-    setVoiceStatus("Voice recognition is not supported in this browser.", true);
+async function buildWishlistItem(symbol) {
+  const marketType = detectMarketFromSymbol(symbol);
+  const profile = await fetchSymbolProfile(symbol);
+  const ticker = escapeHtml(profile?.ticker || getTickerFromSymbol(symbol));
+  const companyName = escapeHtml(profile?.name || marketType.toUpperCase());
+  const logo = String(profile?.logo || "").trim();
+  const logoHtml = logo
+    ? `<img class="wish-logo" src="${logo}" alt="${ticker} logo" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"><div class="wish-logo-fallback" style="display:none;">${getLogoInitials(symbol)}</div>`
+    : `<div class="wish-logo-fallback">${getLogoInitials(symbol)}</div>`;
+
+  return `
+    <div class="wish-item">
+      <div class="wish-main">
+        <div class="wish-logo-wrap">${logoHtml}</div>
+        <div class="wish-meta">
+          <a class="mono" href="stock.html?symbol=${encodeURIComponent(symbol)}">${escapeHtml(symbol)}</a>
+          <p class="brand-sub wish-sub">${companyName}</p>
+        </div>
+      </div>
+      <div class="row row-tight">
+        <button class="btn ghost btn-auto" type="button" onclick="go('${symbol}','${marketType}')">Open</button>
+        <button class="btn ghost btn-auto" type="button" onclick="removeFromWishlist('${symbol}')">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+async function renderWishlist() {
+  const list = getStoredWatchlist();
+  const wrap = document.getElementById("wishlist");
+
+  if (list.length === 0) {
+    wrap.innerHTML = "<p class='brand-sub'>Your watchlist is empty.</p>";
     return;
   }
-  if (voiceListening) return;
 
-  voiceRecognition = new SpeechRecognitionAPI();
-  voiceRecognition.lang = "en-US";
-  voiceRecognition.continuous = false;
-  voiceRecognition.interimResults = false;
-  voiceRecognition.maxAlternatives = 1;
+  const renderSeq = ++watchlistRenderSeq;
+  wrap.innerHTML = list
+    .map((symbol) => `
+      <div class="wish-item">
+        <div class="wish-main">
+          <div class="wish-logo-wrap"><div class="wish-logo-fallback">${getLogoInitials(symbol)}</div></div>
+          <div class="wish-meta">
+            <a class="mono" href="stock.html?symbol=${encodeURIComponent(symbol)}">${escapeHtml(symbol)}</a>
+            <p class="brand-sub wish-sub">Loading...</p>
+          </div>
+        </div>
+      </div>
+    `)
+    .join("");
 
-  voiceRecognition.onstart = () => {
-    setVoiceListeningUI(true);
-    setVoiceStatus("Listening");
+  const rows = await Promise.all(list.map((symbol) => buildWishlistItem(symbol)));
+  if (renderSeq !== watchlistRenderSeq) return;
+  wrap.innerHTML = rows.join("");
+}
+
+function renderQuickSymbols() {
+  const marketLabels = {
+    stock: "Stocks & ETFs",
+    forex: "Forex",
+    crypto: "Crypto",
+    futures: "Futures",
+    options: "Options"
   };
 
-  voiceRecognition.onresult = (event) => {
-    const transcript = event.results?.[0]?.[0]?.transcript || "";
-    setVoiceStatus(`Heard: "${transcript}"`);
-    runVoiceCommand(transcript);
-  };
+  const orderedMarkets = ["stock", "forex", "crypto", "futures", "options"];
+  quickBox.innerHTML = orderedMarkets
+    .map((market) => {
+      const items = quickSymbols.filter((item) => item.market === market);
+      if (!items.length) return "";
+      const pills = items
+        .map((item) => `<button class="pill" type="button" onclick="go('${item.symbol}','${item.market}')">${item.label}</button>`)
+        .join("");
+      return `<div style="width:100%;margin-top:2px;"><p class="brand-sub" style="margin:2px 0 8px 0;">${marketLabels[market]}</p>${pills}</div>`;
+    })
+    .join("");
+}
 
-  voiceRecognition.onerror = (event) => {
-    setVoiceStatus(`Voice error: ${event.error}`, true);
-  };
+function fmtChange(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${n.toFixed(2)}%`;
+}
 
-  voiceRecognition.onend = () => {
-    setVoiceListeningUI(false);
-  };
+function renderDashboardSummary(payload = {}) {
+  const totalWatchlist = Number(payload.totalWatchlist || 0);
+  const alertsTriggeredToday = Number(payload.alertsTriggeredToday || 0);
+  const marketStatus = String(payload.marketStatus || "idle");
+  const topGainer = payload.topGainer;
+  const topLoser = payload.topLoser;
 
-  voiceRecognition.start();
+  dashboardSummaryEl.innerHTML = [
+    `<div class="kpi"><div class="kpi-label">Watchlist</div><div class="kpi-value">${totalWatchlist}</div></div>`,
+    `<div class="kpi"><div class="kpi-label">Top Gainer</div><div class="kpi-value good">${topGainer ? `${escapeHtml(topGainer.symbol)} ${fmtChange(topGainer.change24hPct)}` : "-"}</div></div>`,
+    `<div class="kpi"><div class="kpi-label">Top Loser</div><div class="kpi-value ${topLoser && Number(topLoser.change24hPct) < 0 ? "bad" : ""}">${topLoser ? `${escapeHtml(topLoser.symbol)} ${fmtChange(topLoser.change24hPct)}` : "-"}</div></div>`,
+    `<div class="kpi"><div class="kpi-label">Alerts Today</div><div class="kpi-value">${alertsTriggeredToday}</div></div>`,
+    `<div class="kpi"><div class="kpi-label">Market Feed</div><div class="kpi-value">${escapeHtml(marketStatus)}</div></div>`,
+    `<div class="kpi"><div class="kpi-label">FX Preference</div><div class="kpi-value">${escapeHtml(window.TradeProCore?.getCurrency?.() || "USD")}</div></div>`
+  ].join("");
+  dashboardSummaryStatusEl.textContent = "Summary updated from your watchlist and alert history.";
+}
+
+async function loadDashboardSummary() {
+  if (!dashboardSummaryEl || !window.TradeProCore) return;
+  dashboardSummaryStatusEl.textContent = "Loading watchlist summary...";
+  dashboardSummaryEl.innerHTML = `<div class="kpi"><div class="kpi-label">Loading</div><div class="kpi-value">...</div></div>`.repeat(6);
+  try {
+    const response = await window.TradeProCore.apiFetch("/api/dashboard/summary");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Summary unavailable.");
+    renderDashboardSummary(data);
+  } catch (error) {
+    dashboardSummaryStatusEl.textContent = String(error.message || "Summary unavailable.");
+    dashboardSummaryEl.innerHTML = `<div class="kpi"><div class="kpi-label">Summary</div><div class="kpi-value bad">Unavailable</div></div>`;
+  }
+}
+
+function renderOnboarding() {
+  if (!onboardingCardEl || localStorage.getItem("tp_onboarding_hidden") === "true") {
+    if (onboardingCardEl) onboardingCardEl.style.display = "none";
+    return;
+  }
+
+  onboardingCardEl.style.display = "";
+  const watchlist = getStoredWatchlist();
+  const lastSymbol = localStorage.getItem("tp_recent_symbol") || "";
+  const steps = [
+    {
+      done: watchlist.length > 0,
+      title: "Search and open a symbol",
+      detail: lastSymbol ? `Recent: ${lastSymbol}` : "Try AAPL, NVDA, BTCUSDT, or EURUSD."
+    },
+    {
+      done: watchlist.length > 0,
+      title: "Build a watchlist",
+      detail: watchlist.length ? `${watchlist.length} symbols saved.` : "Add at least one asset so the dashboard can track risk and movers."
+    },
+    {
+      done: false,
+      title: "Create a stock alert",
+      detail: "Open any stock page and use the Price Alert card with email enabled."
+    },
+    {
+      done: false,
+      title: "Review live vs fallback data",
+      detail: "Stock pages now show whether analytics come from live market data or fallback data."
+    }
+  ];
+
+  onboardingStepsEl.innerHTML = steps.map((step) => `
+    <div class="news-item">
+      <h4>${step.done ? "Completed" : "Next"}: ${escapeHtml(step.title)}</h4>
+      <p>${escapeHtml(step.detail)}</p>
+    </div>
+  `).join("");
+}
+
+function populateFxSelect(selectEl, defaultCode) {
+  if (!selectEl) return;
+  selectEl.innerHTML = DASHBOARD_FX_CODES
+    .map((code) => `<option value="${code}" ${code === defaultCode ? "selected" : ""}>${code}</option>`)
+    .join("");
+}
+
+function formatCurrencyValue(value, currency) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 4
+    }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(4)}`;
+  }
+}
+
+function renderDashboardConverter() {
+  if (!window.TradeProCore || !dashboardFxResultEl) return;
+  const amount = Number(dashboardFxAmountEl?.value || 0);
+  const from = dashboardFxFromEl?.value || "USD";
+  const to = dashboardFxToEl?.value || "INR";
+  const converted = window.TradeProCore.convertCurrencyAmount(amount, from, to);
+  const state = window.TradeProCore.getCurrencyRates?.() || { rates: {}, updatedAt: 0 };
+  const fromRate = Number(state.rates?.[from] || 1);
+  const toRate = Number(state.rates?.[to] || 1);
+  const oneUnitRate = Number.isFinite(fromRate) && fromRate > 0 ? toRate / fromRate : Number.NaN;
+
+  dashboardFxResultEl.textContent = formatCurrencyValue(converted, to);
+  dashboardFxRateEl.textContent = Number.isFinite(oneUnitRate) ? `1 ${from} = ${oneUnitRate.toFixed(6)} ${to}` : "FX rate unavailable";
+  dashboardFxUpdatedEl.textContent = state.updatedAt
+    ? `FX updated ${new Date(state.updatedAt).toLocaleString()}`
+    : "Using fallback FX rates until live rates arrive.";
+}
+
+function hydrateSearchDefaults() {
+  const recentSymbol = localStorage.getItem("tp_recent_symbol");
+  const recentMarketType = localStorage.getItem("tp_recent_market_type");
+  if (symbolInputEl && recentSymbol) symbolInputEl.value = recentSymbol;
+  if (marketTypeEl && recentMarketType) marketTypeEl.value = recentMarketType;
 }
 
 if (symbolInputEl) {
-  symbolInputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      go();
-    }
+  symbolInputEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") go();
   });
-}
-
-if (voiceBtnEl) {
-  voiceBtnEl.addEventListener("click", startVoiceRecognition);
 }
 
 if (themeSelectEl && window.TradeProCore) {
@@ -606,18 +637,39 @@ if (currencySelectEl && window.TradeProCore) {
   });
 }
 
-clearListBtn.addEventListener("click", () => {
+clearListBtn?.addEventListener("click", () => {
   setStoredWatchlist([]);
   renderWishlist();
   renderRiskHeatMap();
+  loadDashboardSummary();
+  renderOnboarding();
 });
 
+dismissOnboardingBtn?.addEventListener("click", () => {
+  localStorage.setItem("tp_onboarding_hidden", "true");
+  if (onboardingCardEl) onboardingCardEl.style.display = "none";
+});
+
+dashboardFxAmountEl?.addEventListener("input", renderDashboardConverter);
+dashboardFxFromEl?.addEventListener("change", renderDashboardConverter);
+dashboardFxToEl?.addEventListener("change", renderDashboardConverter);
+window.addEventListener("storage", renderDashboardConverter);
+window.addEventListener("tp:currency-changed", renderDashboardConverter);
+
+populateFxSelect(dashboardFxFromEl, "USD");
+populateFxSelect(dashboardFxToEl, window.TradeProCore?.getCurrency?.() || "INR");
+hydrateSearchDefaults();
 renderQuickSymbols();
 hydrateWatchlistFromServer().finally(() => {
   renderWishlist();
   renderRiskHeatMap();
+  loadDashboardSummary();
+  renderOnboarding();
 });
+renderDashboardConverter();
+setSearchStatus("Validate a symbol before opening the stock page.");
 
-
-
-
+window.go = go;
+window.removeFromWishlist = removeFromWishlist;
+window.openNotesWindow = openNotesWindow;
+window.logout = logout;

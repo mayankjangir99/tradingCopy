@@ -5,7 +5,8 @@
       "username": "admin",
       "passwordHash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
       "role": "admin",
-      "displayName": "Admin Trader"
+      "displayName": "Admin Trader",
+      "mustResetPassword": true
     },
     {
       "id": "u-11363733",
@@ -85,6 +86,13 @@
       "email": "njoh4508@gmail.com",
       "authProvider": "google.com",
       "authProviderUserId": "106027765331587188258"
+    },
+    {
+      "id": "u-674b3c63",
+      "username": "user1772336526",
+      "passwordHash": "d3dec3f35387156495cbc21471313f87155f878f3435b693f50077c2be479033",
+      "role": "user",
+      "displayName": "Smoke User"
     }
   ],
   "watchlists": {
@@ -100,12 +108,31 @@
     "u-ba35718d": [],
     "u-a47eb3af": [],
     "u-60bbd9a8": [],
-    "u-d43f7b6c": []
+    "u-d43f7b6c": [],
+    "u-674b3c63": []
   },
   "preferences": {
     "u-admin": {
       "defaultStrategy": "swing",
-      "defaultAiTf": "1D"
+      "defaultAiTf": "1D",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772335320847,
+          "updatedAt": 1772335320847
+        }
+      ],
+      "activeWorkspaceId": "ws-default",
+      "theme": "dark"
     },
     "u-11363733": {
       "defaultStrategy": "swing",
@@ -218,6 +245,28 @@
           },
           "createdAt": 1772272155677,
           "updatedAt": 1772272155677
+        }
+      ]
+    },
+    "u-674b3c63": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772336527088,
+          "updatedAt": 1772336527088
         }
       ]
     }
@@ -391,25 +440,354 @@
       "orders": [],
       "closedTrades": [],
       "updatedAt": 1772272155677
+    },
+    "u-admin": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772335320847
+    },
+    "u-674b3c63": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772336527088
     }
   },
   "alerts": {
     "u-f9f6a9dc": [],
     "u-a47eb3af": [],
     "u-60bbd9a8": [],
-    "u-d43f7b6c": []
+    "u-d43f7b6c": [],
+    "u-admin": [],
+    "u-674b3c63": []
   },
   "alertEvents": {
     "u-f9f6a9dc": [],
     "u-a47eb3af": [],
     "u-60bbd9a8": [],
-    "u-d43f7b6c": []
+    "u-d43f7b6c": [],
+    "u-admin": [],
+    "u-674b3c63": []
   },
   "backtests": {
     "u-f9f6a9dc": [],
     "u-a47eb3af": [],
     "u-60bbd9a8": [],
-    "u-d43f7b6c": []
+    "u-d43f7b6c": [],
+    "u-admin": [],
+    "u-674b3c63": [
+      {
+        "id": "bt-3b19d9ee0f",
+        "createdAt": 1772336527893,
+        "symbol": "AAPL",
+        "timeframe": "1D",
+        "strategy": "ema_cross",
+        "params": {
+          "fastPeriod": 9,
+          "slowPeriod": 21
+        },
+        "dataSource": "synthetic",
+        "metrics": {
+          "trades": 3,
+          "winRate": 66.67,
+          "expectancyPct": -0.6537,
+          "maxDrawdownPct": 3,
+          "sharpe": -0.626,
+          "avgWinPct": 0.519,
+          "avgLossPct": -2.999,
+          "endingEquity": 0.9801
+        },
+        "trades": [
+          {
+            "entryIndex": 20,
+            "exitIndex": 32,
+            "entryPrice": 58.780917,
+            "exitPrice": 57.018324,
+            "returnPct": -2.998580304557009
+          },
+          {
+            "entryIndex": 97,
+            "exitIndex": 121,
+            "entryPrice": 52.953809,
+            "exitPrice": 53.195733,
+            "returnPct": 0.45685854250824026
+          },
+          {
+            "entryIndex": 187,
+            "exitIndex": 211,
+            "entryPrice": 48.605309,
+            "exitPrice": 48.887457,
+            "returnPct": 0.5804880285814034
+          }
+        ],
+        "equityCurve": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9700141969544299,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9744457896767589,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479,
+          0.9801023308308479
+        ]
+      }
+    ]
   },
   "teamSpaces": {},
   "brokerSandbox": {
@@ -452,402 +830,30 @@
       "status": "disconnected",
       "updatedAt": 1772272155677,
       "orderHistory": []
+    },
+    "u-admin": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772335320847,
+      "orderHistory": []
+    },
+    "u-674b3c63": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772336527088,
+      "orderHistory": []
     }
   },
   "activityLogs": {
     "u-f9f6a9dc": [
-      {
-        "id": "evt-12ade95ac3",
-        "ts": 1772262854562,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-5377fe0b63",
-        "ts": 1772262855149,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-f3e3ee43ad",
-        "ts": 1772262855859,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-89c9f8e1b8",
-        "ts": 1772262856393,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-cb89b05d63",
-        "ts": 1772262857130,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-862d94ded1",
-        "ts": 1772262857925,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-04432c6397",
-        "ts": 1772262858428,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-38eba797e8",
-        "ts": 1772262859117,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-aea6f3baa3",
-        "ts": 1772262859923,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-e811ac8e9c",
-        "ts": 1772262860394,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-97220c25d2",
-        "ts": 1772262861139,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-323c337ce5",
-        "ts": 1772262861899,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 4
-      },
-      {
-        "id": "evt-be8c654f01",
-        "ts": 1772262862644,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-b4480a0136",
-        "ts": 1772262863107,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-7d42a750bc",
-        "ts": 1772262863892,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-fc5d080c0d",
-        "ts": 1772262864341,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-a4865d4df5",
-        "ts": 1772262865206,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-64257ca750",
-        "ts": 1772262866016,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-83df1fb0ad",
-        "ts": 1772262866630,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-92519513ab",
-        "ts": 1772262867165,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-e2df98477d",
-        "ts": 1772262867896,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-d7474d0517",
-        "ts": 1772262868392,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-0a64fd07a2",
-        "ts": 1772262869106,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-429a6788f7",
-        "ts": 1772262869675,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-7eb2a96b3d",
-        "ts": 1772262870462,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-b3b8c919a0",
-        "ts": 1772262871252,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-6154dca0a7",
-        "ts": 1772262871973,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-30944b301b",
-        "ts": 1772262872626,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-3a44a11659",
-        "ts": 1772262873255,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-874b342b1c",
-        "ts": 1772262873893,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-395d4c063d",
-        "ts": 1772262874535,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-61529370ac",
-        "ts": 1772262875233,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-cc7aa4f886",
-        "ts": 1772262875757,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-6c76b881cf",
-        "ts": 1772262876389,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-afbc50fc84",
-        "ts": 1772262876963,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 4
-      },
-      {
-        "id": "evt-a3e151ec57",
-        "ts": 1772262877602,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-2e3cbce1e5",
-        "ts": 1772262878257,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-52ef705c7c",
-        "ts": 1772262878935,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-030a0b67c0",
-        "ts": 1772262879533,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 200,
-        "durationMs": 3
-      },
-      {
-        "id": "evt-df9cf375dc",
-        "ts": 1772262879838,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-ddef2f1acb",
-        "ts": 1772262880100,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 200,
-        "durationMs": 1
-      },
-      {
-        "id": "evt-0c289865f7",
-        "ts": 1772262880484,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 304,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-1cceb96d96",
-        "ts": 1772262915221,
-        "type": "api_call",
-        "method": "GET",
-        "path": "/api/theme",
-        "statusCode": 200,
-        "durationMs": 2
-      },
-      {
-        "id": "evt-7ab416fe03",
-        "ts": 1772263047632,
-        "type": "login_success"
-      },
       {
         "id": "evt-f639aa7445",
         "ts": 1772263047715,
@@ -9332,6 +9338,394 @@
         "path": "/api/theme",
         "statusCode": 304,
         "durationMs": 10
+      },
+      {
+        "id": "evt-35c702d4e1",
+        "ts": 1772293624409,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-0a96b745e2",
+        "ts": 1772293624726,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 30
+      },
+      {
+        "id": "evt-89eb175fd8",
+        "ts": 1772293624788,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 31
+      },
+      {
+        "id": "evt-b734354b93",
+        "ts": 1772293624812,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 14
+      },
+      {
+        "id": "evt-4183912dad",
+        "ts": 1772293627357,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-4aa3245676",
+        "ts": 1772293627708,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 42
+      },
+      {
+        "id": "evt-f2444f85c4",
+        "ts": 1772293627777,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 11
+      },
+      {
+        "id": "evt-6b6ffc0738",
+        "ts": 1772293627871,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 23
+      },
+      {
+        "id": "evt-fc1588c340",
+        "ts": 1772293660066,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 16
+      },
+      {
+        "id": "evt-427d185bcb",
+        "ts": 1772293661019,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 63
+      },
+      {
+        "id": "evt-f8906a24b6",
+        "ts": 1772293661379,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 42
+      },
+      {
+        "id": "evt-d149ab88ad",
+        "ts": 1772293662108,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 21
+      },
+      {
+        "id": "evt-8775e1cbeb",
+        "ts": 1772293662559,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 64
+      },
+      {
+        "id": "evt-f1696a459f",
+        "ts": 1772293664209,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 34
+      },
+      {
+        "id": "evt-e15bad9310",
+        "ts": 1772293664696,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 47
+      },
+      {
+        "id": "evt-24ebf847e5",
+        "ts": 1772293665412,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 29
+      },
+      {
+        "id": "evt-8cd15acc7b",
+        "ts": 1772293665954,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 78
+      },
+      {
+        "id": "evt-eeb36f85c9",
+        "ts": 1772293666566,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 84
+      },
+      {
+        "id": "evt-03fdbd679c",
+        "ts": 1772293667031,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 27
+      },
+      {
+        "id": "evt-06bed86465",
+        "ts": 1772293667600,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 43
+      },
+      {
+        "id": "evt-bab3db22ed",
+        "ts": 1772293668098,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 59
+      },
+      {
+        "id": "evt-4bd8951593",
+        "ts": 1772293668796,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 28
+      },
+      {
+        "id": "evt-67dde56bd7",
+        "ts": 1772293670598,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 36
+      },
+      {
+        "id": "evt-ed9c8b2188",
+        "ts": 1772293671277,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 11
+      },
+      {
+        "id": "evt-0086ad74f0",
+        "ts": 1772293672636,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 56
+      },
+      {
+        "id": "evt-4504ec5ac1",
+        "ts": 1772293673050,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 18
+      },
+      {
+        "id": "evt-951b89ab99",
+        "ts": 1772293673577,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 44
+      },
+      {
+        "id": "evt-68b6a4bb28",
+        "ts": 1772293674066,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 79
+      },
+      {
+        "id": "evt-ca0939abb1",
+        "ts": 1772293674476,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 25
+      },
+      {
+        "id": "evt-34ae67867c",
+        "ts": 1772293675144,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 58
+      },
+      {
+        "id": "evt-490c3f2e0c",
+        "ts": 1772293675721,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 36
+      },
+      {
+        "id": "evt-09d6e14c8b",
+        "ts": 1772293676218,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 33
+      },
+      {
+        "id": "evt-36b0c96ffa",
+        "ts": 1772293677671,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 66
+      },
+      {
+        "id": "evt-f2833ee0a8",
+        "ts": 1772293678274,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 51
+      },
+      {
+        "id": "evt-1253791fff",
+        "ts": 1772293679142,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 11
+      },
+      {
+        "id": "evt-eb38a6febc",
+        "ts": 1772293680025,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 24
+      },
+      {
+        "id": "evt-ec0476b1c3",
+        "ts": 1772293680356,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 29
+      },
+      {
+        "id": "evt-d7578c0a9c",
+        "ts": 1772293681240,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 23
+      },
+      {
+        "id": "evt-aa9205a41c",
+        "ts": 1772293681640,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 13
+      },
+      {
+        "id": "evt-9065822c57",
+        "ts": 1772293682371,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 31
+      },
+      {
+        "id": "evt-d36844e72b",
+        "ts": 1772293682903,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 28
+      },
+      {
+        "id": "evt-566185ffc3",
+        "ts": 1772293683387,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 31
+      },
+      {
+        "id": "evt-f8fd51bfad",
+        "ts": 1772293683983,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 16
+      },
+      {
+        "id": "evt-6848dfbec9",
+        "ts": 1772293684790,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 48
       }
     ],
     "u-a47eb3af": [
@@ -10282,6 +10676,354 @@
         "path": "/api/theme",
         "statusCode": 304,
         "durationMs": 9
+      },
+      {
+        "id": "evt-d5c9b9a83b",
+        "ts": 1772293659541,
+        "type": "social_login_success",
+        "provider": "google.com"
+      },
+      {
+        "id": "evt-75eca95ae5",
+        "ts": 1772293659938,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 38
+      },
+      {
+        "id": "evt-e71d124456",
+        "ts": 1772293659985,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 38
+      },
+      {
+        "id": "evt-f1b309249f",
+        "ts": 1772293660087,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 11
+      },
+      {
+        "id": "evt-2338c9187e",
+        "ts": 1772293660561,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 45
+      },
+      {
+        "id": "evt-2b9eae9f4a",
+        "ts": 1772293661689,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 64
+      },
+      {
+        "id": "evt-a74e4c0cd7",
+        "ts": 1772293662827,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 52
+      },
+      {
+        "id": "evt-10a3bf9b02",
+        "ts": 1772293665009,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 44
+      },
+      {
+        "id": "evt-622158c6e6",
+        "ts": 1772293666079,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 45
+      },
+      {
+        "id": "evt-4fea6803cc",
+        "ts": 1772293666629,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 34
+      },
+      {
+        "id": "evt-98545674a2",
+        "ts": 1772293667177,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 17
+      },
+      {
+        "id": "evt-af19db5cac",
+        "ts": 1772293668209,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 87
+      },
+      {
+        "id": "evt-157fc88c96",
+        "ts": 1772293668717,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 52
+      },
+      {
+        "id": "evt-28f3380bbd",
+        "ts": 1772293670227,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 28
+      },
+      {
+        "id": "evt-7ba62bf467",
+        "ts": 1772293670622,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 10
+      },
+      {
+        "id": "evt-f3678971b9",
+        "ts": 1772293671258,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 22
+      },
+      {
+        "id": "evt-d81729ef83",
+        "ts": 1772293672252,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 28
+      },
+      {
+        "id": "evt-fcc7268d36",
+        "ts": 1772293672719,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 16
+      },
+      {
+        "id": "evt-935d645750",
+        "ts": 1772293673194,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 37
+      },
+      {
+        "id": "evt-ea6a64208a",
+        "ts": 1772293673646,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 29
+      },
+      {
+        "id": "evt-d9297d0ebc",
+        "ts": 1772293674157,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 25
+      },
+      {
+        "id": "evt-8f54a2f859",
+        "ts": 1772293675037,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 103
+      },
+      {
+        "id": "evt-073a9023d2",
+        "ts": 1772293675642,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 87
+      },
+      {
+        "id": "evt-c451bb0075",
+        "ts": 1772293676142,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 68
+      },
+      {
+        "id": "evt-3368c6c7d5",
+        "ts": 1772293677283,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 28
+      },
+      {
+        "id": "evt-1bc0beaabd",
+        "ts": 1772293677754,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 29
+      },
+      {
+        "id": "evt-7cd76cd2cf",
+        "ts": 1772293678204,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 91
+      },
+      {
+        "id": "evt-1660865e24",
+        "ts": 1772293679116,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 25
+      },
+      {
+        "id": "evt-7820aa57eb",
+        "ts": 1772293679697,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 25
+      },
+      {
+        "id": "evt-890cea381b",
+        "ts": 1772293680434,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 37
+      },
+      {
+        "id": "evt-14e7c7bbd3",
+        "ts": 1772293681588,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 25
+      },
+      {
+        "id": "evt-6028bd0886",
+        "ts": 1772293681930,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 21
+      },
+      {
+        "id": "evt-01bda9df92",
+        "ts": 1772293682305,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 23
+      },
+      {
+        "id": "evt-e6a9cd2b25",
+        "ts": 1772293682640,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 27
+      },
+      {
+        "id": "evt-031f042826",
+        "ts": 1772293683331,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 20
+      },
+      {
+        "id": "evt-248c775e27",
+        "ts": 1772293684292,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 24
+      },
+      {
+        "id": "evt-b0517526d6",
+        "ts": 1772293684675,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 51
+      },
+      {
+        "id": "evt-252bf4b209",
+        "ts": 1772293686245,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 10
+      },
+      {
+        "id": "evt-2f9373c0fa",
+        "ts": 1772293686645,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 11
       }
     ],
     "u-60bbd9a8": [
@@ -10987,6 +11729,67 @@
         "path": "/api/workspaces",
         "statusCode": 304,
         "durationMs": 7
+      }
+    ],
+    "u-admin": [
+      {
+        "id": "evt-d6e7433702",
+        "ts": 1772335320847,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-4971ab7a4b",
+        "ts": 1772335372718,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-1852dda5a9",
+        "ts": 1772335372958,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 6
+      },
+      {
+        "id": "evt-74679dbad1",
+        "ts": 1772335372997,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/workspaces",
+        "statusCode": 200,
+        "durationMs": 5
+      },
+      {
+        "id": "evt-71f92405e6",
+        "ts": 1772335548156,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-76c0b59bae",
+        "ts": 1772335548301,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/backtest/run",
+        "statusCode": 500,
+        "durationMs": 92
+      }
+    ],
+    "u-674b3c63": [
+      {
+        "id": "evt-eab178773e",
+        "ts": 1772336527088,
+        "type": "account_created",
+        "username": "user1772336526"
+      },
+      {
+        "id": "evt-2bb959024b",
+        "ts": 1772336527903,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/backtest/run",
+        "statusCode": 200,
+        "durationMs": 24
       }
     ]
   }

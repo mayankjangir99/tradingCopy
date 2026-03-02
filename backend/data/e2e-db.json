@@ -1,0 +1,235 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "username": "adminuser",
+      "passwordHash": "60fe74406e7f353ed979f350f2fbb6a2e8690a5fa7d1b0c32983d1d8b3f95f67",
+      "role": "admin",
+      "displayName": "Admin Trader"
+    },
+    {
+      "id": "u-3ca0b67a",
+      "username": "qauser",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA User"
+    }
+  ],
+  "watchlists": {
+    "u-admin": [],
+    "u-3ca0b67a": [
+      "NASDAQ:AAPL",
+      "BINANCE:BTCUSDT"
+    ]
+  },
+  "preferences": {
+    "u-admin": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772437766937,
+          "updatedAt": 1772437766937
+        }
+      ]
+    },
+    "u-3ca0b67a": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772437769505,
+          "updatedAt": 1772437769505
+        }
+      ],
+      "currency": "INR"
+    }
+  },
+  "paperTrading": {
+    "u-admin": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772437766937
+    },
+    "u-3ca0b67a": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772437769505
+    }
+  },
+  "alerts": {
+    "u-admin": [],
+    "u-3ca0b67a": [
+      {
+        "id": "alert-33eece757f",
+        "name": "AAPL high guard",
+        "symbol": "NASDAQ:AAPL",
+        "logic": "AND",
+        "isActive": true,
+        "cooldownSec": 300,
+        "channels": {
+          "inApp": true,
+          "email": false,
+          "telegram": false,
+          "whatsapp": false
+        },
+        "conditions": [
+          {
+            "type": "price_below",
+            "value": 999999
+          }
+        ],
+        "lastTriggeredAt": 1772437769664,
+        "createdAt": 1772437769661,
+        "updatedAt": 1772437769661
+      }
+    ]
+  },
+  "alertEvents": {
+    "u-admin": [],
+    "u-3ca0b67a": [
+      {
+        "id": "alrtevt-a7cd624ee5",
+        "alertId": "alert-33eece757f",
+        "name": "AAPL high guard",
+        "symbol": "NASDAQ:AAPL",
+        "triggeredAt": 1772437769664,
+        "reason": "manual",
+        "emailRecipient": "",
+        "conditionResults": [
+          {
+            "type": "price_below",
+            "targetValue": 999999,
+            "matched": true,
+            "label": "Price",
+            "observedValue": 58.018627,
+            "observedText": "",
+            "comparator": "<"
+          }
+        ],
+        "channels": {
+          "inApp": "delivered",
+          "email": "disabled",
+          "telegram": "disabled",
+          "whatsapp": "disabled"
+        }
+      }
+    ]
+  },
+  "backtests": {
+    "u-admin": [],
+    "u-3ca0b67a": []
+  },
+  "teamSpaces": {},
+  "brokerSandbox": {
+    "u-admin": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772437766937,
+      "orderHistory": []
+    },
+    "u-3ca0b67a": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772437769505,
+      "orderHistory": []
+    }
+  },
+  "activityLogs": {
+    "u-admin": [],
+    "u-3ca0b67a": [
+      {
+        "id": "evt-5698b2866b",
+        "ts": 1772437769505,
+        "type": "account_created",
+        "username": "qauser"
+      },
+      {
+        "id": "evt-0442767fc3",
+        "ts": 1772437769515,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-310b2d6084",
+        "ts": 1772437769527,
+        "type": "api_call",
+        "method": "PUT",
+        "path": "/api/watchlist",
+        "statusCode": 200,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-be09df8640",
+        "ts": 1772437769532,
+        "type": "preferences_updated",
+        "keys": [
+          "defaultStrategy",
+          "currency"
+        ]
+      },
+      {
+        "id": "evt-cfb2b9f267",
+        "ts": 1772437769534,
+        "type": "api_call",
+        "method": "PUT",
+        "path": "/api/preferences",
+        "statusCode": 200,
+        "durationMs": 2
+      },
+      {
+        "id": "evt-7bc19ec6de",
+        "ts": 1772437769662,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/alerts",
+        "statusCode": 200,
+        "durationMs": 2
+      },
+      {
+        "id": "evt-f5d45f858b",
+        "ts": 1772437769672,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/alerts/evaluate",
+        "statusCode": 200,
+        "durationMs": 8
+      }
+    ]
+  }
+}

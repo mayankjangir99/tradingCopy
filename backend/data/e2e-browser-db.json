@@ -1,0 +1,2106 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "username": "adminuser",
+      "passwordHash": "60fe74406e7f353ed979f350f2fbb6a2e8690a5fa7d1b0c32983d1d8b3f95f67",
+      "role": "admin",
+      "displayName": "Admin Trader"
+    },
+    {
+      "id": "u-7cf5e931",
+      "username": "qa_1772439046409",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-9d404f93",
+      "username": "qa_1772439047612",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-bf0e07f6",
+      "username": "qa_1772439048479",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-9f826d72",
+      "username": "qa_1772439049349",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-697bfa22",
+      "username": "qa_1772439050219",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-6afa3f6b",
+      "username": "qa_1772439051079",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-866cb757",
+      "username": "qa_1772439051909",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-d801091d",
+      "username": "qa_1772439052779",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-fde8baaa",
+      "username": "qa_1772439053639",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-53462ec4",
+      "username": "qa_1772439054489",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-42e38ce7",
+      "username": "qa_1772439055339",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-081a22db",
+      "username": "qa_1772439056279",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-25d43832",
+      "username": "qa_1772439057129",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-9cac7c42",
+      "username": "qa_1772439060659",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-3d1f3865",
+      "username": "qa_1772439061529",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-a48498e3",
+      "username": "qa_1772439065069",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-7355753f",
+      "username": "qa_1772439065939",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-cbc87fd6",
+      "username": "qa_1772439069469",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-a937887d",
+      "username": "qa_1772439073009",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-5a229b34",
+      "username": "qa_1772439076549",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-b8fa81fa",
+      "username": "qa_1772439080079",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-83a3d460",
+      "username": "qa_1772439083609",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-6f81c719",
+      "username": "qa_1772439084459",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-40c9dd17",
+      "username": "qa_1772439085319",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-d31adaf6",
+      "username": "qa_1772439088859",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-ebe69e18",
+      "username": "qa_1772439092399",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    },
+    {
+      "id": "u-05b688c4",
+      "username": "qa_1772439095929",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA Browser"
+    }
+  ],
+  "watchlists": {
+    "u-admin": [],
+    "u-7cf5e931": [],
+    "u-9d404f93": [],
+    "u-bf0e07f6": [],
+    "u-9f826d72": [],
+    "u-697bfa22": [],
+    "u-6afa3f6b": [],
+    "u-866cb757": [],
+    "u-d801091d": [],
+    "u-fde8baaa": [],
+    "u-53462ec4": [],
+    "u-42e38ce7": [],
+    "u-081a22db": [],
+    "u-25d43832": [],
+    "u-9cac7c42": [],
+    "u-3d1f3865": [],
+    "u-a48498e3": [],
+    "u-7355753f": [],
+    "u-cbc87fd6": [],
+    "u-a937887d": [],
+    "u-5a229b34": [],
+    "u-b8fa81fa": [],
+    "u-83a3d460": [],
+    "u-6f81c719": [],
+    "u-40c9dd17": [],
+    "u-d31adaf6": [],
+    "u-ebe69e18": [],
+    "u-05b688c4": []
+  },
+  "preferences": {
+    "u-admin": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439042635,
+          "updatedAt": 1772439042635
+        }
+      ]
+    },
+    "u-7cf5e931": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439047328,
+          "updatedAt": 1772439047328
+        }
+      ]
+    },
+    "u-9d404f93": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439047743,
+          "updatedAt": 1772439047743
+        }
+      ]
+    },
+    "u-bf0e07f6": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439048711,
+          "updatedAt": 1772439048711
+        }
+      ]
+    },
+    "u-9f826d72": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439049572,
+          "updatedAt": 1772439049572
+        }
+      ]
+    },
+    "u-697bfa22": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439050078,
+          "updatedAt": 1772439050078
+        }
+      ]
+    },
+    "u-6afa3f6b": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439050593,
+          "updatedAt": 1772439050593
+        }
+      ]
+    },
+    "u-866cb757": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439051111,
+          "updatedAt": 1772439051111
+        }
+      ]
+    },
+    "u-d801091d": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439051634,
+          "updatedAt": 1772439051634
+        }
+      ]
+    },
+    "u-fde8baaa": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439052508,
+          "updatedAt": 1772439052508
+        }
+      ]
+    },
+    "u-53462ec4": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439052906,
+          "updatedAt": 1772439052906
+        }
+      ]
+    },
+    "u-42e38ce7": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439053629,
+          "updatedAt": 1772439053629
+        }
+      ]
+    },
+    "u-081a22db": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439054015,
+          "updatedAt": 1772439054015
+        }
+      ]
+    },
+    "u-25d43832": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439054466,
+          "updatedAt": 1772439054466
+        }
+      ]
+    },
+    "u-9cac7c42": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439054889,
+          "updatedAt": 1772439054889
+        }
+      ]
+    },
+    "u-3d1f3865": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439055320,
+          "updatedAt": 1772439055320
+        }
+      ]
+    },
+    "u-a48498e3": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439055715,
+          "updatedAt": 1772439055715
+        }
+      ]
+    },
+    "u-7355753f": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439056081,
+          "updatedAt": 1772439056081
+        }
+      ]
+    },
+    "u-cbc87fd6": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439056451,
+          "updatedAt": 1772439056451
+        }
+      ]
+    },
+    "u-a937887d": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439056906,
+          "updatedAt": 1772439056906
+        }
+      ]
+    },
+    "u-5a229b34": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439057293,
+          "updatedAt": 1772439057293
+        }
+      ]
+    },
+    "u-b8fa81fa": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439057676,
+          "updatedAt": 1772439057676
+        }
+      ]
+    },
+    "u-83a3d460": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439058150,
+          "updatedAt": 1772439058150
+        }
+      ]
+    },
+    "u-6f81c719": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439058779,
+          "updatedAt": 1772439058779
+        }
+      ]
+    },
+    "u-40c9dd17": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439059225,
+          "updatedAt": 1772439059225
+        }
+      ]
+    },
+    "u-d31adaf6": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439059708,
+          "updatedAt": 1772439059708
+        }
+      ]
+    },
+    "u-ebe69e18": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439060322,
+          "updatedAt": 1772439060322
+        }
+      ]
+    },
+    "u-05b688c4": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772439060853,
+          "updatedAt": 1772439060853
+        }
+      ]
+    }
+  },
+  "paperTrading": {
+    "u-admin": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439042635
+    },
+    "u-7cf5e931": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439047328
+    },
+    "u-9d404f93": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439047743
+    },
+    "u-bf0e07f6": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439048711
+    },
+    "u-9f826d72": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439049572
+    },
+    "u-697bfa22": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439050078
+    },
+    "u-6afa3f6b": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439050593
+    },
+    "u-866cb757": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439051111
+    },
+    "u-d801091d": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439051634
+    },
+    "u-fde8baaa": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439052508
+    },
+    "u-53462ec4": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439052906
+    },
+    "u-42e38ce7": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439053629
+    },
+    "u-081a22db": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439054015
+    },
+    "u-25d43832": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439054466
+    },
+    "u-9cac7c42": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439054889
+    },
+    "u-3d1f3865": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439055320
+    },
+    "u-a48498e3": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439055715
+    },
+    "u-7355753f": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439056081
+    },
+    "u-cbc87fd6": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439056451
+    },
+    "u-a937887d": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439056906
+    },
+    "u-5a229b34": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439057293
+    },
+    "u-b8fa81fa": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439057676
+    },
+    "u-83a3d460": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439058150
+    },
+    "u-6f81c719": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439058779
+    },
+    "u-40c9dd17": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439059225
+    },
+    "u-d31adaf6": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439059708
+    },
+    "u-ebe69e18": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439060322
+    },
+    "u-05b688c4": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772439060853
+    }
+  },
+  "alerts": {
+    "u-admin": [],
+    "u-7cf5e931": [],
+    "u-9d404f93": [],
+    "u-bf0e07f6": [],
+    "u-9f826d72": [],
+    "u-697bfa22": [],
+    "u-6afa3f6b": [],
+    "u-866cb757": [],
+    "u-d801091d": [],
+    "u-fde8baaa": [],
+    "u-53462ec4": [],
+    "u-42e38ce7": [],
+    "u-081a22db": [],
+    "u-25d43832": [],
+    "u-9cac7c42": [],
+    "u-3d1f3865": [],
+    "u-a48498e3": [],
+    "u-7355753f": [],
+    "u-cbc87fd6": [],
+    "u-a937887d": [],
+    "u-5a229b34": [],
+    "u-b8fa81fa": [],
+    "u-83a3d460": [],
+    "u-6f81c719": [],
+    "u-40c9dd17": [],
+    "u-d31adaf6": [],
+    "u-ebe69e18": [],
+    "u-05b688c4": []
+  },
+  "alertEvents": {
+    "u-admin": [],
+    "u-7cf5e931": [],
+    "u-9d404f93": [],
+    "u-bf0e07f6": [],
+    "u-9f826d72": [],
+    "u-697bfa22": [],
+    "u-6afa3f6b": [],
+    "u-866cb757": [],
+    "u-d801091d": [],
+    "u-fde8baaa": [],
+    "u-53462ec4": [],
+    "u-42e38ce7": [],
+    "u-081a22db": [],
+    "u-25d43832": [],
+    "u-9cac7c42": [],
+    "u-3d1f3865": [],
+    "u-a48498e3": [],
+    "u-7355753f": [],
+    "u-cbc87fd6": [],
+    "u-a937887d": [],
+    "u-5a229b34": [],
+    "u-b8fa81fa": [],
+    "u-83a3d460": [],
+    "u-6f81c719": [],
+    "u-40c9dd17": [],
+    "u-d31adaf6": [],
+    "u-ebe69e18": [],
+    "u-05b688c4": []
+  },
+  "backtests": {
+    "u-admin": [],
+    "u-7cf5e931": [],
+    "u-9d404f93": [],
+    "u-bf0e07f6": [],
+    "u-9f826d72": [],
+    "u-697bfa22": [],
+    "u-6afa3f6b": [],
+    "u-866cb757": [],
+    "u-d801091d": [],
+    "u-fde8baaa": [],
+    "u-53462ec4": [],
+    "u-42e38ce7": [],
+    "u-081a22db": [],
+    "u-25d43832": [],
+    "u-9cac7c42": [],
+    "u-3d1f3865": [],
+    "u-a48498e3": [],
+    "u-7355753f": [],
+    "u-cbc87fd6": [],
+    "u-a937887d": [],
+    "u-5a229b34": [],
+    "u-b8fa81fa": [],
+    "u-83a3d460": [],
+    "u-6f81c719": [],
+    "u-40c9dd17": [],
+    "u-d31adaf6": [],
+    "u-ebe69e18": [],
+    "u-05b688c4": []
+  },
+  "teamSpaces": {},
+  "brokerSandbox": {
+    "u-admin": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439042635,
+      "orderHistory": []
+    },
+    "u-7cf5e931": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439047328,
+      "orderHistory": []
+    },
+    "u-9d404f93": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439047743,
+      "orderHistory": []
+    },
+    "u-bf0e07f6": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439048711,
+      "orderHistory": []
+    },
+    "u-9f826d72": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439049572,
+      "orderHistory": []
+    },
+    "u-697bfa22": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439050078,
+      "orderHistory": []
+    },
+    "u-6afa3f6b": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439050593,
+      "orderHistory": []
+    },
+    "u-866cb757": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439051111,
+      "orderHistory": []
+    },
+    "u-d801091d": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439051634,
+      "orderHistory": []
+    },
+    "u-fde8baaa": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439052508,
+      "orderHistory": []
+    },
+    "u-53462ec4": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439052906,
+      "orderHistory": []
+    },
+    "u-42e38ce7": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439053629,
+      "orderHistory": []
+    },
+    "u-081a22db": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439054015,
+      "orderHistory": []
+    },
+    "u-25d43832": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439054466,
+      "orderHistory": []
+    },
+    "u-9cac7c42": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439054889,
+      "orderHistory": []
+    },
+    "u-3d1f3865": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439055320,
+      "orderHistory": []
+    },
+    "u-a48498e3": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439055715,
+      "orderHistory": []
+    },
+    "u-7355753f": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439056081,
+      "orderHistory": []
+    },
+    "u-cbc87fd6": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439056451,
+      "orderHistory": []
+    },
+    "u-a937887d": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439056906,
+      "orderHistory": []
+    },
+    "u-5a229b34": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439057293,
+      "orderHistory": []
+    },
+    "u-b8fa81fa": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439057676,
+      "orderHistory": []
+    },
+    "u-83a3d460": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439058150,
+      "orderHistory": []
+    },
+    "u-6f81c719": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439058779,
+      "orderHistory": []
+    },
+    "u-40c9dd17": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439059225,
+      "orderHistory": []
+    },
+    "u-d31adaf6": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439059708,
+      "orderHistory": []
+    },
+    "u-ebe69e18": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439060322,
+      "orderHistory": []
+    },
+    "u-05b688c4": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772439060853,
+      "orderHistory": []
+    }
+  },
+  "activityLogs": {
+    "u-admin": [],
+    "u-7cf5e931": [
+      {
+        "id": "evt-eea95e688c",
+        "ts": 1772439047329,
+        "type": "account_created",
+        "username": "qa_1772439046409"
+      },
+      {
+        "id": "evt-a45e660bdf",
+        "ts": 1772439047456,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 200,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-6c3061fa14",
+        "ts": 1772439047460,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 2
+      }
+    ],
+    "u-9d404f93": [
+      {
+        "id": "evt-44d684dc17",
+        "ts": 1772439047743,
+        "type": "account_created",
+        "username": "qa_1772439047612"
+      },
+      {
+        "id": "evt-90287b2b95",
+        "ts": 1772439047891,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-4f3f1d823a",
+        "ts": 1772439047899,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-bf0e07f6": [
+      {
+        "id": "evt-8fead9ed8e",
+        "ts": 1772439048711,
+        "type": "account_created",
+        "username": "qa_1772439048479"
+      },
+      {
+        "id": "evt-cb6af56170",
+        "ts": 1772439048839,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-69e3230782",
+        "ts": 1772439048847,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-9f826d72": [
+      {
+        "id": "evt-541a7afc29",
+        "ts": 1772439049572,
+        "type": "account_created",
+        "username": "qa_1772439049349"
+      },
+      {
+        "id": "evt-ee7f260cd2",
+        "ts": 1772439049713,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-156c10ca29",
+        "ts": 1772439049768,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 17
+      }
+    ],
+    "u-697bfa22": [
+      {
+        "id": "evt-13ddad627a",
+        "ts": 1772439050078,
+        "type": "account_created",
+        "username": "qa_1772439050219"
+      },
+      {
+        "id": "evt-0aa2a0681a",
+        "ts": 1772439050201,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 19
+      },
+      {
+        "id": "evt-62b8db068c",
+        "ts": 1772439050211,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-6afa3f6b": [
+      {
+        "id": "evt-80b85330c5",
+        "ts": 1772439050593,
+        "type": "account_created",
+        "username": "qa_1772439051079"
+      }
+    ],
+    "u-866cb757": [
+      {
+        "id": "evt-60d1fbc012",
+        "ts": 1772439051111,
+        "type": "account_created",
+        "username": "qa_1772439051909"
+      },
+      {
+        "id": "evt-1c49b7ec41",
+        "ts": 1772439051233,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 5
+      },
+      {
+        "id": "evt-dcdc972f34",
+        "ts": 1772439051247,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-d801091d": [
+      {
+        "id": "evt-de15ec2483",
+        "ts": 1772439051634,
+        "type": "account_created",
+        "username": "qa_1772439052779"
+      },
+      {
+        "id": "evt-f43249b43e",
+        "ts": 1772439051807,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 8
+      },
+      {
+        "id": "evt-e14fecbaa3",
+        "ts": 1772439051815,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-fde8baaa": [
+      {
+        "id": "evt-c0a5bef9b9",
+        "ts": 1772439052508,
+        "type": "account_created",
+        "username": "qa_1772439053639"
+      },
+      {
+        "id": "evt-af94b8b5b1",
+        "ts": 1772439052637,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 8
+      },
+      {
+        "id": "evt-eab865b62e",
+        "ts": 1772439052657,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-53462ec4": [
+      {
+        "id": "evt-f5ff5bc013",
+        "ts": 1772439052906,
+        "type": "account_created",
+        "username": "qa_1772439054489"
+      },
+      {
+        "id": "evt-026a6a98b0",
+        "ts": 1772439053002,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 5
+      },
+      {
+        "id": "evt-24af30c3f3",
+        "ts": 1772439053015,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-42e38ce7": [
+      {
+        "id": "evt-3b481f8207",
+        "ts": 1772439053629,
+        "type": "account_created",
+        "username": "qa_1772439055339"
+      },
+      {
+        "id": "evt-bc87c53510",
+        "ts": 1772439053704,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-cce9a39777",
+        "ts": 1772439053733,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-081a22db": [
+      {
+        "id": "evt-c0cd282dab",
+        "ts": 1772439054015,
+        "type": "account_created",
+        "username": "qa_1772439056279"
+      },
+      {
+        "id": "evt-10c2f35a52",
+        "ts": 1772439054083,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-555eaf528d",
+        "ts": 1772439054100,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 2
+      }
+    ],
+    "u-25d43832": [
+      {
+        "id": "evt-ffcf954ff9",
+        "ts": 1772439054466,
+        "type": "account_created",
+        "username": "qa_1772439057129"
+      },
+      {
+        "id": "evt-b8b448899d",
+        "ts": 1772439054565,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-188681ce69",
+        "ts": 1772439054571,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-9cac7c42": [
+      {
+        "id": "evt-b232350c39",
+        "ts": 1772439054889,
+        "type": "account_created",
+        "username": "qa_1772439060659"
+      },
+      {
+        "id": "evt-58aa910a77",
+        "ts": 1772439054949,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 2
+      },
+      {
+        "id": "evt-d5dad81a8e",
+        "ts": 1772439054964,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-3d1f3865": [
+      {
+        "id": "evt-f604ed1a90",
+        "ts": 1772439055320,
+        "type": "account_created",
+        "username": "qa_1772439061529"
+      },
+      {
+        "id": "evt-82c891ecf0",
+        "ts": 1772439055391,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-f02301a248",
+        "ts": 1772439055406,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-a48498e3": [
+      {
+        "id": "evt-5a9db9e512",
+        "ts": 1772439055715,
+        "type": "account_created",
+        "username": "qa_1772439065069"
+      },
+      {
+        "id": "evt-c0fac51a76",
+        "ts": 1772439055785,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-cbdc75fed1",
+        "ts": 1772439055794,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-7355753f": [
+      {
+        "id": "evt-c887171a91",
+        "ts": 1772439056081,
+        "type": "account_created",
+        "username": "qa_1772439065939"
+      },
+      {
+        "id": "evt-b88bb92d8d",
+        "ts": 1772439056197,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-b2dbea9175",
+        "ts": 1772439056204,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-cbc87fd6": [
+      {
+        "id": "evt-6ff0ffe69d",
+        "ts": 1772439056451,
+        "type": "account_created",
+        "username": "qa_1772439069469"
+      },
+      {
+        "id": "evt-41aa2a0ca0",
+        "ts": 1772439056541,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-101e95b8bf",
+        "ts": 1772439056545,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 2
+      }
+    ],
+    "u-a937887d": [
+      {
+        "id": "evt-0efa69202a",
+        "ts": 1772439056906,
+        "type": "account_created",
+        "username": "qa_1772439073009"
+      },
+      {
+        "id": "evt-93d9dab844",
+        "ts": 1772439056977,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-3cfde837d5",
+        "ts": 1772439056986,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 7
+      }
+    ],
+    "u-5a229b34": [
+      {
+        "id": "evt-39bf91014c",
+        "ts": 1772439057294,
+        "type": "account_created",
+        "username": "qa_1772439076549"
+      },
+      {
+        "id": "evt-efe4205c56",
+        "ts": 1772439057367,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-a626079a64",
+        "ts": 1772439057374,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-b8fa81fa": [
+      {
+        "id": "evt-5cdf0af61e",
+        "ts": 1772439057676,
+        "type": "account_created",
+        "username": "qa_1772439080079"
+      },
+      {
+        "id": "evt-5358c7cac0",
+        "ts": 1772439057751,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-640afa0ca0",
+        "ts": 1772439057756,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-83a3d460": [
+      {
+        "id": "evt-41515a99e9",
+        "ts": 1772439058150,
+        "type": "account_created",
+        "username": "qa_1772439083609"
+      },
+      {
+        "id": "evt-aa201fb8e1",
+        "ts": 1772439058242,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-6bdde88749",
+        "ts": 1772439058247,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-6f81c719": [
+      {
+        "id": "evt-1de586df3b",
+        "ts": 1772439058779,
+        "type": "account_created",
+        "username": "qa_1772439084459"
+      },
+      {
+        "id": "evt-6e6b109734",
+        "ts": 1772439058853,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 7
+      },
+      {
+        "id": "evt-cc594c8f42",
+        "ts": 1772439058865,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-40c9dd17": [
+      {
+        "id": "evt-7258681d1c",
+        "ts": 1772439059226,
+        "type": "account_created",
+        "username": "qa_1772439085319"
+      },
+      {
+        "id": "evt-5396b991ae",
+        "ts": 1772439059312,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-b0cfbf0701",
+        "ts": 1772439059325,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      }
+    ],
+    "u-d31adaf6": [
+      {
+        "id": "evt-181b76e6a3",
+        "ts": 1772439059708,
+        "type": "account_created",
+        "username": "qa_1772439088859"
+      },
+      {
+        "id": "evt-84e051d706",
+        "ts": 1772439059807,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-2e0368e8a6",
+        "ts": 1772439059834,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 5
+      }
+    ],
+    "u-ebe69e18": [
+      {
+        "id": "evt-c3195d4f15",
+        "ts": 1772439060322,
+        "type": "account_created",
+        "username": "qa_1772439092399"
+      },
+      {
+        "id": "evt-272bd60209",
+        "ts": 1772439060394,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      },
+      {
+        "id": "evt-c332a4ec58",
+        "ts": 1772439060401,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 3
+      }
+    ],
+    "u-05b688c4": [
+      {
+        "id": "evt-10ae383a7b",
+        "ts": 1772439060853,
+        "type": "account_created",
+        "username": "qa_1772439095929"
+      },
+      {
+        "id": "evt-4968f5fed5",
+        "ts": 1772439060947,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 4
+      },
+      {
+        "id": "evt-8cad50409f",
+        "ts": 1772439060970,
+        "type": "api_call",
+        "method": "GET",
+        "path": "/api/theme",
+        "statusCode": 304,
+        "durationMs": 5
+      }
+    ]
+  }
+}

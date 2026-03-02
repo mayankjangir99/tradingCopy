@@ -1,4 +1,4 @@
-if (window.TradeProCore && window.TradeProCore.hasSession()) {
+﻿if (window.TradeProCore && window.TradeProCore.hasSession()) {
   window.TradeProCore.ensureAuthenticated().catch(() => {
     window.location = "index.html";
   });
@@ -8,7 +8,12 @@ if (window.TradeProCore && window.TradeProCore.hasSession()) {
 
 const params = new URLSearchParams(window.location.search);
 const SYMBOL = (params.get("symbol") || "NASDAQ:AAPL").toUpperCase();
-const API_BASE = (window.TradeProCore && window.TradeProCore.API_BASE) || "https://tradingcopy-0p0k.onrender.com";
+const API_BASE =
+  (window.TradeProCore && window.TradeProCore.API_BASE) ||
+  window.TRADEPRO_CONFIG?.API_BASE ||
+  localStorage.getItem("tp_api_base") ||
+  document.querySelector('meta[name="tradepro-api-base"]')?.content ||
+  "https://tradingcopy-0p0k.onrender.com";
 
 const stockNameEl = document.getElementById("stockName");
 const subTitleEl = document.getElementById("subTitle");
@@ -27,6 +32,22 @@ const allocationLegend = document.getElementById("allocationLegend");
 const growthAreaChart = document.getElementById("growthAreaChart");
 const growthChartTypeSelect = document.getElementById("growthChartType");
 const chartEl = document.getElementById("chart");
+const stockAlertNameInput = document.getElementById("stockAlertName");
+const stockAlertDirectionSelect = document.getElementById("stockAlertDirection");
+const stockAlertValueInput = document.getElementById("stockAlertValue");
+const stockAlertCooldownInput = document.getElementById("stockAlertCooldown");
+const stockAlertEmailInput = document.getElementById("stockAlertEmail");
+const stockAlertHint = document.getElementById("stockAlertHint");
+const stockAlertStatus = document.getElementById("stockAlertStatus");
+const stockCreateAlertBtn = document.getElementById("stockCreateAlertBtn");
+const stockAlertsList = document.getElementById("stockAlertsList");
+const stockUseCurrentPriceBtn = document.getElementById("stockUseCurrentPriceBtn");
+const stockWatchlistBtn = document.getElementById("stockWatchlistBtn");
+const autoRefreshSelect = document.getElementById("autoRefreshSelect");
+const stockPageStatus = document.getElementById("stockPageStatus");
+const stockDataModeBadge = document.getElementById("stockDataModeBadge");
+const stockHealthBadge = document.getElementById("stockHealthBadge");
+const stockLastUpdated = document.getElementById("stockLastUpdated");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -36,6 +57,243 @@ let currentAiTf = "1D";
 let currentChartTf = "D";
 let lastAiSnapshot = null;
 let resizeTimer = null;
+let currentRealtimePrice = Number.NaN;
+let aiRefreshTimer = null;
+
+function setStockAlertStatus(message, isError = false) {
+  if (!stockAlertStatus) return;
+  stockAlertStatus.textContent = message || "";
+  stockAlertStatus.style.color = isError ? "#ff8b94" : "";
+}
+
+function setStockPageStatus(message, isError = false) {
+  if (!stockPageStatus) return;
+  stockPageStatus.textContent = message || "";
+  stockPageStatus.classList.toggle("bad", Boolean(isError));
+}
+
+function setStockDataMode(label, mode = "neutral") {
+  if (!stockDataModeBadge) return;
+  stockDataModeBadge.textContent = label || "Data";
+  stockDataModeBadge.className = `technical-badge ${mode}`;
+}
+
+function setStockHealthStatus(label, mode = "neutral") {
+  if (!stockHealthBadge) return;
+  stockHealthBadge.textContent = label || "Provider Health";
+  stockHealthBadge.className = `technical-badge ${mode}`;
+}
+
+function updateLastUpdated(ts = Date.now()) {
+  if (!stockLastUpdated) return;
+  stockLastUpdated.textContent = `Last updated ${new Date(ts).toLocaleTimeString()}`;
+}
+
+function getStoredWatchlist() {
+  return JSON.parse(localStorage.getItem("wishlist") || "[]");
+}
+
+function isInWatchlist(symbol) {
+  return getStoredWatchlist().includes(symbol);
+}
+
+function updateWatchlistButton() {
+  if (!stockWatchlistBtn) return;
+  stockWatchlistBtn.textContent = isInWatchlist(SYMBOL) ? "Remove Watchlist" : "Add to Watchlist";
+}
+
+async function syncWatchlistToServer(list) {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
+  try {
+    await window.TradeProCore.apiFetch("/api/watchlist", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ watchlist: list })
+    });
+  } catch (error) {
+    console.log("Watchlist sync warning:", error.message);
+  }
+}
+
+async function toggleWatchlistMembership() {
+  const list = getStoredWatchlist();
+  const updated = isInWatchlist(SYMBOL)
+    ? list.filter((item) => item !== SYMBOL)
+    : [SYMBOL, ...list.filter((item) => item !== SYMBOL)].slice(0, 20);
+  localStorage.setItem("wishlist", JSON.stringify(updated));
+  await syncWatchlistToServer(updated);
+  updateWatchlistButton();
+  setStockPageStatus(isInWatchlist(SYMBOL) ? "Added to watchlist." : "Removed from watchlist.");
+}
+
+function applyAlertTargetValue(value) {
+  if (!stockAlertValueInput) return;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return;
+  stockAlertValueInput.value = numeric.toFixed(numeric >= 100 ? 2 : 4);
+}
+
+function applyRelativeAlertTarget(percent) {
+  if (!Number.isFinite(currentRealtimePrice) || currentRealtimePrice <= 0) {
+    setStockAlertStatus("Current price is not available yet.", true);
+    return;
+  }
+  const nextValue = currentRealtimePrice * (1 + percent / 100);
+  applyAlertTargetValue(nextValue);
+  setStockAlertStatus(`Alert target set to ${formatMoney(nextValue, 4)}.`);
+}
+
+function rememberStockPreferences() {
+  localStorage.setItem("tp_recent_symbol", SYMBOL);
+  localStorage.setItem("tp_stock_strategy", strategySelect?.value || "swing");
+  localStorage.setItem("tp_stock_refresh_ms", String(autoRefreshSelect?.value || "30000"));
+  localStorage.setItem("tp_default_alert_cooldown", String(stockAlertCooldownInput?.value || "300"));
+}
+
+function hydrateStockPreferences() {
+  const savedStrategy = localStorage.getItem("tp_stock_strategy");
+  const savedRefresh = localStorage.getItem("tp_stock_refresh_ms");
+  const savedCooldown = localStorage.getItem("tp_default_alert_cooldown");
+  if (savedStrategy && strategySelect) strategySelect.value = savedStrategy;
+  if (savedRefresh && autoRefreshSelect) autoRefreshSelect.value = savedRefresh;
+  if (savedCooldown && stockAlertCooldownInput) stockAlertCooldownInput.value = savedCooldown;
+}
+
+async function apiFetchJson(path, options = {}) {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) {
+    throw new Error("Unauthorized");
+  }
+  const response = await window.TradeProCore.apiFetch(path, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `API ${response.status}`);
+  }
+  return data;
+}
+
+async function validateCurrentSymbol() {
+  try {
+    const data = await apiFetchJson(`/api/symbol/resolve?symbol=${encodeURIComponent(SYMBOL)}`);
+    if (!data.valid) throw new Error(data.error || "Invalid symbol.");
+    if (!data.available) {
+      setStockPageStatus(data.error || "Live data is temporarily unavailable. Showing fallback experience.", true);
+      setStockHealthStatus("Provider Degraded", "negative");
+    } else {
+      setStockPageStatus(`Validated ${data.normalizedSymbol}.`);
+    }
+    return data;
+  } catch (error) {
+    setStockPageStatus(error.message, true);
+    setStockDataMode("Invalid Symbol", "negative");
+    throw error;
+  }
+}
+
+function applyProviderHealth(health, isDegraded = false) {
+  const providers = Array.isArray(health?.providers)
+    ? health.providers.filter((item) => item.id !== "smtp")
+    : [];
+  const hasIssue = isDegraded || providers.some((item) => String(item.status || "").includes("not_"));
+  setStockHealthStatus(hasIssue ? "Provider Degraded" : "Providers Healthy", hasIssue ? "negative" : "positive");
+}
+
+async function loadStockAlertMeta() {
+  if (!window.TradeProCore || !window.TradeProCore.hasSession()) return;
+  try {
+    const data = await apiFetchJson("/api/alerts");
+    const currentAlerts = (data.alerts || []).filter((item) => String(item.symbol || "").toUpperCase() === SYMBOL);
+    const currentEvents = (data.events || []).filter((item) => String(item.symbol || "").toUpperCase() === SYMBOL);
+    const email = String(data.notificationEmail || "").trim();
+    if (stockAlertNameInput && !stockAlertNameInput.value.trim()) {
+      stockAlertNameInput.value = `${SYMBOL} price alert`;
+    }
+    if (stockAlertHint) {
+      stockAlertHint.textContent = email
+        ? (data.emailDeliveryReady
+          ? `Email alerts for ${SYMBOL} will be sent to ${email}.`
+          : `Email recipient is ${email}, but backend SMTP is not configured yet.`)
+        : "Email alerts need a saved account email, such as Google login.";
+    }
+    if (stockAlertEmailInput) {
+      stockAlertEmailInput.disabled = !email;
+      if (!email) stockAlertEmailInput.checked = false;
+    }
+    renderStockAlerts(currentAlerts, currentEvents);
+  } catch (error) {
+    setStockAlertStatus(error.message, true);
+  }
+}
+
+function renderStockAlerts(alerts = [], events = []) {
+  if (!stockAlertsList) return;
+  if (!alerts.length && !events.length) {
+    stockAlertsList.innerHTML = "<p class='brand-sub'>No alerts created for this symbol yet.</p>";
+    return;
+  }
+
+  stockAlertsList.innerHTML = [
+    ...alerts.map((alert) => `
+      <div class="news-item">
+        <h4>${alert.name}</h4>
+        <p>${alert.conditions.map((item) => `${item.type}${Number.isFinite(Number(item.value)) ? ` @ ${item.value}` : ""}`).join(", ") || "No conditions"}</p>
+        <p>Cooldown ${alert.cooldownSec}s | Email ${alert.channels?.email ? "On" : "Off"} | Last trigger ${alert.lastTriggeredAt ? new Date(alert.lastTriggeredAt).toLocaleString() : "Never"}</p>
+        <div class="row row-tight" style="margin-top:8px;">
+          <button class="btn ghost btn-auto" type="button" onclick="deleteStockAlert('${alert.id}')">Delete</button>
+        </div>
+      </div>
+    `),
+    ...events.slice(0, 4).map((event) => `
+      <div class="news-item">
+        <h4>Triggered ${new Date(event.triggeredAt).toLocaleString()}</h4>
+        <p>${event.conditionResults?.map((item) => `${item.label || item.type}: observed ${item.observedText || item.observedValue} vs target ${Number.isFinite(Number(item.targetValue)) ? item.targetValue : "-"}`).join(" | ") || event.reason}</p>
+        <p>Email ${event.channels?.email || "disabled"}${event.emailRecipient ? ` to ${event.emailRecipient}` : ""}</p>
+      </div>
+    `)
+  ].join("");
+}
+
+async function deleteStockAlert(alertId) {
+  try {
+    await apiFetchJson(`/api/alerts/${encodeURIComponent(alertId)}`, { method: "DELETE" });
+    setStockAlertStatus("Alert removed.");
+    await loadStockAlertMeta();
+  } catch (error) {
+    setStockAlertStatus(error.message, true);
+  }
+}
+
+async function createStockPageAlert() {
+  const targetValue = Number(stockAlertValueInput?.value);
+  if (!Number.isFinite(targetValue) || targetValue <= 0) {
+    throw new Error("Enter a valid alert price.");
+  }
+
+  const payload = {
+    name: stockAlertNameInput?.value.trim() || `${SYMBOL} price alert`,
+    symbol: SYMBOL,
+    logic: "AND",
+    cooldownSec: Number(stockAlertCooldownInput?.value) || 300,
+    channels: {
+      inApp: true,
+      email: Boolean(stockAlertEmailInput?.checked),
+      telegram: false,
+      whatsapp: false
+    },
+    conditions: [
+      {
+        type: stockAlertDirectionSelect?.value || "price_above",
+        value: targetValue
+      }
+    ]
+  };
+
+  await apiFetchJson("/api/alerts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  rememberStockPreferences();
+}
 
 function getResponsiveChartHeights() {
   const w = window.innerWidth || 1200;
@@ -90,12 +348,14 @@ function changeTimeframe() {
 }
 
 function refreshStockPageData() {
+  setStockPageStatus("Refreshing stock page...");
   renderChart();
   renderSymbolInfoWidget();
   renderOverviewWidget();
   renderTechnicalWidget();
   renderNewsWidget();
   loadAiData();
+  loadStockAlertMeta();
 }
 
 function renderChart() {
@@ -564,73 +824,112 @@ function renderAiLoading() {
   weightGrid.innerHTML = "<div class='weight-item'><div class='kpi-label'>Loading confidence components...</div></div>";
 }
 
+function renderAiPayload(data, warningText = "") {
+  const safeData = data || {};
+  const metrics = safeData.metrics || {};
+  const indicators = safeData.indicators || {};
+  const suggestion = safeData.suggestion || {};
+  const sentiment = safeData.sentiment || {};
+  const backtest = safeData.backtest || {};
+  const confidence = safeData.confidence || {};
+  const weights = confidence.components || {};
+  const warningCard = warningText
+    ? `<div class="kpi"><div class="kpi-label">Data Status</div><div class="kpi-value">${warningText}</div></div>`
+    : "";
+
+  const ch = Number(metrics.change24hPct);
+  currentRealtimePrice = Number(metrics.realtimePrice);
+  aiPrimary.innerHTML = [
+    warningCard,
+    kpi("Real-time Price", formatMoney(metrics.realtimePrice, 4)),
+    kpi("24h % Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
+    kpi("Volume", formatNumber(metrics.volume, 0)),
+    kpi("24h High", formatMoney(metrics.high24h, 4)),
+    kpi("24h Low", formatMoney(metrics.low24h, 4)),
+    kpi("Market Cap", metrics.marketCap ? formatMoney(metrics.marketCap, 0) : "N/A")
+  ].join("");
+
+  aiIndicators.innerHTML = [
+    kpi("RSI", formatNumber(indicators.rsi, 2)),
+    kpi("EMA Crossover", indicators.emaCrossover || "N/A"),
+    kpi("MACD", `${formatNumber(indicators.macd?.value, 3)} / ${indicators.macd?.state || "N/A"}`),
+    kpi("Bollinger", indicators.bollinger?.state || "N/A"),
+    kpi("Volume Signal", indicators.volumeSignal || "N/A"),
+    kpi("Risk", `${safeData.risk?.level || "Unknown"} ${safeData.risk?.emoji || ""}`)
+  ].join("");
+
+  aiSignals.innerHTML = [
+    kpi("Strategy", safeData.strategy || "-"),
+    kpi("Action", suggestion.action || "-"),
+    kpi("Entry", formatMoney(suggestion.entry, 4)),
+    kpi("Stoploss", formatMoney(suggestion.stopLoss, 4)),
+    kpi("Target", formatMoney(suggestion.target, 4)),
+    kpi("News", `${sentiment.label || "Neutral"} ${sentiment.emoji || ""}`)
+  ].join("");
+
+  confidenceScore.textContent = Number.isFinite(Number(confidence.score)) ? `${confidence.score}%` : "-";
+  marketModeBadge.textContent = safeData.marketMode || "Neutral";
+  marketModeBadge.className = `status ${statusClass(safeData.marketMode || "Neutral")}`;
+
+  weightGrid.innerHTML = [
+    `RSI ${weights.rsi?.weight || 0}% -> ${weights.rsi?.score ?? "-"}`,
+    `EMA ${weights.ema?.weight || 0}% -> ${weights.ema?.score ?? "-"}`,
+    `MACD ${weights.macd?.weight || 0}% -> ${weights.macd?.score ?? "-"}`,
+    `Volume ${weights.volume?.weight || 0}% -> ${weights.volume?.score ?? "-"}`,
+    `News ${weights.news?.weight || 0}% -> ${weights.news?.score ?? "-"}`
+  ].map((line) => `<div class="weight-item"><div class="kpi-label">${line}</div></div>`).join("");
+
+  aiBacktest.innerHTML = [
+    kpi("Win rate", `${formatNumber(backtest.winRate, 1)}%`),
+    kpi("Profit %", `${formatNumber(backtest.profitPct, 2)}%`, Number(backtest.profitPct) >= 0 ? "good" : "bad"),
+    kpi("Max drawdown", `${formatNumber(backtest.maxDrawdownPct, 2)}%`),
+    kpi("Trades", formatNumber(backtest.trades, 0)),
+    kpi("Trend", safeData.marketMode || "-"),
+    kpi("Sentiment + / -", `${sentiment.positive ?? 0} / ${sentiment.negative ?? 0}`)
+  ].join("");
+
+  renderAllocationPie(safeData);
+  renderAreaChart(safeData);
+}
+
+async function fetchAiPayloadOnce(strategy) {
+  const url = `${API_BASE}/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`;
+  const response = window.TradeProCore && window.TradeProCore.hasSession()
+    ? await window.TradeProCore.apiFetch(`/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`)
+    : await fetch(url);
+  if (!response.ok) throw new Error(`AI API ${response.status}`);
+  return response.json();
+}
+
 async function loadAiData() {
   const strategy = strategySelect.value;
-  renderAiLoading();
+  rememberStockPreferences();
+  const hadSnapshot = Boolean(lastAiSnapshot);
+  if (!hadSnapshot) renderAiLoading();
+  setStockPageStatus("Loading analytics...");
   try {
-    const url = `${API_BASE}/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`;
-    const response = window.TradeProCore && window.TradeProCore.hasSession()
-      ? await window.TradeProCore.apiFetch(`/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`)
-      : await fetch(url);
-    if (!response.ok) throw new Error(`AI API ${response.status}`);
-
-    const data = await response.json();
-
-    const ch = Number(data.metrics.change24hPct);
-    aiPrimary.innerHTML = [
-      kpi("Real-time Price", formatMoney(data.metrics.realtimePrice, 4)),
-      kpi("24h % Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
-      kpi("Volume", formatNumber(data.metrics.volume, 0)),
-      kpi("24h High", formatMoney(data.metrics.high24h, 4)),
-      kpi("24h Low", formatMoney(data.metrics.low24h, 4)),
-      kpi("Market Cap", data.metrics.marketCap ? formatMoney(data.metrics.marketCap, 0) : "N/A")
-    ].join("");
-
-    aiIndicators.innerHTML = [
-      kpi("RSI", formatNumber(data.indicators.rsi, 2)),
-      kpi("EMA Crossover", data.indicators.emaCrossover),
-      kpi("MACD", `${formatNumber(data.indicators.macd.value, 3)} / ${data.indicators.macd.state}`),
-      kpi("Bollinger", data.indicators.bollinger.state),
-      kpi("Volume Signal", data.indicators.volumeSignal),
-      kpi("Risk", `${data.risk.level} ${data.risk.emoji}`)
-    ].join("");
-
-    aiSignals.innerHTML = [
-      kpi("Strategy", data.strategy),
-      kpi("Action", data.suggestion.action),
-      kpi("Entry", formatMoney(data.suggestion.entry, 4)),
-      kpi("Stoploss", formatMoney(data.suggestion.stopLoss, 4)),
-      kpi("Target", formatMoney(data.suggestion.target, 4)),
-      kpi("News", `${data.sentiment.label} ${data.sentiment.emoji}`)
-    ].join("");
-
-    confidenceScore.textContent = `${data.confidence.score}%`;
-
-    marketModeBadge.textContent = data.marketMode;
-    marketModeBadge.className = `status ${statusClass(data.marketMode)}`;
-
-    const weights = data.confidence.components;
-    weightGrid.innerHTML = [
-      `RSI ${weights.rsi.weight}% -> ${weights.rsi.score}`,
-      `EMA ${weights.ema.weight}% -> ${weights.ema.score}`,
-      `MACD ${weights.macd.weight}% -> ${weights.macd.score}`,
-      `Volume ${weights.volume.weight}% -> ${weights.volume.score}`,
-      `News ${weights.news.weight}% -> ${weights.news.score}`
-    ].map((line) => `<div class="weight-item"><div class="kpi-label">${line}</div></div>`).join("");
-
-    aiBacktest.innerHTML = [
-      kpi("Win rate", `${formatNumber(data.backtest.winRate, 1)}%`),
-      kpi("Profit %", `${formatNumber(data.backtest.profitPct, 2)}%`, Number(data.backtest.profitPct) >= 0 ? "good" : "bad"),
-      kpi("Max drawdown", `${formatNumber(data.backtest.maxDrawdownPct, 2)}%`),
-      kpi("Trades", formatNumber(data.backtest.trades, 0)),
-      kpi("Trend", data.marketMode),
-      kpi("Sentiment + / -", `${data.sentiment.positive} / ${data.sentiment.negative}`)
-    ].join("");
-
-    renderAllocationPie(data);
-    renderAreaChart(data);
+    let data;
+    try {
+      data = await fetchAiPayloadOnce(strategy);
+    } catch (firstError) {
+      console.log("AI fetch warning:", firstError.message);
+      data = await fetchAiPayloadOnce(strategy);
+    }
+    const warningText = data?.warning || (data?.degraded ? "Showing fallback analytics." : "");
+    renderAiPayload(data, warningText);
     lastAiSnapshot = data;
+    setStockDataMode(data?.degraded ? "Fallback Data" : "Live Data", data?.degraded ? "negative" : "positive");
+    applyProviderHealth(data?.providerHealth, Boolean(data?.degraded));
+    setStockPageStatus(data?.degraded ? warningText || "Showing fallback analytics." : "Live analytics loaded.");
+    updateLastUpdated(Date.now());
   } catch (error) {
+    if (lastAiSnapshot) {
+      renderAiPayload(lastAiSnapshot, `Live refresh failed: ${error.message}. Showing last successful data.`);
+      setStockDataMode("Last Good Snapshot", "neutral");
+      setStockPageStatus(`Refresh failed: ${error.message}`, true);
+      updateLastUpdated(Date.now());
+      return;
+    }
     const err = `<div class="kpi"><div class="kpi-label">AI Error</div><div class="kpi-value">${error.message}</div></div>`;
     aiPrimary.innerHTML = err;
     aiIndicators.innerHTML = "";
@@ -643,10 +942,50 @@ async function loadAiData() {
     renderAllocationPie(null);
     renderAreaChart(null);
     lastAiSnapshot = null;
+    setStockDataMode("Unavailable", "negative");
+    setStockHealthStatus("Provider Error", "negative");
+    setStockPageStatus(error.message, true);
   }
 }
 
-strategySelect.addEventListener("change", loadAiData);
+strategySelect.addEventListener("change", () => {
+  rememberStockPreferences();
+  loadAiData();
+});
+
+if (stockCreateAlertBtn) {
+  stockCreateAlertBtn.addEventListener("click", async () => {
+    try {
+      setStockAlertStatus("Creating alert...");
+      await createStockPageAlert();
+      setStockAlertStatus(`Alert created for ${SYMBOL}. The server will check it automatically.`);
+      await loadStockAlertMeta();
+    } catch (error) {
+      setStockAlertStatus(error.message, true);
+    }
+  });
+}
+
+stockUseCurrentPriceBtn?.addEventListener("click", () => {
+  if (!Number.isFinite(currentRealtimePrice) || currentRealtimePrice <= 0) {
+    setStockAlertStatus("Current price is not available yet.", true);
+    return;
+  }
+  applyAlertTargetValue(currentRealtimePrice);
+  setStockAlertStatus(`Alert target set to current price ${formatMoney(currentRealtimePrice, 4)}.`);
+});
+
+document.querySelectorAll("[data-alert-adjust]").forEach((button) => {
+  button.addEventListener("click", () => {
+    applyRelativeAlertTarget(Number(button.getAttribute("data-alert-adjust") || 0));
+  });
+});
+
+stockWatchlistBtn?.addEventListener("click", () => {
+  toggleWatchlistMembership().catch((error) => {
+    setStockPageStatus(error.message, true);
+  });
+});
 
 function refreshResponsiveCharts() {
   renderChart();
@@ -661,24 +1000,24 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(refreshResponsiveCharts, 220);
 });
 
-renderChart();
-renderSymbolInfoWidget();
-renderOverviewWidget();
-renderTechnicalWidget();
-renderNewsWidget();
-renderAiTfPills();
-renderAllocationPie(null);
-loadAiData();
-let aiRefreshTimer = null;
-
 function startAiAutoRefresh() {
   if (aiRefreshTimer) clearInterval(aiRefreshTimer);
+  const intervalMs = Math.max(0, Number(autoRefreshSelect?.value || 30000));
+  if (!intervalMs) {
+    setStockPageStatus("Auto-refresh is off.");
+    return;
+  }
   aiRefreshTimer = setInterval(() => {
     if (document.visibilityState === "visible") {
       loadAiData();
     }
-  }, 45000);
+  }, intervalMs);
 }
+
+autoRefreshSelect?.addEventListener("change", () => {
+  rememberStockPreferences();
+  startAiAutoRefresh();
+});
 
 function handleVisibilityChange() {
   if (document.visibilityState === "visible") {
@@ -687,9 +1026,31 @@ function handleVisibilityChange() {
 }
 
 document.addEventListener("visibilitychange", handleVisibilityChange);
-startAiAutoRefresh();
 
+async function bootstrapStockPage() {
+  hydrateStockPreferences();
+  updateWatchlistButton();
+  renderChart();
+  renderSymbolInfoWidget();
+  renderOverviewWidget();
+  renderTechnicalWidget();
+  renderNewsWidget();
+  renderAiTfPills();
+  renderAllocationPie(null);
+  try {
+    await validateCurrentSymbol();
+  } catch {
+    if (chartEl) {
+      chartEl.innerHTML = "<div class='empty-state'>This symbol is invalid or unavailable right now. Try opening it from Dashboard search so it can be validated first.</div>";
+    }
+    return;
+  }
+  await Promise.allSettled([loadAiData(), loadStockAlertMeta()]);
+  startAiAutoRefresh();
+}
 
+bootstrapStockPage().catch((error) => {
+  setStockPageStatus(error.message, true);
+});
 
-
-
+window.deleteStockAlert = deleteStockAlert;

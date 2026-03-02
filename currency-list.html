@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#57b6ff">
+  <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
   <title>Currency List</title>
   <link rel="stylesheet" href="style.css">
@@ -32,6 +33,35 @@
     <main class="page-main currency-main">
       <section class="card currency-card">
         <div class="row space section-head">
+          <h3 class="section-title">Live Currency Converter</h3>
+          <button class="btn ghost btn-auto" type="button" id="refreshRatesBtn">Refresh Rates</button>
+        </div>
+        <div class="currency-converter-grid">
+          <div>
+            <label class="form-label" for="convertAmount">Amount</label>
+            <input class="input" id="convertAmount" type="number" step="0.01" value="1" placeholder="Enter amount">
+          </div>
+          <div>
+            <label class="form-label" for="fromCurrency">From</label>
+            <select id="fromCurrency"></select>
+          </div>
+          <div class="currency-converter-swap">
+            <button class="btn ghost btn-auto" type="button" id="swapCurrenciesBtn">Swap</button>
+          </div>
+          <div>
+            <label class="form-label" for="toCurrency">To</label>
+            <select id="toCurrency"></select>
+          </div>
+        </div>
+        <div class="currency-converter-output">
+          <div class="currency-converter-value" id="conversionResult">Loading...</div>
+          <div class="brand-sub" id="conversionRateText"></div>
+          <div class="helper-note" id="ratesUpdatedText"></div>
+        </div>
+      </section>
+
+      <section class="card currency-card">
+        <div class="row space section-head">
           <h3 class="section-title">Currency List</h3>
           <span class="helper-note" id="currencyCount">Loading...</span>
         </div>
@@ -43,6 +73,7 @@
     </main>
   </section>
 
+  <script src="app-core.js"></script>
   <script src="currency-list.js"></script>
 </body>
 </html>

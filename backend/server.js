@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const net = require("net");
+const tls = require("tls");
 const PDFDocument = require("pdfkit");
 const { RSI, EMA, MACD, BollingerBands, ATR } = require("technicalindicators");
 
@@ -19,19 +21,35 @@ const REFRESH_TTL_SECONDS = Number(process.env.REFRESH_TTL_SECONDS || 604800);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || "";
+const DEFAULT_ADMIN_USERNAME = String(process.env.DEFAULT_ADMIN_USERNAME || "").trim().toLowerCase();
+const DEFAULT_ADMIN_PASSWORD = String(process.env.DEFAULT_ADMIN_PASSWORD || "");
 const ALPACA_SANDBOX_KEY = process.env.ALPACA_SANDBOX_KEY || "";
 const ALPACA_SANDBOX_SECRET = process.env.ALPACA_SANDBOX_SECRET || "";
 const OANDA_SANDBOX_TOKEN = process.env.OANDA_SANDBOX_TOKEN || "";
 const OANDA_SANDBOX_ACCOUNT_ID = process.env.OANDA_SANDBOX_ACCOUNT_ID || "";
 const BROKER_WEBHOOK_SECRET = process.env.BROKER_WEBHOOK_SECRET || "";
-const DB_FILE = path.join(__dirname, "data", "app-db.json");
-const REGISTER_EXPORT_FILE = path.join(__dirname, "..", "registered-users.csv");
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, "data"));
+const DB_FILE = path.resolve(process.env.DB_FILE_PATH || path.join(DATA_DIR, "app-db.json"));
+const REGISTER_EXPORT_FILE = path.resolve(
+  process.env.REGISTER_EXPORT_FILE_PATH || path.join(DATA_DIR, "registered-users.csv")
+);
+const SMTP_HOST = String(process.env.SMTP_HOST || "").trim();
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || SMTP_PORT === 465;
+const SMTP_USER = String(process.env.SMTP_USER || "").trim();
+const SMTP_PASS = String(process.env.SMTP_PASS || "").trim();
+const SMTP_FROM = String(process.env.SMTP_FROM || SMTP_USER).trim();
+const ALERT_EVALUATION_INTERVAL_MS = Math.max(15000, Number(process.env.ALERT_EVALUATION_INTERVAL_MS || 60000));
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 180);
 const RATE_LIMIT_AUTH_MAX_REQUESTS = Number(process.env.RATE_LIMIT_AUTH_MAX_REQUESTS || 700);
 const ENABLE_PAPER_TRADING_FEATURE = String(process.env.ENABLE_PAPER_TRADING_FEATURE || "false").toLowerCase() === "true";
 const ENABLE_PORTFOLIO_FEATURE = String(process.env.ENABLE_PORTFOLIO_FEATURE || "false").toLowerCase() === "true";
 const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_.-]{2,23}$/;
+const ALLOWED_ORIGINS = String(process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const CRYPTO_EXCHANGES = new Set(["BINANCE", "COINBASE", "BYBIT", "KRAKEN", "BITFINEX"]);
 const FOREX_EXCHANGES = new Set(["FX", "FOREX", "OANDA", "FX_IDC"]);
@@ -60,7 +78,15 @@ const TIMEFRAME_CONFIG = {
   "1D": { interval: "1d", range: "1y", bars24h: 1 }
 };
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origin not allowed by CORS"));
+  }
+}));
 app.use(express.json());
 
 const requestBuckets = new Map();
@@ -112,6 +138,8 @@ function hashPassword(password) {
   return crypto.createHash("sha256").update(String(password || "")).digest("hex");
 }
 
+const LEGACY_DEFAULT_ADMIN_HASH = hashPassword("1234");
+
 function createUserId() {
   if (typeof crypto.randomUUID === "function") {
     return `u-${crypto.randomUUID().slice(0, 8)}`;
@@ -138,75 +166,87 @@ function ensureDbFile() {
   if (fs.existsSync(DB_FILE)) return;
 
   const defaultDb = {
-    users: [
-      {
-        id: "u-admin",
-        username: "admin",
-        passwordHash: hashPassword("1234"),
-        role: "admin",
-        displayName: "Admin Trader"
-      }
-    ],
-    watchlists: {
-      "u-admin": []
-    },
-    preferences: {
-      "u-admin": {
-        defaultStrategy: "swing",
-        defaultAiTf: "1D",
-        theme: "dark",
-        activeWorkspaceId: "ws-default",
-        workspaces: [
-          {
-            id: "ws-default",
-            name: "Default Workspace",
-            layout: {
-              dashboardPanels: ["watchlist", "risk-heatmap", "planning-tools"],
-              density: "comfortable"
-            },
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          }
-        ]
-      }
-    },
-    paperTrading: {
-      "u-admin": {
-        cash: 100000,
-        positions: {},
-        orders: [],
-        closedTrades: [],
-        updatedAt: Date.now()
-      }
-    },
-    alerts: {
-      "u-admin": []
-    },
-    alertEvents: {
-      "u-admin": []
-    },
-    backtests: {
-      "u-admin": []
-    },
+    users: [],
+    watchlists: {},
+    preferences: {},
+    paperTrading: {},
+    alerts: {},
+    alertEvents: {},
+    backtests: {},
     teamSpaces: {},
-    brokerSandbox: {
-      "u-admin": {
-        connected: false,
-        provider: "",
-        accountId: "",
-        buyingPower: 100000,
-        maxOrderValuePct: 25,
-        status: "disconnected",
-        updatedAt: Date.now(),
-        orderHistory: []
-      }
-    },
-    activityLogs: {
-      "u-admin": []
-    }
+    brokerSandbox: {},
+    activityLogs: {}
   };
 
   fs.writeFileSync(DB_FILE, JSON.stringify(defaultDb, null, 2), "utf8");
+}
+
+function isStrongSeedPassword(password) {
+  return !validateRegistrationInput("adminseed", String(password || ""));
+}
+
+function buildDefaultAdminUser() {
+  if (!DEFAULT_ADMIN_USERNAME || !USERNAME_REGEX.test(DEFAULT_ADMIN_USERNAME) || !isStrongSeedPassword(DEFAULT_ADMIN_PASSWORD)) {
+    return null;
+  }
+
+  return {
+    id: "u-admin",
+    username: DEFAULT_ADMIN_USERNAME,
+    passwordHash: hashPassword(DEFAULT_ADMIN_PASSWORD),
+    role: "admin",
+    displayName: "Admin Trader"
+  };
+}
+
+function maybeSeedConfiguredAdmin(db) {
+  const seed = buildDefaultAdminUser();
+  if (!seed) return false;
+  if (Array.isArray(db.users) && db.users.length > 0) return false;
+
+  db.users.push(seed);
+  db.watchlists[seed.id] = [];
+  db.preferences[seed.id] = {
+    defaultStrategy: "swing",
+    defaultAiTf: "1D",
+    theme: "dark",
+    activeWorkspaceId: "ws-default",
+    workspaces: [
+      {
+        id: "ws-default",
+        name: "Default Workspace",
+        layout: {
+          dashboardPanels: ["watchlist", "risk-heatmap", "planning-tools"],
+          density: "comfortable"
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
+    ]
+  };
+  ensureUserFeatureState(db, seed.id);
+  return true;
+}
+
+function hardenLegacyDefaultAdmin(db) {
+  const legacyAdmin = (db.users || []).find((user) => user.id === "u-admin" && user.passwordHash === LEGACY_DEFAULT_ADMIN_HASH);
+  if (!legacyAdmin) return false;
+
+  if (isStrongSeedPassword(DEFAULT_ADMIN_PASSWORD)) {
+    legacyAdmin.passwordHash = hashPassword(DEFAULT_ADMIN_PASSWORD);
+    if (DEFAULT_ADMIN_USERNAME && USERNAME_REGEX.test(DEFAULT_ADMIN_USERNAME)) {
+      legacyAdmin.username = DEFAULT_ADMIN_USERNAME;
+    }
+    delete legacyAdmin.mustResetPassword;
+    return true;
+  }
+
+  if (!legacyAdmin.mustResetPassword) {
+    legacyAdmin.mustResetPassword = true;
+    return true;
+  }
+
+  return false;
 }
 
 function readDb() {
@@ -214,7 +254,7 @@ function readDb() {
   try {
     const raw = fs.readFileSync(DB_FILE, "utf8");
     const parsed = JSON.parse(raw);
-    return {
+    const db = {
       users: Array.isArray(parsed.users) ? parsed.users : [],
       watchlists: parsed.watchlists && typeof parsed.watchlists === "object" ? parsed.watchlists : {},
       preferences: parsed.preferences && typeof parsed.preferences === "object" ? parsed.preferences : {},
@@ -226,6 +266,9 @@ function readDb() {
       brokerSandbox: parsed.brokerSandbox && typeof parsed.brokerSandbox === "object" ? parsed.brokerSandbox : {},
       activityLogs: parsed.activityLogs && typeof parsed.activityLogs === "object" ? parsed.activityLogs : {}
     };
+    const changed = maybeSeedConfiguredAdmin(db) || hardenLegacyDefaultAdmin(db);
+    if (changed) writeDb(db);
+    return db;
   } catch {
     return {
       users: [],
@@ -293,8 +336,13 @@ function sanitizeUser(user) {
     id: user.id,
     username: user.username,
     role: user.role || "user",
-    displayName: user.displayName || user.username
+    displayName: user.displayName || user.username,
+    email: user.email || ""
   };
+}
+
+function isEmailDeliveryConfigured() {
+  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && SMTP_FROM);
 }
 
 function issueTokens(userId, username, role) {
@@ -584,6 +632,28 @@ function cleanSymbolInput(input) {
   return String(input || "").trim().toUpperCase();
 }
 
+function isLikelyValidSymbolFormat(input) {
+  const value = cleanSymbolInput(input);
+  if (!value) return false;
+  if (value.includes(":")) {
+    const info = splitSymbol(value);
+    const symbolOnly = String(info.symbolOnly || "").replace(/\//g, "");
+    if (!symbolOnly) return false;
+    if (info.marketType === "forex") return /^[A-Z]{6}$/.test(symbolOnly);
+    if (info.marketType === "crypto") return /^[A-Z0-9]{2,20}(USDT|USDC|BUSD|USD)$/.test(symbolOnly);
+    if (info.marketType === "options") return OPTION_PATTERN.test(symbolOnly);
+    if (info.marketType === "futures") return /^[A-Z0-9._!-]{1,20}$/.test(symbolOnly);
+    return /^[A-Z][A-Z0-9.\-]{0,14}$/.test(symbolOnly);
+  }
+  return (
+    OPTION_PATTERN.test(value) ||
+    /^[A-Z][A-Z0-9.\-]{0,14}$/.test(value) ||
+    /^[A-Z]{6}$/.test(value) ||
+    /^[A-Z0-9]{2,20}(USDT|USDC|BUSD|USD)$/.test(value) ||
+    /^[A-Z]{1,4}1!$/.test(value)
+  );
+}
+
 function toPositiveInt(value, fallback = 0) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return fallback;
@@ -637,6 +707,44 @@ function splitSymbol(input) {
     exchange,
     symbolOnly,
     marketType
+  };
+}
+
+function getLiveFeedHealthSnapshot() {
+  const alive = Array.from(liveFeedState.clients.values())
+    .filter((entry) => Date.now() - entry.startedAt < 24 * 60 * 60 * 1000)
+    .length;
+  return {
+    connectedClients: alive,
+    lastTickAt: liveFeedState.lastTickAt || 0,
+    status: alive > 0 ? "streaming" : "idle"
+  };
+}
+
+function getProviderHealthSnapshot() {
+  return {
+    live: getLiveFeedHealthSnapshot(),
+    providers: [
+      {
+        id: "yahoo",
+        label: "Yahoo Finance",
+        status: "available",
+        note: "Primary market data source for price candles and quotes."
+      },
+      {
+        id: "finnhub",
+        label: "Finnhub",
+        status: FINNHUB_KEY ? "available" : "not_configured",
+        note: FINNHUB_KEY ? "Used for stock news and company profiles." : "News and profile enrichment are disabled until FINNHUB_KEY is set."
+      },
+      {
+        id: "smtp",
+        label: "Email SMTP",
+        status: isEmailDeliveryConfigured() ? "available" : "not_configured",
+        note: isEmailDeliveryConfigured() ? "Alert email delivery is enabled." : "Alert emails will stay in-app until SMTP is configured."
+      }
+    ],
+    checkedAt: Date.now()
   };
 }
 
@@ -762,6 +870,121 @@ async function fetchYahooCandles(yahooTicker, tf) {
   return { rows, meta: result.meta || {}, cfg };
 }
 
+function hashSeed(input) {
+  return Array.from(String(input || "")).reduce((acc, ch, index) => {
+    return (acc + (ch.charCodeAt(0) * (index + 17))) >>> 0;
+  }, 2166136261) >>> 0;
+}
+
+function createSeededRandom(seedInput) {
+  let seed = hashSeed(seedInput) || 123456789;
+  return () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+}
+
+function syntheticBarsCount(tf) {
+  switch (tf) {
+    case "1m": return 360;
+    case "5m": return 320;
+    case "15m": return 280;
+    case "1h": return 240;
+    case "4h": return 220;
+    default: return 260;
+  }
+}
+
+function timeframeStepMs(tf) {
+  switch (tf) {
+    case "1m": return 60 * 1000;
+    case "5m": return 5 * 60 * 1000;
+    case "15m": return 15 * 60 * 1000;
+    case "1h": return 60 * 60 * 1000;
+    case "4h": return 4 * 60 * 60 * 1000;
+    default: return 24 * 60 * 60 * 1000;
+  }
+}
+
+function generateSyntheticCandles(yahooTicker, tf) {
+  const cfg = TIMEFRAME_CONFIG[tf] || TIMEFRAME_CONFIG["1D"];
+  const count = syntheticBarsCount(tf);
+  const stepMs = timeframeStepMs(tf);
+  const random = createSeededRandom(`${yahooTicker}:${tf}`);
+  const now = Date.now();
+  const basePrice = 40 + (hashSeed(yahooTicker) % 220);
+  const drift = (random() - 0.48) * 0.0025;
+  const amplitude = 0.012 + (random() * 0.016);
+  const rows = [];
+  let close = basePrice;
+
+  for (let i = 0; i < count; i += 1) {
+    const wave = Math.sin(i / 7) * amplitude + Math.cos(i / 15) * amplitude * 0.7;
+    const noise = (random() - 0.5) * amplitude;
+    const movePct = drift + wave * 0.18 + noise * 0.22;
+    const open = close;
+    close = Math.max(1, open * (1 + movePct));
+    const wickUp = 1 + Math.abs((random() - 0.5) * 0.02);
+    const wickDown = 1 - Math.abs((random() - 0.5) * 0.02);
+    const high = Math.max(open, close) * wickUp;
+    const low = Math.max(0.5, Math.min(open, close) * wickDown);
+    const volume = Math.round(100000 + random() * 900000 + (i % 12) * 12000);
+    rows.push({
+      ts: Math.floor((now - ((count - 1 - i) * stepMs)) / 1000),
+      open: toFixedNumber(open, 6),
+      high: toFixedNumber(high, 6),
+      low: toFixedNumber(low, 6),
+      close: toFixedNumber(close, 6),
+      volume
+    });
+  }
+
+  return {
+    rows,
+    meta: {
+      currency: "USD",
+      symbol: yahooTicker,
+      synthetic: true
+    },
+    cfg,
+    source: "synthetic"
+  };
+}
+
+async function fetchYahooCandlesWithFallback(yahooTicker, tf) {
+  try {
+    const result = await fetchYahooCandles(yahooTicker, tf);
+    return { ...result, source: "yahoo" };
+  } catch (error) {
+    console.log("Candle Warning:", error.response?.data || error.message);
+    return generateSyntheticCandles(yahooTicker, tf);
+  }
+}
+
+function buildQuoteFromRows(rows, symbol) {
+  const latest = rows[rows.length - 1];
+  const previous = rows[rows.length - 2] || latest;
+  const recent = rows.slice(-24);
+  const current = Number(latest?.close || 0);
+  const prevClose = Number(previous?.close || current || 0);
+  const high = Math.max(...recent.map((row) => Number(row.high || row.close || 0)));
+  const low = Math.min(...recent.map((row) => Number(row.low || row.close || 0)));
+  const change = current - prevClose;
+  const changePct = prevClose ? (change / prevClose) * 100 : 0;
+
+  return {
+    c: toFixedNumber(current, 6),
+    d: toFixedNumber(change, 6),
+    dp: toFixedNumber(changePct, 4),
+    h: toFixedNumber(high, 6),
+    l: toFixedNumber(low, 6),
+    o: toFixedNumber(Number(latest?.open || current), 6),
+    pc: toFixedNumber(prevClose, 6),
+    t: Number(latest?.ts || Math.floor(Date.now() / 1000)),
+    symbol
+  };
+}
+
 async function fetchMarketCap(yahooTicker, marketType) {
   if (marketType !== "stock") return null;
 
@@ -781,7 +1004,7 @@ async function fetchMarketCap(yahooTicker, marketType) {
 async function fetchLatestPriceForSymbol(symbol) {
   const symbolInfo = splitSymbol(symbol);
   const yahooTicker = toYahooTicker(symbolInfo);
-  const { rows } = await fetchYahooCandles(yahooTicker, "1m");
+  const { rows } = await fetchYahooCandlesWithFallback(yahooTicker, "1m");
   const last = rows[rows.length - 1];
   if (!last || !Number.isFinite(last.close)) throw new Error("No latest price");
   return Number(last.close);
@@ -1363,6 +1586,196 @@ function runBacktestRsiReversion(closes, rsiPeriod = 14, entryRsi = 30, exitRsi 
   return { trades, equityCurve };
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function createSocketConnection() {
+  return new Promise((resolve, reject) => {
+    const onError = (error) => reject(error);
+    const socket = SMTP_SECURE
+      ? tls.connect({ host: SMTP_HOST, port: SMTP_PORT, servername: SMTP_HOST }, () => {
+          socket.removeListener("error", onError);
+          resolve(socket);
+        })
+      : net.connect({ host: SMTP_HOST, port: SMTP_PORT }, () => {
+          socket.removeListener("error", onError);
+          resolve(socket);
+        });
+    socket.once("error", onError);
+    socket.setEncoding("utf8");
+    attachSmtpState(socket);
+  });
+}
+
+function attachSmtpState(socket) {
+  socket.__smtpState = {
+    buffer: "",
+    lines: [],
+    waiters: []
+  };
+
+  socket.on("data", (chunk) => {
+    const state = socket.__smtpState;
+    state.buffer += chunk;
+    const parts = state.buffer.split(/\r?\n/);
+    state.buffer = parts.pop();
+    for (const part of parts) {
+      if (!part) continue;
+      state.lines.push(part);
+    }
+    while (state.waiters.length && state.lines.length) {
+      state.waiters.shift()();
+    }
+  });
+}
+
+function waitForSmtpLine(socket) {
+  const state = socket.__smtpState;
+  if (state.lines.length) return Promise.resolve(state.lines.shift());
+  return new Promise((resolve, reject) => {
+    const onError = (error) => {
+      socket.off("close", onClose);
+      reject(error);
+    };
+    const onClose = () => {
+      socket.off("error", onError);
+      reject(new Error("SMTP connection closed"));
+    };
+    state.waiters.push(() => {
+      socket.off("error", onError);
+      socket.off("close", onClose);
+      resolve(state.lines.shift());
+    });
+    socket.once("error", onError);
+    socket.once("close", onClose);
+  });
+}
+
+async function readSmtpResponse(socket) {
+  const lines = [];
+  while (true) {
+    const line = await waitForSmtpLine(socket);
+    lines.push(line);
+    if (/^\d{3}\s/.test(line)) {
+      const code = Number(line.slice(0, 3));
+      return { code, lines, text: lines.map((item) => item.slice(4)).join("\n") };
+    }
+  }
+}
+
+async function sendSmtpCommand(socket, command, expectedCodes) {
+  if (command !== null) {
+    socket.write(`${command}\r\n`);
+  }
+  const response = await readSmtpResponse(socket);
+  if (!expectedCodes.includes(response.code)) {
+    throw new Error(`SMTP ${response.code}: ${response.text || "Command failed"}`);
+  }
+  return response;
+}
+
+function upgradeSocketToTls(socket) {
+  return new Promise((resolve, reject) => {
+    const secureSocket = tls.connect({ socket, servername: SMTP_HOST }, () => resolve(secureSocket));
+    secureSocket.once("error", reject);
+    secureSocket.setEncoding("utf8");
+  });
+}
+
+function encodeSmtpData(value) {
+  return String(value || "")
+    .replace(/\r?\n/g, "\r\n")
+    .split("\r\n")
+    .map((line) => (line.startsWith(".") ? `.${line}` : line))
+    .join("\r\n");
+}
+
+async function sendEmailViaSmtp({ to, subject, text, html }) {
+  if (!isEmailDeliveryConfigured()) {
+    throw new Error("SMTP is not configured");
+  }
+
+  let socket = await createSocketConnection();
+  try {
+    await readSmtpResponse(socket);
+
+    let ehlo = await sendSmtpCommand(socket, "EHLO tradepro.local", [250]);
+    if (!SMTP_SECURE && ehlo.text.includes("STARTTLS")) {
+      await sendSmtpCommand(socket, "STARTTLS", [220]);
+      socket = await upgradeSocketToTls(socket);
+      attachSmtpState(socket);
+      ehlo = await sendSmtpCommand(socket, "EHLO tradepro.local", [250]);
+    }
+
+    if (!ehlo.text.includes("AUTH")) {
+      throw new Error("SMTP server does not support AUTH");
+    }
+
+    await sendSmtpCommand(socket, "AUTH LOGIN", [334]);
+    await sendSmtpCommand(socket, Buffer.from(SMTP_USER).toString("base64"), [334]);
+    await sendSmtpCommand(socket, Buffer.from(SMTP_PASS).toString("base64"), [235]);
+    await sendSmtpCommand(socket, `MAIL FROM:<${SMTP_FROM}>`, [250]);
+    await sendSmtpCommand(socket, `RCPT TO:<${to}>`, [250, 251]);
+    await sendSmtpCommand(socket, "DATA", [354]);
+
+    const message = [
+      `From: TradePro Alerts <${SMTP_FROM}>`,
+      `To: <${to}>`,
+      `Subject: ${subject}`,
+      "MIME-Version: 1.0",
+      'Content-Type: text/html; charset="UTF-8"',
+      "",
+      html || `<pre>${escapeHtml(text)}</pre>`
+    ].join("\r\n");
+    socket.write(`${encodeSmtpData(message)}\r\n.\r\n`);
+    await sendSmtpCommand(socket, null, [250]);
+    await sendSmtpCommand(socket, "QUIT", [221]);
+  } finally {
+    socket.destroy();
+  }
+}
+
+function describeAlertCondition(conditionResult) {
+  if (!conditionResult) return "-";
+  const observed = Number.isFinite(conditionResult.observedValue)
+    ? conditionResult.observedValue.toFixed(2)
+    : conditionResult.observedText || "n/a";
+  const target = Number.isFinite(conditionResult.targetValue) ? conditionResult.targetValue.toFixed(2) : "";
+  const comparator = conditionResult.comparator || "";
+  return `${conditionResult.label}: ${observed}${target ? ` ${comparator} ${target}` : ""}`;
+}
+
+function buildAlertEmail(alert, event, recipientEmail) {
+  const summaryLines = (event.conditionResults || []).map((item) => describeAlertCondition(item));
+  const subject = `TradePro alert: ${alert.symbol} crossed your target`;
+  const text = [
+    `Alert: ${alert.name}`,
+    `Symbol: ${alert.symbol}`,
+    `Triggered: ${new Date(event.triggeredAt).toISOString()}`,
+    `Recipient: ${recipientEmail}`,
+    "",
+    "Matched conditions:",
+    ...summaryLines.map((line) => `- ${line}`)
+  ].join("\n");
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#142133">
+      <h2 style="margin:0 0 12px;">TradePro Alert Triggered</h2>
+      <p style="margin:0 0 8px;"><strong>${escapeHtml(alert.name)}</strong> for <strong>${escapeHtml(alert.symbol)}</strong> has fired.</p>
+      <p style="margin:0 0 8px;">Recipient: ${escapeHtml(recipientEmail)}</p>
+      <p style="margin:0 0 16px;">Triggered at ${escapeHtml(new Date(event.triggeredAt).toISOString())}</p>
+      <ul style="padding-left:18px;margin:0;">
+        ${summaryLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+  return { subject, text, html };
+}
+
 function normalizeAlert(alert) {
   const cleanSymbol = cleanSymbolInput(alert.symbol);
   const logic = String(alert.logic || "AND").toUpperCase() === "OR" ? "OR" : "AND";
@@ -1394,11 +1807,28 @@ function normalizeAlert(alert) {
 async function evaluateAlertCondition(symbol, condition) {
   const type = condition.type;
   const val = Number(condition.value);
-  if (!symbol) return false;
+  if (!symbol) {
+    return {
+      type,
+      targetValue: val,
+      matched: false,
+      label: "Condition",
+      observedValue: NaN,
+      observedText: ""
+    };
+  }
 
   if (type === "price_above" || type === "price_below") {
     const px = await fetchLatestPriceForSymbol(symbol);
-    return type === "price_above" ? px > val : px < val;
+    return {
+      type,
+      targetValue: val,
+      matched: type === "price_above" ? px > val : px < val,
+      label: "Price",
+      observedValue: px,
+      observedText: "",
+      comparator: type === "price_above" ? ">" : "<"
+    };
   }
 
   if (type === "rsi_above" || type === "rsi_below") {
@@ -1408,36 +1838,159 @@ async function evaluateAlertCondition(symbol, condition) {
     const closes = rows.map((r) => r.close);
     const rsiSeries = RSI.calculate({ values: closes, period: 14 });
     const latestRsi = rsiSeries[rsiSeries.length - 1];
-    if (!Number.isFinite(latestRsi)) return false;
-    return type === "rsi_above" ? latestRsi > val : latestRsi < val;
+    return {
+      type,
+      targetValue: val,
+      matched: Number.isFinite(latestRsi) ? (type === "rsi_above" ? latestRsi > val : latestRsi < val) : false,
+      label: "RSI(14)",
+      observedValue: latestRsi,
+      observedText: "",
+      comparator: type === "rsi_above" ? ">" : "<"
+    };
   }
 
   if (type === "news_positive" || type === "news_negative") {
     const news = await fetchFinnhubNews(splitSymbol(symbol));
     const sentiment = sentimentFromNews(news);
-    return type === "news_positive"
-      ? sentiment.positive > sentiment.negative
-      : sentiment.negative > sentiment.positive;
+    const observedValue = type === "news_positive" ? sentiment.positive : sentiment.negative;
+    const compareValue = type === "news_positive" ? sentiment.negative : sentiment.positive;
+    return {
+      type,
+      targetValue: compareValue,
+      matched: type === "news_positive"
+        ? sentiment.positive > sentiment.negative
+        : sentiment.negative > sentiment.positive,
+      label: type === "news_positive" ? "Positive news score" : "Negative news score",
+      observedValue,
+      observedText: `positive=${sentiment.positive}, negative=${sentiment.negative}`,
+      comparator: "vs"
+    };
   }
 
-  return false;
+  return {
+    type,
+    targetValue: val,
+    matched: false,
+    label: type || "Condition",
+    observedValue: NaN,
+    observedText: "",
+    comparator: ""
+  };
 }
 
 async function evaluateAlertRule(alert) {
   if (!alert.isActive || !alert.symbol || !Array.isArray(alert.conditions) || alert.conditions.length === 0) {
-    return { fired: false, matches: [] };
+    return { fired: false, matches: [], conditionResults: [] };
   }
 
   const matches = [];
+  const conditionResults = [];
   for (const condition of alert.conditions) {
     try {
-      matches.push(await evaluateAlertCondition(alert.symbol, condition));
+      const result = await evaluateAlertCondition(alert.symbol, condition);
+      conditionResults.push(result);
+      matches.push(Boolean(result?.matched));
     } catch {
+      conditionResults.push({
+        type: condition.type,
+        targetValue: Number(condition.value),
+        matched: false,
+        label: condition.type || "Condition",
+        observedValue: NaN,
+        observedText: "evaluation_failed",
+        comparator: ""
+      });
       matches.push(false);
     }
   }
   const fired = alert.logic === "OR" ? matches.some(Boolean) : matches.every(Boolean);
-  return { fired, matches };
+  return { fired, matches, conditionResults };
+}
+
+async function deliverAlertEmail(user, alert, event) {
+  if (!alert.channels?.email) return "disabled";
+  const recipientEmail = String(user?.email || "").trim().toLowerCase();
+  if (!recipientEmail) return "no_recipient";
+  if (!isEmailDeliveryConfigured()) return "not_configured";
+
+  const email = buildAlertEmail(alert, event, recipientEmail);
+  await sendEmailViaSmtp({ to: recipientEmail, ...email });
+  event.emailRecipient = recipientEmail;
+  return "delivered";
+}
+
+async function evaluateAlertsForUser(db, userId, reason = "manual") {
+  ensureUserFeatureState(db, userId);
+  const user = db.users.find((item) => item.id === userId) || null;
+  const alerts = db.alerts[userId] || [];
+  const now = Date.now();
+  const triggered = [];
+  let changed = false;
+
+  for (const alert of alerts) {
+    if (!alert.isActive) continue;
+    const last = Number(alert.lastTriggeredAt || 0);
+    const cooldownMs = Math.max(30, Number(alert.cooldownSec || 300)) * 1000;
+    if (now - last < cooldownMs) continue;
+
+    const result = await evaluateAlertRule(alert);
+    if (!result.fired) continue;
+
+    alert.lastTriggeredAt = now;
+    const event = {
+      id: createEntityId("alrtevt"),
+      alertId: alert.id,
+      name: alert.name,
+      symbol: alert.symbol,
+      triggeredAt: now,
+      reason,
+      emailRecipient: "",
+      conditionResults: result.conditionResults,
+      channels: {
+        inApp: alert.channels?.inApp !== false ? "delivered" : "disabled",
+        email: "disabled",
+        telegram: alert.channels?.telegram ? (process.env.TELEGRAM_BOT_TOKEN ? "queued" : "not_configured") : "disabled",
+        whatsapp: alert.channels?.whatsapp ? (process.env.WHATSAPP_WEBHOOK_URL ? "queued" : "not_configured") : "disabled"
+      }
+    };
+
+    try {
+      event.channels.email = await deliverAlertEmail(user, alert, event);
+    } catch (error) {
+      event.channels.email = "failed";
+      event.emailError = String(error.message || "Email delivery failed");
+    }
+
+    db.alertEvents[userId].push(event);
+    triggered.push(event);
+    changed = true;
+  }
+
+  if (triggered.length) {
+    db.alertEvents[userId] = (db.alertEvents[userId] || []).slice(-300);
+  }
+  return { triggered, changed };
+}
+
+let alertWorkerRunning = false;
+
+async function evaluateAlertsAcrossUsers(reason = "system") {
+  if (alertWorkerRunning) return { triggered: [], count: 0, skipped: true };
+  alertWorkerRunning = true;
+  try {
+    const db = readDb();
+    let changed = false;
+    const triggered = [];
+    for (const user of db.users) {
+      const result = await evaluateAlertsForUser(db, user.id, reason);
+      if (result.changed) changed = true;
+      if (result.triggered.length) triggered.push(...result.triggered);
+    }
+    if (changed) writeDb(db);
+    return { triggered, count: triggered.length, skipped: false };
+  } finally {
+    alertWorkerRunning = false;
+  }
 }
 
 function computeReturnsFromCloses(closes, maxPoints = 90) {
@@ -1772,6 +2325,18 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   };
 }
 
+function buildFallbackAiPayload(symbolInfo, tf, strategy, reason = "") {
+  const synthetic = generateSyntheticCandles(toYahooTicker(symbolInfo), tf);
+  const neutralSentiment = { positive: 0, negative: 0, score: 50, label: "Neutral", emoji: "?" };
+  const payload = computeAiPayload(synthetic.rows, tf, strategy, neutralSentiment, null, symbolInfo);
+  payload.dataSource = synthetic.source;
+  payload.degraded = true;
+  payload.warning = reason || "Live analytics source is unavailable. Showing fallback analytics.";
+  payload.providerHealth = getProviderHealthSnapshot();
+  payload.symbol = symbolInfo.original;
+  return payload;
+}
+
 app.post("/api/auth/login", (req, res) => {
   try {
     const username = String(req.body?.username || "").trim().toLowerCase();
@@ -1782,6 +2347,11 @@ app.post("/api/auth/login", (req, res) => {
 
     const db = readDb();
     const user = db.users.find((u) => String(u.username || "").toLowerCase() === username);
+    if (user?.mustResetPassword) {
+      return res.status(403).json({
+        error: "Legacy default admin is disabled. Register a new account or set DEFAULT_ADMIN_PASSWORD to replace it."
+      });
+    }
     if (!user || user.passwordHash !== hashPassword(password)) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -1956,10 +2526,11 @@ app.get("/api/watchlist", authRequired, (req, res) => {
 
 app.put("/api/watchlist", authRequired, (req, res) => {
   const incoming = Array.isArray(req.body?.watchlist) ? req.body.watchlist : [];
-  const normalized = incoming
-    .map((item) => String(item || "").trim().toUpperCase())
-    .filter((item) => item.length > 0)
-    .slice(0, 50);
+  const normalized = Array.from(new Set(
+    incoming
+      .map((item) => cleanSymbolInput(item))
+      .filter((item) => item.length > 0 && isLikelyValidSymbolFormat(item))
+  )).slice(0, 50);
 
   const db = readDb();
   db.watchlists[req.user.sub] = normalized;
@@ -2441,9 +3012,12 @@ app.post("/api/broker/sandbox/webhook/:provider", async (req, res) => {
 app.get("/api/alerts", authRequired, (req, res) => {
   const db = readDb();
   ensureUserFeatureState(db, req.user.sub);
+  const user = db.users.find((item) => item.id === req.user.sub) || null;
   res.json({
     alerts: db.alerts[req.user.sub] || [],
-    events: (db.alertEvents[req.user.sub] || []).slice(-50).reverse()
+    events: (db.alertEvents[req.user.sub] || []).slice(-50).reverse(),
+    notificationEmail: String(user?.email || ""),
+    emailDeliveryReady: Boolean(String(user?.email || "").trim() && isEmailDeliveryConfigured())
   });
 });
 
@@ -2472,41 +3046,9 @@ app.delete("/api/alerts/:id", authRequired, (req, res) => {
 app.post("/api/alerts/evaluate", authRequired, async (req, res) => {
   try {
     const db = readDb();
-    ensureUserFeatureState(db, req.user.sub);
-    const alerts = db.alerts[req.user.sub] || [];
-    const now = Date.now();
-    const triggered = [];
-
-    for (const alert of alerts) {
-      if (!alert.isActive) continue;
-      const last = Number(alert.lastTriggeredAt || 0);
-      const cooldownMs = Math.max(30, Number(alert.cooldownSec || 300)) * 1000;
-      if (now - last < cooldownMs) continue;
-
-      const result = await evaluateAlertRule(alert);
-      if (!result.fired) continue;
-
-      alert.lastTriggeredAt = now;
-      const event = {
-        id: createEntityId("alrtevt"),
-        alertId: alert.id,
-        name: alert.name,
-        symbol: alert.symbol,
-        triggeredAt: now,
-        channels: {
-          inApp: alert.channels?.inApp !== false ? "delivered" : "disabled",
-          email: alert.channels?.email ? (process.env.SMTP_HOST ? "queued" : "not_configured") : "disabled",
-          telegram: alert.channels?.telegram ? (process.env.TELEGRAM_BOT_TOKEN ? "queued" : "not_configured") : "disabled",
-          whatsapp: alert.channels?.whatsapp ? (process.env.WHATSAPP_WEBHOOK_URL ? "queued" : "not_configured") : "disabled"
-        }
-      };
-      db.alertEvents[req.user.sub].push(event);
-      triggered.push(event);
-    }
-
-    db.alertEvents[req.user.sub] = (db.alertEvents[req.user.sub] || []).slice(-300);
-    writeDb(db);
-    res.json({ triggered, count: triggered.length });
+    const result = await evaluateAlertsForUser(db, req.user.sub, "manual");
+    if (result.changed) writeDb(db);
+    res.json({ triggered: result.triggered, count: result.triggered.length });
   } catch (error) {
     console.log("Alert evaluate error:", error.message);
     res.status(500).json({ error: "Alert evaluation failed" });
@@ -2524,7 +3066,8 @@ app.post("/api/backtest/run", authRequired, async (req, res) => {
 
     const symbolInfo = splitSymbol(symbol);
     const yahooTicker = toYahooTicker(symbolInfo);
-    const { rows } = await fetchYahooCandles(yahooTicker, tf);
+    const candles = await fetchYahooCandlesWithFallback(yahooTicker, tf);
+    const { rows } = candles;
     const closes = rows.map((r) => r.close);
 
     let details;
@@ -2551,6 +3094,7 @@ app.post("/api/backtest/run", authRequired, async (req, res) => {
       timeframe: tf,
       strategy,
       params: req.body?.params || {},
+      dataSource: candles.source,
       metrics,
       trades: details.trades.slice(-500),
       equityCurve: details.equityCurve.slice(-800)
@@ -2631,11 +3175,91 @@ app.get("/api/backtest/:id/export.pdf", authRequired, (req, res) => {
 });
 
 app.get("/api/live/health", authRequired, (req, res) => {
-  const alive = Array.from(liveFeedState.clients.values()).filter((entry) => Date.now() - entry.startedAt < 24 * 60 * 60 * 1000).length;
+  res.json(getProviderHealthSnapshot().live);
+});
+
+app.get("/api/system/health", authRequired, (_req, res) => {
+  res.json(getProviderHealthSnapshot());
+});
+
+app.get("/api/symbol/resolve", authRequired, async (req, res) => {
+  const rawSymbol = String(req.query?.symbol || "");
+  const normalizedSymbol = cleanSymbolInput(rawSymbol);
+  const validFormat = isLikelyValidSymbolFormat(normalizedSymbol);
+  if (!normalizedSymbol || !validFormat) {
+    return res.status(400).json({
+      valid: false,
+      normalizedSymbol,
+      available: false,
+      error: "Enter a valid stock, forex, crypto, futures, or options symbol."
+    });
+  }
+
+  const symbolInfo = splitSymbol(normalizedSymbol);
+  try {
+    const lastPrice = await fetchLatestPriceForSymbol(normalizedSymbol);
+    return res.json({
+      valid: true,
+      normalizedSymbol,
+      marketType: symbolInfo.marketType,
+      available: true,
+      lastPrice: toFixedNumber(lastPrice, 6),
+      providerHealth: getProviderHealthSnapshot()
+    });
+  } catch (error) {
+    return res.json({
+      valid: true,
+      normalizedSymbol,
+      marketType: symbolInfo.marketType,
+      available: false,
+      lastPrice: null,
+      error: "The symbol format is valid, but live data is temporarily unavailable.",
+      providerHealth: getProviderHealthSnapshot()
+    });
+  }
+});
+
+app.get("/api/dashboard/summary", authRequired, async (req, res) => {
+  const db = readDb();
+  ensureUserFeatureState(db, req.user.sub);
+  const watchlist = (db.watchlists[req.user.sub] || []).slice(0, 10);
+  const events = db.alertEvents[req.user.sub] || [];
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const alertsTriggeredToday = events.filter((item) => Number(item.triggeredAt || 0) >= todayStart.getTime()).length;
+
+  const quotes = await Promise.all(watchlist.map(async (symbol) => {
+    try {
+      const symbolInfo = splitSymbol(symbol);
+      const candles = await fetchYahooCandlesWithFallback(toYahooTicker(symbolInfo), "1D");
+      const rows = candles.rows || [];
+      const last = rows[rows.length - 1];
+      const prev = rows.length > 1 ? rows[rows.length - 2] : rows[0];
+      if (!last || !prev || !Number.isFinite(last.close) || !Number.isFinite(prev.close) || prev.close === 0) {
+        return null;
+      }
+      const change24hPct = ((last.close - prev.close) / prev.close) * 100;
+      return {
+        symbol,
+        marketType: symbolInfo.marketType,
+        price: toFixedNumber(last.close, 6),
+        change24hPct: toFixedNumber(change24hPct, 2),
+        dataSource: candles.source
+      };
+    } catch {
+      return null;
+    }
+  }));
+
+  const sorted = quotes.filter(Boolean).sort((a, b) => Number(b.change24hPct) - Number(a.change24hPct));
   res.json({
-    connectedClients: alive,
-    lastTickAt: liveFeedState.lastTickAt || 0,
-    status: alive > 0 ? "streaming" : "idle"
+    totalWatchlist: watchlist.length,
+    alertsTriggeredToday,
+    marketStatus: getProviderHealthSnapshot().live.status,
+    topGainer: sorted[0] || null,
+    topLoser: sorted.length ? sorted[sorted.length - 1] : null,
+    watchlistPreview: sorted.slice(0, 5),
+    providerHealth: getProviderHealthSnapshot()
   });
 });
 
@@ -2952,16 +3576,24 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/quote/:symbol", async (req, res) => {
+  const symbolInfo = splitSymbol(req.params.symbol);
   try {
-    const symbolInfo = splitSymbol(req.params.symbol);
+    if (!FINNHUB_KEY) {
+      throw new Error("FINNHUB_KEY is not configured");
+    }
     const response = await axios.get("https://finnhub.io/api/v1/quote", {
       params: { symbol: symbolInfo.apiSymbol, token: FINNHUB_KEY },
       timeout: 10000
     });
-    res.json(response.data || {});
+    res.json({ ...(response.data || {}), source: "finnhub" });
   } catch (error) {
     console.log("Quote Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Quote API Error" });
+    const yahooTicker = toYahooTicker(symbolInfo);
+    const fallback = await fetchYahooCandlesWithFallback(yahooTicker, "1m");
+    res.json({
+      ...buildQuoteFromRows(fallback.rows, symbolInfo.original || symbolInfo.apiSymbol),
+      source: fallback.source
+    });
   }
 });
 
@@ -3056,184 +3688,55 @@ app.get("/api/ai/:symbol", async (req, res) => {
     const strategy = String(req.query.strategy || "swing").toLowerCase();
 
     const yahooTicker = toYahooTicker(symbolInfo);
-    const [{ rows }, marketCap, news] = await Promise.all([
-      fetchYahooCandles(yahooTicker, tf),
+    const [candlesResult, marketCapResult, newsResult] = await Promise.allSettled([
+      fetchYahooCandlesWithFallback(yahooTicker, tf),
       fetchMarketCap(yahooTicker, symbolInfo.marketType),
       fetchFinnhubNews(symbolInfo)
     ]);
 
-    const sentiment = sentimentFromNews(news);
-    const payload = computeAiPayload(rows, tf, strategy, sentiment, marketCap, symbolInfo);
+    const warnings = [];
+    const candles = candlesResult.status === "fulfilled"
+      ? candlesResult.value
+      : generateSyntheticCandles(yahooTicker, tf);
+    if (candlesResult.status !== "fulfilled") {
+      warnings.push("Price candles unavailable");
+    }
+
+    const marketCap = marketCapResult.status === "fulfilled" ? marketCapResult.value : null;
+    if (marketCapResult.status !== "fulfilled") {
+      warnings.push("Market cap unavailable");
+    }
+
+    const news = newsResult.status === "fulfilled" ? newsResult.value : [];
+    if (newsResult.status !== "fulfilled") {
+      warnings.push("News feed unavailable");
+    }
+
+    let payload;
+    try {
+      const sentiment = sentimentFromNews(news);
+      payload = computeAiPayload(candles.rows, tf, strategy, sentiment, marketCap, symbolInfo);
+      payload.dataSource = candles.source;
+      payload.symbol = symbolInfo.original;
+      payload.providerHealth = getProviderHealthSnapshot();
+      if (warnings.length) {
+        payload.degraded = true;
+        payload.warning = warnings.join(". ");
+      }
+    } catch (error) {
+      console.log("AI Payload Warning:", error.message);
+      payload = buildFallbackAiPayload(symbolInfo, tf, strategy, "Live analytics source is unavailable. Showing fallback analytics.");
+    }
 
     res.json(payload);
   } catch (error) {
     console.log("AI Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "AI analytics failed" });
-  }
-});
-
-function normalizeAssistantSymbol(input) {
-  let symbol = String(input || "")
-    .toUpperCase()
-    .trim()
-    .replace(/[.,!?;:]+$/g, "")
-    .replace(/\s+/g, "")
-    .replace(/\//g, "");
-
-  if (!symbol) return "";
-  if (/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|LTC)$/.test(symbol)) symbol = `${symbol}USDT`;
-  if (/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|LTC)USD$/.test(symbol)) symbol = `${symbol}T`;
-  if (/^([A-Z0-9]{2,10})(USDT|USDC|BUSD|USD)$/.test(symbol)) {
-    return symbol.replace(/(USDT|USDC|BUSD|USD)$/i, "/$1");
-  }
-  return symbol;
-}
-
-function extractAssistantJson(content) {
-  const text = String(content || "").trim();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    // Try extracting first JSON object.
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      try {
-        return JSON.parse(text.slice(start, end + 1));
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }
-}
-
-function parseAssistantCommandRuleBased(text) {
-  const raw = String(text || "").trim();
-  const lower = raw.toLowerCase();
-  if (!raw) {
-    return { action: "chat", reply: "Please say a command so I can help." };
-  }
-
-  if (/dashboard|open dashboard|go dashboard/.test(lower)) {
-    return { action: "dashboard", reply: "Opening dashboard." };
-  }
-
-  if (/portfolio/.test(lower)) {
-    return { action: "chat", reply: "Portfolio feature is disabled." };
-  }
-
-  const compareMatch = raw.match(/compare\s+(.+?)\s+(?:and|vs)\s+(.+)$/i);
-  if (compareMatch) {
-    const first = normalizeAssistantSymbol(compareMatch[1]);
-    const second = normalizeAssistantSymbol(compareMatch[2]);
-    if (first && second) {
-      return { action: "compare", first, second, reply: `Comparing ${first} and ${second}.` };
-    }
-  }
-
-  const symbolMatch = raw.match(/([A-Z]{1,8}:[A-Z0-9!./-]+|[A-Z]{1,6}\d{6}[CP]\d{8}|[A-Z]{1,12}(?:\/(?:USDT|USDC|BUSD|USD))?)/i);
-  const symbol = normalizeAssistantSymbol(symbolMatch?.[1] || "");
-
-  if (/(price|quote|analyze|analysis|chart)/.test(lower) && symbol) {
-    return { action: "analyze", symbol, reply: `Analyzing ${symbol}.` };
-  }
-  if (symbol) {
-    return { action: "analyze", symbol, reply: `Analyzing ${symbol}.` };
-  }
-
-  return {
-    action: "chat",
-    reply: "Try: analyze AAPL, show price of BTCUSDT, compare NVDA and MSFT, or open dashboard."
-  };
-}
-
-async function parseAssistantWithOpenAI(text, page) {
-  const systemPrompt = [
-    "You are a trading voice command parser.",
-    "Return ONLY valid JSON with keys:",
-    "action: one of dashboard, analyze, compare, chat",
-    "symbol: string or empty",
-    "first: string or empty",
-    "second: string or empty",
-    "reply: short helpful response",
-    "Parse user command for a trading web app.",
-    "If command is ambiguous, action=chat.",
-    "If compare command found, set action=compare and fill first/second.",
-    "If stock/crypto/forex/options symbol found, action=analyze and fill symbol."
-  ].join(" ");
-
-  const response = await axios.post(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      model: OPENAI_MODEL,
-      temperature: 0.1,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `page=${String(page || "").slice(0, 40)}\ncommand=${text}`
-        }
-      ]
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      timeout: 15000
-    }
-  );
-
-  const content = response.data?.choices?.[0]?.message?.content || "";
-  const parsed = extractAssistantJson(content);
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("Invalid assistant JSON response");
-  }
-
-  const action = String(parsed.action || "chat").toLowerCase();
-  const payload = {
-    action: ["dashboard", "analyze", "compare", "chat"].includes(action) ? action : "chat",
-    symbol: normalizeAssistantSymbol(parsed.symbol || ""),
-    first: normalizeAssistantSymbol(parsed.first || ""),
-    second: normalizeAssistantSymbol(parsed.second || ""),
-    reply: String(parsed.reply || "Done.")
-  };
-
-  if (payload.action === "compare" && (!payload.first || !payload.second)) {
-    return parseAssistantCommandRuleBased(text);
-  }
-  if (payload.action === "analyze" && !payload.symbol) {
-    return parseAssistantCommandRuleBased(text);
-  }
-  return payload;
-}
-
-app.post("/api/assistant/respond", async (req, res) => {
-  try {
-    const text = String(req.body?.text || "").trim();
-    const page = String(req.body?.page || "").trim().toLowerCase();
-    if (!text) {
-      return res.status(400).json({ action: "chat", reply: "Please say a command so I can help." });
-    }
-
-    let result;
-    if (OPENAI_API_KEY) {
-      try {
-        result = await parseAssistantWithOpenAI(text, page);
-      } catch (error) {
-        console.log("Assistant OpenAI Warning:", error.response?.data || error.message);
-        result = parseAssistantCommandRuleBased(text);
-      }
-    } else {
-      result = parseAssistantCommandRuleBased(text);
-    }
-
-    return res.json(result);
-  } catch (error) {
-    console.log("Assistant Error:", error.message);
-    return res.status(500).json({ action: "chat", reply: "Assistant is temporarily unavailable." });
+    const symbolInfo = splitSymbol(req.params.symbol);
+    const rawTf = String(req.query.tf || "1D").trim();
+    const tfMap = { "1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "4h", "1d": "1D", "1D": "1D" };
+    const tf = tfMap[rawTf] || "1D";
+    const strategy = String(req.query.strategy || "swing").toLowerCase();
+    res.json(buildFallbackAiPayload(symbolInfo, tf, strategy, "Live analytics source is unavailable. Showing fallback analytics."));
   }
 });
 
@@ -3408,8 +3911,26 @@ app.post("/api/sip-pdf", (req, res) => {
   }
 });
 
+app.get("/healthz", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "tradingcopy-api",
+    timestamp: new Date().toISOString()
+  });
+});
+
+setInterval(() => {
+  evaluateAlertsAcrossUsers("system").catch((error) => {
+    console.log("Alert worker error:", error.message);
+  });
+}, ALERT_EVALUATION_INTERVAL_MS);
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Alert worker polling every ${Math.round(ALERT_EVALUATION_INTERVAL_MS / 1000)}s`);
+  evaluateAlertsAcrossUsers("startup").catch((error) => {
+    console.log("Initial alert worker error:", error.message);
+  });
 });
 
 

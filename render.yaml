@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: tradingcopy-api
+    env: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATA_DIR
+        value: /var/data/tradingcopy
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: FINNHUB_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: ALPACA_SANDBOX_KEY
+        sync: false
+      - key: ALPACA_SANDBOX_SECRET
+        sync: false
+      - key: OANDA_SANDBOX_TOKEN
+        sync: false
+      - key: OANDA_SANDBOX_ACCOUNT_ID
+        sync: false
+      - key: BROKER_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: ALERT_EVALUATION_INTERVAL_MS
+        value: "60000"
+      - key: ENABLE_PAPER_TRADING_FEATURE
+        value: "false"
+      - key: ENABLE_PORTFOLIO_FEATURE
+        value: "false"
+    disk:
+      name: tradingcopy-data
+      mountPath: /var/data/tradingcopy
+      sizeGB: 1

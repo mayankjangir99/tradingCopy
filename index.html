@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#57b6ff">
+  <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
   <title>TradePro AI Login</title>
   <link rel="stylesheet" href="style.css">
@@ -27,6 +28,7 @@
 
       <p class="value-line">Track. Analyze. Execute.</p>
       <p class="login-intro">Sign in with your account or continue using Google.</p>
+      <p class="helper-note" id="authStatus" aria-live="polite">Fastest path: use your last username, then continue to dashboard.</p>
 
       <div class="feature-pills" aria-hidden="true">
         <span class="feature-pill">Live Signals</span>
@@ -50,7 +52,6 @@
         </div>
         <div class="mini-row">
           <label class="checkline"><input id="remember" type="checkbox"> Remember me</label>
-          <a class="link-quiet" href="#" onclick="event.preventDefault()">Forgot password?</a>
         </div>
         <div class="action-grid">
           <button class="btn" type="submit">Enter Dashboard</button>
@@ -91,17 +92,12 @@
           <button class="btn" type="submit">Create Account</button>
           <button class="btn ghost" type="button" onclick="switchAuthMode('login')">Back to Login</button>
         </div>
+        <p class="helper-note">Use a strong password. Your preferred currency and recent symbol will be remembered after sign-in.</p>
       </form>
     </section>
   </main>
 
   <script src="app-core.js?v=20260228a"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=20260228a"></script>
   <script src="auth.js?v=20260228a"></script>
-  <button class="floating-voice-btn" id="floatingVoiceBtn" type="button" aria-label="Open voice assistant">Assistant</button>
-  <div class="floating-voice-status brand-sub" id="floatingVoiceStatus" aria-live="polite"></div>
-  <script src="voice-assistant.js?v=20260228a"></script>
 </body>
 </html>

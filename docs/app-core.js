@@ -1,5 +1,34 @@
 (function () {
-  const API_BASE = "https://tradingcopy-0p0k.onrender.com";
+  function resolveApiBase() {
+    const configuredBase = String(
+      window.TRADEPRO_CONFIG?.API_BASE ||
+      localStorage.getItem("tp_api_base") ||
+      document.querySelector('meta[name="tradepro-api-base"]')?.content ||
+      ""
+    ).trim();
+
+    if (configuredBase) {
+      const isLocalPage = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+      const pointsToHostedBackend = /onrender\.com$/i.test(new URL(configuredBase, window.location.href).hostname);
+      if (!(isLocalPage && pointsToHostedBackend)) {
+        return configuredBase.replace(/\/+$/, "");
+      }
+    }
+
+    const hostname = String(window.location.hostname || "").toLowerCase();
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+    const currentPort = String(window.location.port || "");
+    if (isLocalHost) {
+      if (currentPort === "3000" || currentPort === "3012") {
+        return window.location.origin.replace(/\/+$/, "");
+      }
+      return "http://localhost:3000";
+    }
+
+    return "https://tradingcopy-0p0k.onrender.com";
+  }
+
+  const API_BASE = resolveApiBase();
   const ACCESS_KEY = "tp_access_token";
   const REFRESH_KEY = "tp_refresh_token";
   const USER_KEY = "tp_user";

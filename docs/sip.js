@@ -1,4 +1,10 @@
-const API_BASE = "https://tradingcopy-0p0k.onrender.com";
+const API_BASE = String(
+  (window.TradeProCore && window.TradeProCore.API_BASE)
+  || window.TRADEPRO_CONFIG?.API_BASE
+  || localStorage.getItem("tp_api_base")
+  || document.querySelector('meta[name="tradepro-api-base"]')?.content
+  || "https://tradingcopy-0p0k.onrender.com"
+).replace(/\/+$/, "");
 let sipChartInstance = null;
 let lastSipPayload = null;
 

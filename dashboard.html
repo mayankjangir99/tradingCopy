@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#57b6ff">
+  <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
   <title>TradePro AI Dashboard</title>
   <link rel="stylesheet" href="style.css">
@@ -61,20 +62,62 @@
           <span class="helper-note">Tip: Try <span class="mono">AAPL</span>, <span class="mono">EURUSD</span>, <span class="mono">BTCUSDT</span>, <span class="mono">ES1!</span></span>
         </div>
         <div class="search-row search-row-wide">
-        <input class="input" id="symbol" placeholder="AAPL, EURUSD, BTCUSDT, ES1!, AAPL240621C00200000">
-        <select id="marketType" aria-label="Market type">
-          <option value="auto" selected>Auto Detect</option>
-          <option value="stock">Stock</option>
-          <option value="forex">Forex</option>
-          <option value="crypto">Crypto</option>
-          <option value="futures">Futures</option>
-          <option value="options">Options</option>
-        </select>
-        <button class="btn" onclick="go()">Analyze</button>
-      </div>
+          <input class="input" id="symbol" placeholder="AAPL, EURUSD, BTCUSDT, ES1!, AAPL240621C00200000">
+          <select id="marketType" aria-label="Market type">
+            <option value="auto" selected>Auto Detect</option>
+            <option value="stock">Stock</option>
+            <option value="forex">Forex</option>
+            <option value="crypto">Crypto</option>
+            <option value="futures">Futures</option>
+            <option value="options">Options</option>
+          </select>
+          <button class="btn" id="analyzeBtn" type="button" onclick="go()">Analyze</button>
+        </div>
+        <p class="helper-note" id="searchStatus" aria-live="polite">Validate a symbol before opening the stock page.</p>
       </section>
 
       <div class="quick-list" id="quickSymbols"></div>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Console Summary</h3>
+          <span class="brand-sub" id="dashboardSummaryStatus">Loading watchlist summary...</span>
+        </div>
+        <div class="kpis" id="dashboardSummary"></div>
+      </section>
+
+      <section class="card" id="onboardingCard">
+        <div class="row space section-head">
+          <h3 class="section-title">Getting Started</h3>
+          <button class="btn ghost btn-auto" type="button" id="dismissOnboardingBtn">Dismiss</button>
+        </div>
+        <div class="news-list" id="onboardingSteps"></div>
+      </section>
+
+      <section class="card">
+        <div class="row space section-head">
+          <h3 class="section-title">Quick Currency Converter</h3>
+          <span class="helper-note" id="dashboardFxUpdated">Using latest cached FX rates.</span>
+        </div>
+        <div class="currency-converter-grid compact-converter-grid">
+          <div>
+            <label class="form-label" for="dashboardFxAmount">Amount</label>
+            <input class="input" id="dashboardFxAmount" type="number" step="0.01" value="1">
+          </div>
+          <div>
+            <label class="form-label" for="dashboardFxFrom">From</label>
+            <select id="dashboardFxFrom"></select>
+          </div>
+          <div>
+            <label class="form-label" for="dashboardFxTo">To</label>
+            <select id="dashboardFxTo"></select>
+          </div>
+        </div>
+        <div class="currency-converter-output compact-converter-output">
+          <div class="currency-converter-value" id="dashboardFxResult">Loading...</div>
+          <div class="brand-sub" id="dashboardFxRate"></div>
+        </div>
+      </section>
 
       <section class="card">
         <div class="row space section-head">
@@ -120,9 +163,6 @@
 
   <script src="app-core.js"></script>
   <script src="dashboard.js"></script>
-  <button class="floating-voice-btn" id="floatingVoiceBtn" type="button" aria-label="Open voice assistant">Assistant</button>
-  <div class="floating-voice-status brand-sub" id="floatingVoiceStatus" aria-live="polite"></div>
-  <script src="voice-assistant.js"></script>
 </body>
 </html>
 

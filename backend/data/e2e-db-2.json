@@ -1,0 +1,204 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "username": "adminuser",
+      "passwordHash": "60fe74406e7f353ed979f350f2fbb6a2e8690a5fa7d1b0c32983d1d8b3f95f67",
+      "role": "admin",
+      "displayName": "Admin Trader"
+    },
+    {
+      "id": "u-f54df5b9",
+      "username": "qauser2",
+      "passwordHash": "7e3753b0d0d824514a0db8f146c320f522c4ea4da532b02db5e5bedbe4cfa7d6",
+      "role": "user",
+      "displayName": "QA User"
+    }
+  ],
+  "watchlists": {
+    "u-admin": [],
+    "u-f54df5b9": []
+  },
+  "preferences": {
+    "u-admin": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772437880918,
+          "updatedAt": 1772437880918
+        }
+      ]
+    },
+    "u-f54df5b9": {
+      "defaultStrategy": "swing",
+      "defaultAiTf": "1D",
+      "theme": "dark",
+      "activeWorkspaceId": "ws-default",
+      "workspaces": [
+        {
+          "id": "ws-default",
+          "name": "Default Workspace",
+          "layout": {
+            "dashboardPanels": [
+              "watchlist",
+              "risk-heatmap",
+              "planning-tools"
+            ],
+            "density": "comfortable"
+          },
+          "createdAt": 1772437883502,
+          "updatedAt": 1772437883502
+        }
+      ]
+    }
+  },
+  "paperTrading": {
+    "u-admin": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772437880918
+    },
+    "u-f54df5b9": {
+      "cash": 100000,
+      "positions": {},
+      "orders": [],
+      "closedTrades": [],
+      "updatedAt": 1772437883502
+    }
+  },
+  "alerts": {
+    "u-admin": [],
+    "u-f54df5b9": [
+      {
+        "id": "alert-c0674ca8b1",
+        "name": "AAPL rich event",
+        "symbol": "NASDAQ:AAPL",
+        "logic": "AND",
+        "isActive": true,
+        "cooldownSec": 300,
+        "channels": {
+          "inApp": true,
+          "email": false,
+          "telegram": false,
+          "whatsapp": false
+        },
+        "conditions": [
+          {
+            "type": "price_below",
+            "value": 999999
+          }
+        ],
+        "lastTriggeredAt": 1772437883626,
+        "createdAt": 1772437883611,
+        "updatedAt": 1772437883611
+      }
+    ]
+  },
+  "alertEvents": {
+    "u-admin": [],
+    "u-f54df5b9": [
+      {
+        "id": "alrtevt-0bafedbf99",
+        "alertId": "alert-c0674ca8b1",
+        "name": "AAPL rich event",
+        "symbol": "NASDAQ:AAPL",
+        "triggeredAt": 1772437883626,
+        "reason": "manual",
+        "emailRecipient": "",
+        "conditionResults": [
+          {
+            "type": "price_below",
+            "targetValue": 999999,
+            "matched": true,
+            "label": "Price",
+            "observedValue": 58.018627,
+            "observedText": "",
+            "comparator": "<"
+          }
+        ],
+        "channels": {
+          "inApp": "delivered",
+          "email": "disabled",
+          "telegram": "disabled",
+          "whatsapp": "disabled"
+        }
+      }
+    ]
+  },
+  "backtests": {
+    "u-admin": [],
+    "u-f54df5b9": []
+  },
+  "teamSpaces": {},
+  "brokerSandbox": {
+    "u-admin": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772437880918,
+      "orderHistory": []
+    },
+    "u-f54df5b9": {
+      "connected": false,
+      "provider": "",
+      "accountId": "",
+      "buyingPower": 100000,
+      "maxOrderValuePct": 25,
+      "status": "disconnected",
+      "updatedAt": 1772437883502,
+      "orderHistory": []
+    }
+  },
+  "activityLogs": {
+    "u-admin": [],
+    "u-f54df5b9": [
+      {
+        "id": "evt-fc0ef71a4f",
+        "ts": 1772437883503,
+        "type": "account_created",
+        "username": "qauser2"
+      },
+      {
+        "id": "evt-c35b2e4b2c",
+        "ts": 1772437883589,
+        "type": "login_success"
+      },
+      {
+        "id": "evt-ee64d9ba6c",
+        "ts": 1772437883616,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/alerts",
+        "statusCode": 200,
+        "durationMs": 7
+      },
+      {
+        "id": "evt-7a6896d007",
+        "ts": 1772437883813,
+        "type": "api_call",
+        "method": "POST",
+        "path": "/api/alerts/evaluate",
+        "statusCode": 200,
+        "durationMs": 191
+      }
+    ]
+  }
+}
