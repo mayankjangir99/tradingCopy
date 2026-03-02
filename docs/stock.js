@@ -48,6 +48,15 @@ const stockPageStatus = document.getElementById("stockPageStatus");
 const stockDataModeBadge = document.getElementById("stockDataModeBadge");
 const stockHealthBadge = document.getElementById("stockHealthBadge");
 const stockLastUpdated = document.getElementById("stockLastUpdated");
+const forecastHorizonSelect = document.getElementById("forecastHorizon");
+const refreshForecastBtn = document.getElementById("refreshForecastBtn");
+const downloadForecastBtn = document.getElementById("downloadForecastBtn");
+const forecastChartCanvas = document.getElementById("forecastChart");
+const forecastStats = document.getElementById("forecastStats");
+const forecastPatternName = document.getElementById("forecastPatternName");
+const forecastPatternScore = document.getElementById("forecastPatternScore");
+const forecastPatternBullets = document.getElementById("forecastPatternBullets");
+const forecastStatus = document.getElementById("forecastStatus");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -59,6 +68,18 @@ let lastAiSnapshot = null;
 let resizeTimer = null;
 let currentRealtimePrice = Number.NaN;
 let aiRefreshTimer = null;
+let forecastChart = null;
+let forecastRows = [];
+
+function hexToRgba(hex, alpha) {
+  const safe = String(hex || "").replace("#", "");
+  if (safe.length !== 6) return `rgba(87, 182, 255, ${alpha})`;
+  const int = Number.parseInt(safe, 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function setStockAlertStatus(message, isError = false) {
   if (!stockAlertStatus) return;
@@ -169,6 +190,448 @@ async function apiFetchJson(path, options = {}) {
     throw new Error(data.error || `API ${response.status}`);
   }
   return data;
+}
+
+function setForecastStatus(message, isError = false) {
+  if (!forecastStatus) return;
+  forecastStatus.textContent = message || "";
+  forecastStatus.classList.toggle("bad", Boolean(isError));
+}
+
+function setForecastPattern(pattern) {
+  if (!forecastPatternName || !forecastPatternScore || !forecastPatternBullets) return;
+  forecastPatternName.textContent = `Pattern: ${pattern.name}`;
+  forecastPatternScore.textContent = `Probability: ${pattern.probability}%`;
+  forecastPatternBullets.innerHTML = (pattern.explanations || [])
+    .map((item) => `<li>${item}</li>`)
+    .join("");
+}
+
+function movingAverage(values, period) {
+  if (!Array.isArray(values) || values.length < period) return [];
+  const out = [];
+  let sum = 0;
+  for (let i = 0; i < values.length; i += 1) {
+    sum += Number(values[i] || 0);
+    if (i >= period) sum -= Number(values[i - period] || 0);
+    if (i >= period - 1) out.push(sum / period);
+  }
+  return out;
+}
+
+function linearRegression(values) {
+  const points = values.map(Number).filter(Number.isFinite);
+  const n = points.length;
+  if (n < 2) return { slope: 0, intercept: points[0] || 0 };
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+  for (let i = 0; i < n; i += 1) {
+    sumX += i;
+    sumY += points[i];
+    sumXY += i * points[i];
+    sumXX += i * i;
+  }
+  const denom = (n * sumXX) - (sumX * sumX) || 1;
+  const slope = ((n * sumXY) - (sumX * sumY)) / denom;
+  const intercept = (sumY - (slope * sumX)) / n;
+  return { slope, intercept };
+}
+
+function stdDeviation(values) {
+  const points = values.map(Number).filter(Number.isFinite);
+  if (!points.length) return 0;
+  const mean = points.reduce((sum, value) => sum + value, 0) / points.length;
+  const variance = points.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / points.length;
+  return Math.sqrt(Math.max(variance, 0));
+}
+
+function detectPattern(rows) {
+  const recent = rows.slice(-50);
+  const closes = recent.map((row) => Number(row.close));
+  const highs = recent.map((row) => Number(row.high));
+  const lows = recent.map((row) => Number(row.low));
+  const startPrice = closes[0] || 0;
+  const endPrice = closes[closes.length - 1] || 0;
+  const rangeHigh = Math.max(...highs);
+  const rangeLow = Math.min(...lows);
+  const rangeSpan = Math.max(rangeHigh - rangeLow, 0.0001);
+  const quarter = Math.max(1, Math.floor(recent.length / 4));
+  const half = Math.max(1, Math.floor(recent.length / 2));
+  const earlyHigh = Math.max(...highs.slice(0, half));
+  const lateHigh = Math.max(...highs.slice(half));
+  const earlyLow = Math.min(...lows.slice(0, half));
+  const lateLow = Math.min(...lows.slice(half));
+  const necklineLow = Math.min(...lows.slice(quarter, recent.length - quarter));
+  const necklineHigh = Math.max(...highs.slice(quarter, recent.length - quarter));
+  const midHigh = Math.max(...highs.slice(quarter, recent.length - quarter));
+  const leftHigh = Math.max(...highs.slice(0, quarter));
+  const rightHigh = Math.max(...highs.slice(recent.length - quarter));
+  const leftLow = Math.min(...lows.slice(0, quarter));
+  const rightLow = Math.min(...lows.slice(recent.length - quarter));
+  const ma10 = movingAverage(closes, 10);
+  const ma20 = movingAverage(closes, 20);
+  const trendBias = closes.length > 10 ? ((endPrice - startPrice) / Math.max(startPrice, 0.0001)) * 100 : 0;
+  const patternCandidates = [];
+
+  const doubleTopGap = Math.abs(earlyHigh - lateHigh) / rangeSpan;
+  if (doubleTopGap < 0.08 && ((Math.min(earlyHigh, lateHigh) - necklineLow) / rangeSpan) > 0.22) {
+    const score = Math.round(clamp(56 + ((0.08 - doubleTopGap) * 220) + Math.max(0, -trendBias), 0, 94));
+    patternCandidates.push({
+      name: "Double Top",
+      direction: "bearish",
+      probability: score,
+      markers: [
+        { index: highs.indexOf(earlyHigh), label: "Top A", price: earlyHigh, type: "peak" },
+        { index: half + highs.slice(half).indexOf(lateHigh), label: "Top B", price: lateHigh, type: "peak" }
+      ],
+      explanations: [
+        "Two swing highs formed at nearly the same level in the last 50 candles.",
+        "The pullback between those highs created a visible neckline support area.",
+        "Probability rises when price momentum cools after an earlier uptrend."
+      ]
+    });
+  }
+
+  const doubleBottomGap = Math.abs(earlyLow - lateLow) / rangeSpan;
+  if (doubleBottomGap < 0.08 && ((necklineHigh - Math.max(earlyLow, lateLow)) / rangeSpan) > 0.22) {
+    const score = Math.round(clamp(56 + ((0.08 - doubleBottomGap) * 220) + Math.max(0, trendBias), 0, 94));
+    patternCandidates.push({
+      name: "Double Bottom",
+      direction: "bullish",
+      probability: score,
+      markers: [
+        { index: lows.indexOf(earlyLow), label: "Bottom A", price: earlyLow, type: "trough" },
+        { index: half + lows.slice(half).indexOf(lateLow), label: "Bottom B", price: lateLow, type: "trough" }
+      ],
+      explanations: [
+        "Two swing lows formed near the same support zone.",
+        "The rebound between lows created a neckline resistance to reclaim.",
+        "Probability improves when recent candles stop making lower lows."
+      ]
+    });
+  }
+
+  const shouldersAligned = Math.abs(leftHigh - rightHigh) / rangeSpan < 0.1;
+  const headAboveShoulders = ((midHigh - Math.max(leftHigh, rightHigh)) / rangeSpan) > 0.12;
+  if (shouldersAligned && headAboveShoulders) {
+    const score = Math.round(clamp(58 + (headAboveShoulders * 120) + Math.max(0, -trendBias * 0.8), 0, 93));
+    patternCandidates.push({
+      name: "Head and Shoulders",
+      direction: "bearish",
+      probability: score,
+      markers: [
+        { index: highs.indexOf(leftHigh), label: "LS", price: leftHigh, type: "peak" },
+        { index: quarter + highs.slice(quarter, recent.length - quarter).indexOf(midHigh), label: "Head", price: midHigh, type: "peak" },
+        { index: recent.length - quarter + highs.slice(recent.length - quarter).indexOf(rightHigh), label: "RS", price: rightHigh, type: "peak" }
+      ],
+      explanations: [
+        "Middle swing high is materially higher than both side highs.",
+        "Left and right shoulders are reasonably aligned.",
+        "That structure often warns of a weakening uptrend before breakdown."
+      ]
+    });
+  }
+
+  const highsRegression = linearRegression(highs.slice(-25));
+  const lowsRegression = linearRegression(lows.slice(-25));
+  const converging = highsRegression.slope < 0 && lowsRegression.slope > 0 && Math.abs(highsRegression.slope - lowsRegression.slope) < (rangeSpan * 0.02);
+  if (converging) {
+    const score = Math.round(clamp(52 + ((Math.abs(highsRegression.slope) + Math.abs(lowsRegression.slope)) / Math.max(rangeSpan, 0.0001)) * 20, 0, 88));
+    patternCandidates.push({
+      name: "Triangle Consolidation",
+      direction: trendBias >= 0 ? "bullish bias" : "bearish bias",
+      probability: score,
+      markers: [
+        { index: recent.length - 25, label: "Compression", price: (highs[recent.length - 25] + lows[recent.length - 25]) / 2, type: "neutral" },
+        { index: recent.length - 1, label: "Apex", price: closes[recent.length - 1], type: "neutral" }
+      ],
+      explanations: [
+        "Recent highs are compressing lower while lows are stepping higher.",
+        "Range contraction suggests energy is building for a directional breakout.",
+        `Current bias leans ${trendBias >= 0 ? "upward" : "downward"} based on recent trend.`
+      ]
+    });
+  }
+
+  const channelTight = stdDeviation(closes.slice(-20)) / Math.max(endPrice, 0.0001) < 0.025;
+  if (channelTight && ma10.length && ma20.length) {
+    const bullishFlag = trendBias > 4 && ma10[ma10.length - 1] > ma20[ma20.length - 1];
+    const score = Math.round(clamp(50 + Math.abs(trendBias) * 2.4, 0, 86));
+    patternCandidates.push({
+      name: bullishFlag ? "Bull Flag / Tight Channel" : "Bear Flag / Tight Channel",
+      direction: bullishFlag ? "bullish" : "bearish",
+      probability: score,
+      markers: [
+        { index: recent.length - 20, label: "Pole", price: closes[recent.length - 20], type: bullishFlag ? "trough" : "peak" },
+        { index: recent.length - 1, label: "Flag", price: closes[recent.length - 1], type: "neutral" }
+      ],
+      explanations: [
+        "Volatility compressed after a directional move, creating a narrow channel.",
+        "Short-term moving averages are being used to bias the continuation direction.",
+        "Flags are stronger when the pre-flag impulse was sharp and volume cools during consolidation."
+      ]
+    });
+  }
+
+  if (!patternCandidates.length) {
+    return {
+      name: trendBias >= 0 ? "Trend Continuation" : "Mean Reversion Drift",
+      direction: trendBias >= 0 ? "bullish" : "neutral",
+      probability: Math.round(clamp(48 + Math.abs(trendBias) * 1.5, 40, 72)),
+      markers: [
+        { index: recent.length - 1, label: "Now", price: closes[recent.length - 1], type: "neutral" }
+      ],
+      explanations: [
+        "No classic reversal structure was strong enough to dominate the last 50 candles.",
+        "Forecast is leaning more on recent slope, volatility, and moving-average alignment.",
+        "Treat this as a baseline projection rather than a high-conviction chart pattern."
+      ]
+    };
+  }
+
+  return patternCandidates.sort((a, b) => b.probability - a.probability)[0];
+}
+
+function buildForecast(rows, horizon) {
+  const closes = rows.map((row) => Number(row.close)).filter(Number.isFinite);
+  const recentCloses = closes.slice(-50);
+  const returns = [];
+  for (let i = 1; i < recentCloses.length; i += 1) {
+    const prev = recentCloses[i - 1];
+    const next = recentCloses[i];
+    if (!Number.isFinite(prev) || !Number.isFinite(next) || prev === 0) continue;
+    returns.push((next - prev) / prev);
+  }
+
+  const regression = linearRegression(recentCloses);
+  const volatility = stdDeviation(returns);
+  const meanReturn = returns.length ? returns.reduce((sum, value) => sum + value, 0) / returns.length : 0;
+  const pattern = detectPattern(rows);
+  const lastClose = recentCloses[recentCloses.length - 1] || closes[closes.length - 1] || 0;
+  const trendComponent = lastClose ? (regression.slope / lastClose) : 0;
+  const patternBiasMap = {
+    bullish: 0.0016,
+    bearish: -0.0016,
+    "bullish bias": 0.0011,
+    "bearish bias": -0.0011,
+    neutral: 0
+  };
+  const patternBias = patternBiasMap[pattern.direction] || 0;
+  const dailyDrift = clamp(meanReturn + trendComponent + patternBias, -0.045, 0.045);
+  const projections = [];
+  const upperBand = [];
+  const lowerBand = [];
+  let price = lastClose;
+
+  for (let day = 1; day <= horizon; day += 1) {
+    const damping = clamp(1 - (day / Math.max(horizon * 1.6, 1)), 0.4, 1);
+    const drift = dailyDrift * damping;
+    const volatilityBias = volatility * (pattern.direction.includes("bear") ? -0.2 : 0.2);
+    price = Math.max(0.01, price * (1 + drift + volatilityBias));
+    const bandWidth = Math.max(lastClose * 0.006, price * volatility * Math.sqrt(day) * 1.35);
+    projections.push({
+      day,
+      close: Number(price.toFixed(4))
+    });
+    upperBand.push(Number((price + bandWidth).toFixed(4)));
+    lowerBand.push(Number(Math.max(0.01, price - bandWidth).toFixed(4)));
+  }
+
+  const probability = Math.round(clamp(
+    pattern.probability + (Math.abs(dailyDrift) * 900) - (volatility * 120),
+    35,
+    96
+  ));
+
+  return {
+    pattern: { ...pattern, probability },
+    projection: projections,
+    upperBand,
+    lowerBand,
+    stats: {
+      lastClose: Number(lastClose.toFixed(4)),
+      expectedMovePct: Number((((projections[projections.length - 1]?.close || lastClose) - lastClose) / Math.max(lastClose, 0.0001) * 100).toFixed(2)),
+      volatilityPct: Number((volatility * 100).toFixed(2)),
+      dataPoints: rows.length
+    }
+  };
+}
+
+function renderForecastChart(rows, forecast) {
+  if (!forecastChartCanvas || typeof Chart === "undefined") return;
+  const history = rows.slice(-60);
+  const historyLabels = history.map((row) => new Date(Number(row.ts) * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }));
+  const historyClose = history.map((row) => Number(row.close));
+  const futureLabels = forecast.projection.map((item) => `D+${item.day}`);
+  const labels = [...historyLabels, ...futureLabels];
+  const historicalDataset = [...historyClose, ...new Array(forecast.projection.length).fill(null)];
+  const projectionDataset = [
+    ...new Array(Math.max(historyClose.length - 1, 0)).fill(null),
+    historyClose[historyClose.length - 1] ?? null,
+    ...forecast.projection.map((item) => item.close)
+  ];
+  const upperDataset = [
+    ...new Array(historyClose.length).fill(null),
+    ...forecast.upperBand
+  ];
+  const lowerDataset = [
+    ...new Array(historyClose.length).fill(null),
+    ...forecast.lowerBand
+  ];
+  const projectionColor = forecast.pattern.direction.includes("bear") ? "#ff6d7b" : "#2fd08b";
+  const markerPoints = (forecast.pattern.markers || []).map((marker) => {
+    const clampedIndex = clamp(Number(marker.index) || 0, 0, history.length - 1);
+    return {
+      x: historyLabels[clampedIndex],
+      y: Number(marker.price),
+      label: marker.label,
+      type: marker.type
+    };
+  });
+
+  forecastChart?.destroy();
+  forecastChart = new Chart(forecastChartCanvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Historical Close",
+          data: historicalDataset,
+          borderColor: "#57b6ff",
+          backgroundColor: "rgba(87, 182, 255, 0.16)",
+          pointRadius: 0,
+          tension: 0.22,
+          borderWidth: 2
+        },
+        {
+          label: "Confidence Ceiling",
+          data: upperDataset,
+          borderColor: hexToRgba(projectionColor, 0.2),
+          backgroundColor: hexToRgba(projectionColor, 0.14),
+          pointRadius: 0,
+          tension: 0.18,
+          borderWidth: 1,
+          fill: false
+        },
+        {
+          label: "Confidence Band",
+          data: lowerDataset,
+          borderColor: hexToRgba(projectionColor, 0.2),
+          backgroundColor: hexToRgba(projectionColor, 0.14),
+          pointRadius: 0,
+          tension: 0.18,
+          borderWidth: 1,
+          fill: "-1"
+        },
+        {
+          label: "AI Projection",
+          data: projectionDataset,
+          borderColor: projectionColor,
+          backgroundColor: hexToRgba(projectionColor, 0.12),
+          pointRadius: 0,
+          tension: 0.18,
+          borderDash: [7, 5],
+          borderWidth: 2
+        },
+        {
+          type: "scatter",
+          label: "Pattern Markers",
+          data: markerPoints,
+          parsing: false,
+          showLine: false,
+          pointRadius(context) {
+            const point = context.raw || {};
+            if (point.type === "peak" || point.type === "trough") return 5;
+            return 4;
+          },
+          pointBackgroundColor(context) {
+            const point = context.raw || {};
+            if (point.type === "peak") return "#ff6d7b";
+            if (point.type === "trough") return "#2fd08b";
+            return "#ffd166";
+          },
+          pointBorderColor: "#0b1020",
+          pointBorderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: "#dbe8ff" }
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              if (context.dataset.label === "Pattern Markers") {
+                return `${context.raw.label}: ${formatMoney(context.parsed.y, 4)}`;
+              }
+              return `${context.dataset.label}: ${formatMoney(context.parsed.y, 4)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#8ea6c9", maxRotation: 0, autoSkip: true },
+          grid: { color: "rgba(87, 182, 255, 0.08)" }
+        },
+        y: {
+          ticks: {
+            color: "#8ea6c9",
+            callback(value) {
+              return formatMoney(value, 2);
+            }
+          },
+          grid: { color: "rgba(87, 182, 255, 0.08)" }
+        }
+      }
+    }
+  });
+}
+
+function renderForecastStats(stats, source) {
+  if (!forecastStats) return;
+  forecastStats.innerHTML = [
+    kpi("Last Close", formatMoney(stats.lastClose, 4)),
+    kpi("Projected Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
+    kpi("Volatility", `${stats.volatilityPct}%`),
+    kpi("Candles", formatNumber(stats.dataPoints, 0)),
+    kpi("Source", source || "-"),
+    kpi("Horizon", `${forecastHorizonSelect?.value || 14}D`)
+  ].join("");
+}
+
+async function loadForecastWidget() {
+  const horizon = Math.max(7, Number(forecastHorizonSelect?.value || 14));
+  setForecastStatus("Loading six-month daily candles...");
+  try {
+    const data = await apiFetchJson(`/api/forecast/candles/${encodeURIComponent(SYMBOL)}`);
+    forecastRows = Array.isArray(data.rows) ? data.rows : [];
+    if (forecastRows.length < 40) {
+      throw new Error("Not enough daily candles for forecast.");
+    }
+    const forecast = buildForecast(forecastRows, horizon);
+    renderForecastChart(forecastRows, forecast);
+    renderForecastStats(forecast.stats, data.source);
+    setForecastPattern(forecast.pattern);
+    setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using ${data.source} data.`);
+  } catch (error) {
+    if (forecastStats) forecastStats.innerHTML = `<div class="kpi"><div class="kpi-label">Forecast</div><div class="kpi-value bad">Unavailable</div></div>`;
+    setForecastPattern({
+      name: "Unavailable",
+      probability: 0,
+      explanations: ["Could not load enough daily candle data to build the forecast widget."]
+    });
+    setForecastStatus(error.message, true);
+    forecastChart?.destroy();
+    forecastChart = null;
+  }
 }
 
 async function validateCurrentSymbol() {
@@ -356,6 +819,7 @@ function refreshStockPageData() {
   renderNewsWidget();
   loadAiData();
   loadStockAlertMeta();
+  loadForecastWidget();
 }
 
 function renderChart() {
@@ -987,12 +1451,37 @@ stockWatchlistBtn?.addEventListener("click", () => {
   });
 });
 
+forecastHorizonSelect?.addEventListener("change", () => {
+  loadForecastWidget();
+});
+
+refreshForecastBtn?.addEventListener("click", () => {
+  loadForecastWidget();
+});
+
+downloadForecastBtn?.addEventListener("click", () => {
+  if (!forecastChartCanvas) {
+    setForecastStatus("Forecast chart is not ready yet.", true);
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = forecastChartCanvas.toDataURL("image/png");
+  link.download = `${SYMBOL.replace(/[^A-Z0-9]+/g, "-").toLowerCase()}-forecast.png`;
+  link.click();
+});
+
 function refreshResponsiveCharts() {
   renderChart();
   renderOverviewWidget();
   renderTechnicalWidget();
   renderNewsWidget();
   renderAreaChart(lastAiSnapshot);
+  if (forecastRows.length) {
+    renderForecastChart(
+      forecastRows,
+      buildForecast(forecastRows, Math.max(7, Number(forecastHorizonSelect?.value || 14)))
+    );
+  }
 }
 
 window.addEventListener("resize", () => {
@@ -1045,7 +1534,7 @@ async function bootstrapStockPage() {
     }
     return;
   }
-  await Promise.allSettled([loadAiData(), loadStockAlertMeta()]);
+  await Promise.allSettled([loadAiData(), loadStockAlertMeta(), loadForecastWidget()]);
   startAiAutoRefresh();
 }
 

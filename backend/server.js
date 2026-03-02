@@ -3679,6 +3679,33 @@ app.get("/api/profile/:symbol", async (req, res) => {
     });
   }
 });
+
+app.get("/api/forecast/candles/:symbol", authRequired, async (req, res) => {
+  try {
+    const symbolInfo = splitSymbol(req.params.symbol);
+    if (!symbolInfo.original) {
+      return res.status(400).json({ error: "symbol is required" });
+    }
+    const yahooTicker = toYahooTicker(symbolInfo);
+    const candles = await fetchYahooCandlesWithFallback(yahooTicker, "1D");
+    const sixMonthsAgoTs = Math.floor((Date.now() - (183 * 24 * 60 * 60 * 1000)) / 1000);
+    let rows = (candles.rows || []).filter((row) => Number(row.ts || 0) >= sixMonthsAgoTs);
+    if (rows.length < 80) {
+      rows = (candles.rows || []).slice(-130);
+    }
+
+    res.json({
+      symbol: symbolInfo.original,
+      marketType: symbolInfo.marketType,
+      source: candles.source,
+      rows
+    });
+  } catch (error) {
+    console.log("Forecast Candles Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Forecast candles unavailable" });
+  }
+});
+
 app.get("/api/ai/:symbol", async (req, res) => {
   try {
     const symbolInfo = splitSymbol(req.params.symbol);

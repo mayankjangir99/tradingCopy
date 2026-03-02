@@ -1967,6 +1967,43 @@ html[data-theme="light"] .value-line {
   background: rgba(87, 182, 255, 0.12);
 }
 
+.forecast-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.85fr);
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.forecast-chart-shell {
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(14, 23, 42, 0.68);
+  padding: 12px;
+}
+
+.forecast-chart-shell canvas {
+  width: 100% !important;
+  height: 320px !important;
+}
+
+.forecast-side {
+  display: grid;
+  gap: 12px;
+}
+
+.forecast-pattern-card h4 {
+  margin: 0 0 6px;
+}
+
+.forecast-bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+}
+
 .helper-note.bad,
 .brand-sub.bad {
   color: var(--bad);
@@ -1975,7 +2012,8 @@ html[data-theme="light"] .value-line {
 @media (max-width: 980px) {
   .compact-converter-grid,
   .planner-fields,
-  .kpis {
+  .kpis,
+  .forecast-grid {
     grid-template-columns: 1fr;
   }
 

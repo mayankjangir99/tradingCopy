@@ -6,9 +6,12 @@
   <meta name="theme-color" content="#57b6ff">
   <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="alternate icon" type="image/x-icon" href="favicon.ico">
   <title>TradePro AI Market Detail</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://s3.tradingview.com/tv.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <section class="panel app-shell app-shell-stock">
@@ -133,6 +136,39 @@
             <span class="legend-item"><span class="dot dot-blue"></span>Price growth %</span>
             <span class="legend-item"><span class="dot dot-green"></span>EMA-9 growth %</span>
             <span class="legend-item"><span class="dot dot-orange"></span>EMA-21 growth %</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row space section-head">
+            <div>
+              <h3 class="section-title">AI Forecast</h3>
+              <p class="technical-sub">Six-month daily candles, heuristic pattern detection, and projected next trading days.</p>
+            </div>
+            <div class="row row-tight">
+              <select id="forecastHorizon" class="select-auto">
+                <option value="7">7D</option>
+                <option value="14" selected>14D</option>
+                <option value="30">30D</option>
+                <option value="60">60D</option>
+              </select>
+              <button class="btn ghost btn-auto" type="button" id="downloadForecastBtn">Download PNG</button>
+              <button class="btn ghost btn-auto" type="button" id="refreshForecastBtn">Refresh Forecast</button>
+            </div>
+          </div>
+          <div class="forecast-grid">
+            <div class="forecast-chart-shell">
+              <canvas id="forecastChart" aria-label="AI forecast projection chart"></canvas>
+            </div>
+            <div class="forecast-side">
+              <div class="kpis" id="forecastStats"></div>
+              <div class="news-item forecast-pattern-card">
+                <h4 id="forecastPatternName">Pattern: Loading...</h4>
+                <p id="forecastPatternScore">Probability: -</p>
+                <ul class="forecast-bullets" id="forecastPatternBullets"></ul>
+              </div>
+              <p class="brand-sub" id="forecastStatus">Loading forecast data...</p>
+            </div>
           </div>
         </div>
 
