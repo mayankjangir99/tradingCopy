@@ -1992,6 +1992,29 @@ html[data-theme="light"] .value-line {
   gap: 12px;
 }
 
+.forecast-keypoints {
+  display: grid;
+  gap: 10px;
+}
+
+.forecast-keypoint {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(14, 23, 42, 0.8);
+  padding: 12px;
+}
+
+.forecast-keypoint h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.forecast-keypoint p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .forecast-pattern-card h4 {
   margin: 0 0 6px;
 }

@@ -57,6 +57,7 @@ const forecastPatternName = document.getElementById("forecastPatternName");
 const forecastPatternScore = document.getElementById("forecastPatternScore");
 const forecastPatternBullets = document.getElementById("forecastPatternBullets");
 const forecastStatus = document.getElementById("forecastStatus");
+const forecastKeypoints = document.getElementById("forecastKeypoints");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -205,6 +206,48 @@ function setForecastPattern(pattern) {
   forecastPatternBullets.innerHTML = (pattern.explanations || [])
     .map((item) => `<li>${item}</li>`)
     .join("");
+}
+
+function renderForecastKeypoints(forecast, source) {
+  if (!forecastKeypoints) return;
+  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.lastClose };
+  const directionLabel = forecast.pattern.direction.includes("bear")
+    ? "Bearish pressure"
+    : forecast.pattern.direction.includes("bull")
+      ? "Bullish pressure"
+      : "Balanced / neutral";
+  const confidenceText = forecast.pattern.probability >= 75
+    ? "Higher-confidence heuristic setup"
+    : forecast.pattern.probability >= 55
+      ? "Moderate-confidence heuristic setup"
+      : "Low-confidence baseline projection";
+  const sourceText = source === "yahoo"
+    ? "Built from live Yahoo Finance daily candles."
+    : "Built from fallback daily candles because live historical data was unavailable.";
+
+  forecastKeypoints.innerHTML = [
+    {
+      title: "Predicted Direction",
+      body: `${directionLabel}. Expected move over the selected horizon is ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% from the last close.`
+    },
+    {
+      title: "Target Zone",
+      body: `Projection ends near ${formatMoney(lastProjection.close, 4)} with a confidence band between ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} and ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`
+    },
+    {
+      title: "Confidence Read",
+      body: `${confidenceText}. Pattern probability is ${forecast.pattern.probability}% based on recent candle structure and trend slope.`
+    },
+    {
+      title: "Data Note",
+      body: sourceText
+    }
+  ].map((item) => `
+    <div class="forecast-keypoint">
+      <h4>${item.title}</h4>
+      <p>${item.body}</p>
+    </div>
+  `).join("");
 }
 
 function movingAverage(values, period) {
@@ -611,24 +654,82 @@ async function loadForecastWidget() {
   const horizon = Math.max(7, Number(forecastHorizonSelect?.value || 14));
   setForecastStatus("Loading six-month daily candles...");
   try {
-    const data = await apiFetchJson(`/api/forecast/candles/${encodeURIComponent(SYMBOL)}`);
-    forecastRows = Array.isArray(data.rows) ? data.rows : [];
+    let data = null;
+    let source = "fallback";
+    try {
+      data = await apiFetchJson(`/api/forecast/candles/${encodeURIComponent(SYMBOL)}`);
+      source = data.source || "yahoo";
+      forecastRows = Array.isArray(data.rows) ? data.rows : [];
+    } catch (error) {
+      if (String(error.message || "").includes("404")) {
+        if (!lastAiSnapshot?.growth?.pricePct?.length || !Number.isFinite(currentRealtimePrice)) {
+          throw new Error("Forecast service is not deployed yet on the backend. Push and redeploy the backend to enable six-month historical forecasts.");
+        }
+        const syntheticRows = [];
+        const basePrice = Number(currentRealtimePrice) || 100;
+        const nowTs = Math.floor(Date.now() / 1000);
+        let rollingPrice = basePrice * 0.92;
+        for (let i = 0; i < 130; i += 1) {
+          const growthSeed = Number(lastAiSnapshot?.growth?.pricePct?.[i % lastAiSnapshot.growth.pricePct.length] || 0) / 100;
+          const drift = growthSeed * 0.08;
+          const open = rollingPrice;
+          const close = Math.max(0.01, open * (1 + drift));
+          const high = Math.max(open, close) * 1.01;
+          const low = Math.min(open, close) * 0.99;
+          syntheticRows.push({
+            ts: nowTs - ((129 - i) * 86400),
+            open,
+            high,
+            low,
+            close,
+            volume: 100000 + (i * 2500)
+          });
+          rollingPrice = close;
+        }
+        forecastRows = syntheticRows;
+        source = "fallback";
+        setForecastStatus("Backend forecast route is not live yet. Showing a local fallback projection from current analytics.", true);
+      } else {
+        throw error;
+      }
+    }
     if (forecastRows.length < 40) {
       throw new Error("Not enough daily candles for forecast.");
     }
     const forecast = buildForecast(forecastRows, horizon);
     renderForecastChart(forecastRows, forecast);
-    renderForecastStats(forecast.stats, data.source);
+    renderForecastStats(forecast.stats, source);
+    renderForecastKeypoints(forecast, source);
     setForecastPattern(forecast.pattern);
-    setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using ${data.source} data.`);
+    if (source === "yahoo") {
+      setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using live Yahoo Finance data.`);
+    } else {
+      setForecastStatus("Using a local fallback projection. Deploy the latest backend to unlock live six-month candle forecasts.", true);
+    }
   } catch (error) {
     if (forecastStats) forecastStats.innerHTML = `<div class="kpi"><div class="kpi-label">Forecast</div><div class="kpi-value bad">Unavailable</div></div>`;
+    if (forecastKeypoints) {
+      forecastKeypoints.innerHTML = `
+        <div class="forecast-keypoint">
+          <h4>Why it is unavailable</h4>
+          <p>${String(error.message || "Could not load enough daily candle data to build the forecast widget.")}</p>
+        </div>
+      `;
+    }
     setForecastPattern({
       name: "Unavailable",
       probability: 0,
-      explanations: ["Could not load enough daily candle data to build the forecast widget."]
+      explanations: [
+        "Could not load enough daily candle data to build the forecast widget.",
+        "If you just added this feature, redeploy the backend so the new forecast route becomes available."
+      ]
     });
-    setForecastStatus(error.message, true);
+    setForecastStatus(
+      String(error.message || "").includes("404")
+        ? "Forecast service not found on backend yet. Redeploy backend to enable it."
+        : error.message,
+      true
+    );
     forecastChart?.destroy();
     forecastChart = null;
   }
