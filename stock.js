@@ -662,15 +662,17 @@ async function loadForecastWidget() {
       forecastRows = Array.isArray(data.rows) ? data.rows : [];
     } catch (error) {
       if (String(error.message || "").includes("404")) {
-        if (!lastAiSnapshot?.growth?.pricePct?.length || !Number.isFinite(currentRealtimePrice)) {
-          throw new Error("Forecast service is not deployed yet on the backend. Push and redeploy the backend to enable six-month historical forecasts.");
-        }
+        const basePrice = Number.isFinite(currentRealtimePrice) && currentRealtimePrice > 0
+          ? Number(currentRealtimePrice)
+          : Number(lastAiSnapshot?.metrics?.realtimePrice || 0) || 100;
+        const growthSeries = Array.isArray(lastAiSnapshot?.growth?.pricePct) && lastAiSnapshot.growth.pricePct.length
+          ? lastAiSnapshot.growth.pricePct
+          : [0.2, 0.15, -0.08, 0.11, 0.18, -0.04, 0.09, 0.13];
         const syntheticRows = [];
-        const basePrice = Number(currentRealtimePrice) || 100;
         const nowTs = Math.floor(Date.now() / 1000);
         let rollingPrice = basePrice * 0.92;
         for (let i = 0; i < 130; i += 1) {
-          const growthSeed = Number(lastAiSnapshot?.growth?.pricePct?.[i % lastAiSnapshot.growth.pricePct.length] || 0) / 100;
+          const growthSeed = Number(growthSeries[i % growthSeries.length] || 0) / 100;
           const drift = growthSeed * 0.08;
           const open = rollingPrice;
           const close = Math.max(0.01, open * (1 + drift));
@@ -1635,7 +1637,8 @@ async function bootstrapStockPage() {
     }
     return;
   }
-  await Promise.allSettled([loadAiData(), loadStockAlertMeta(), loadForecastWidget()]);
+  await loadAiData();
+  await Promise.allSettled([loadStockAlertMeta(), loadForecastWidget()]);
   startAiAutoRefresh();
 }
 
