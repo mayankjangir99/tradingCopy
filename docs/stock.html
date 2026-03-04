@@ -15,73 +15,103 @@
 </head>
 <body>
   <section class="panel app-shell app-shell-stock">
-    <header class="page-head">
-      <div class="brand-row brand-row-tight">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 100 100" fill="none">
-            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
-            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
-            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <h2 class="brand-title" id="stockName">SYMBOL</h2>
-          <p class="brand-sub" id="subTitle">TradingView market stream + AI analytics engine</p>
-          <div class="page-chips">
-            <span class="page-chip">Live Chart</span>
-            <span class="page-chip">AI Engine</span>
-            <span class="page-chip">News + Signals</span>
+    <header class="page-head stock-hero">
+      <div class="stock-hero-grid">
+        <div class="stock-hero-main">
+          <div class="brand-row brand-row-tight stock-brand-block">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 100 100" fill="none">
+                <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+                <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+                <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="stock-brand-copy">
+              <span class="stock-eyebrow">TradePro Detail Terminal</span>
+              <h2 class="brand-title" id="stockName">SYMBOL</h2>
+              <p class="brand-sub" id="subTitle">TradingView market stream + AI analytics engine</p>
+              <div class="page-chips stock-hero-chips">
+                <span class="page-chip">Live Chart</span>
+                <span class="page-chip">AI Engine</span>
+                <span class="page-chip">News + Signals</span>
+              </div>
+            </div>
           </div>
-          <div class="row row-tight stock-status-row">
-            <span class="technical-badge" id="stockDataModeBadge">Checking Data</span>
-            <span class="technical-badge" id="stockHealthBadge">Provider Health</span>
-            <span class="brand-sub" id="stockLastUpdated">Waiting for first update...</span>
+          <div class="stock-hero-strip">
+            <div class="stock-strip-card">
+              <span class="stock-strip-label">Data Mode</span>
+              <span class="technical-badge" id="stockDataModeBadge">Checking Data</span>
+            </div>
+            <div class="stock-strip-card">
+              <span class="stock-strip-label">Provider Health</span>
+              <span class="technical-badge" id="stockHealthBadge">Provider Health</span>
+            </div>
+            <div class="stock-strip-card">
+              <span class="stock-strip-label">Last Update</span>
+              <span class="brand-sub stock-strip-time" id="stockLastUpdated">Waiting for first update...</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="row">
-        <span class="currency-badge" data-currency-badge>Currency: USD</span>
-        <button class="btn ghost btn-auto" type="button" id="stockWatchlistBtn">Add to Watchlist</button>
-        <button class="btn ghost btn-auto" type="button" onclick="window.location='execution-lab.html'">Alert Lab</button>
-        <button class="btn ghost btn-auto" onclick="window.location='dashboard.html'">Back</button>
-        <button class="btn ghost btn-auto" onclick="logout()">Logout</button>
+        <aside class="stock-hero-side">
+          <div class="stock-actions-card">
+            <span class="stock-eyebrow">Quick Actions</span>
+            <div class="stock-action-grid">
+              <span class="currency-badge stock-currency-badge" data-currency-badge>Currency: USD</span>
+              <button class="btn ghost btn-auto" type="button" id="stockWatchlistBtn">Add to Watchlist</button>
+              <button class="btn ghost btn-auto" type="button" onclick="window.location='execution-lab.html'">Alert Lab</button>
+              <button class="btn ghost btn-auto" onclick="window.location='dashboard.html'">Back</button>
+              <button class="btn ghost btn-auto" onclick="logout()">Logout</button>
+            </div>
+          </div>
+          <div class="stock-hero-note">
+            <span class="stock-eyebrow">Page Focus</span>
+            <p>Live market context, predictive analytics, alerts, and pattern-aware forecasting in one view.</p>
+          </div>
+        </aside>
       </div>
     </header>
 
     <main class="page-main layout">
       <section class="stack">
-        <div class="card" id="chartCard">
+        <div class="card stock-chart-card" id="chartCard">
           <div class="row space section-head">
-            <div class="row row-tight">
-              <label class="form-label form-label-inline">Chart TF</label>
-              <select id="timeframe" class="select-auto" onchange="changeTimeframe()">
-                <option value="1">1m</option>
-                <option value="5">5m</option>
-                <option value="15">15m</option>
-                <option value="60">1h</option>
-                <option value="240">4h</option>
-                <option value="D" selected>1D</option>
-                <option value="W">1W</option>
-              </select>
+            <div>
+              <span class="stock-eyebrow">Market Stream</span>
+              <h3 class="section-title">Live Trading Chart</h3>
             </div>
-            <div class="row row-tight">
-              <label class="form-label form-label-inline">Refresh</label>
-              <select id="autoRefreshSelect" class="select-auto">
-                <option value="0">Off</option>
-                <option value="15000">15s</option>
-                <option value="30000" selected>30s</option>
-                <option value="60000">1m</option>
-              </select>
-              <button class="btn ghost btn-auto" onclick="refreshStockPageData()">Refresh</button>
-              <button class="btn ghost btn-auto" onclick="toggleFullScreen()">Fullscreen</button>
+            <div class="stock-toolbar">
+              <div class="row row-tight">
+                <label class="form-label form-label-inline">Chart TF</label>
+                <select id="timeframe" class="select-auto" onchange="changeTimeframe()">
+                  <option value="1">1m</option>
+                  <option value="5">5m</option>
+                  <option value="15">15m</option>
+                  <option value="60">1h</option>
+                  <option value="240">4h</option>
+                  <option value="D" selected>1D</option>
+                  <option value="W">1W</option>
+                </select>
+              </div>
+              <div class="row row-tight">
+                <label class="form-label form-label-inline">Refresh</label>
+                <select id="autoRefreshSelect" class="select-auto">
+                  <option value="0">Off</option>
+                  <option value="15000">15s</option>
+                  <option value="30000" selected>30s</option>
+                  <option value="60000">1m</option>
+                </select>
+                <button class="btn ghost btn-auto" onclick="refreshStockPageData()">Refresh</button>
+                <button class="btn ghost btn-auto" onclick="toggleFullScreen()">Fullscreen</button>
+              </div>
             </div>
           </div>
           <div id="chart"></div>
         </div>
 
-        <div class="card">
+        <div class="card stock-alert-card">
           <div class="row space section-head">
             <div>
+              <span class="stock-eyebrow">Execution Layer</span>
               <h3 class="section-title">Price Alert</h3>
               <p class="technical-sub">Create an alert for this symbol without leaving the stock page.</p>
             </div>
@@ -116,15 +146,23 @@
           <div class="news-list" id="stockAlertsList" style="margin-top:10px;"></div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">AI Allocation Split</h3>
+        <div class="card stock-allocation-card">
+          <div class="row space section-head">
+            <div>
+              <span class="stock-eyebrow">Model Weighting</span>
+              <h3 class="section-title">AI Allocation Split</h3>
+            </div>
+          </div>
           <div id="allocationPie" class="allocation-wrap"></div>
           <div id="allocationLegend" class="allocation-legend"></div>
         </div>
 
-        <div class="card">
+        <div class="card stock-growth-card">
           <div class="row space section-head">
-            <h3 class="section-title">Growth Area</h3>
+            <div>
+              <span class="stock-eyebrow">Momentum Lens</span>
+              <h3 class="section-title">Growth Area</h3>
+            </div>
             <select id="growthChartType" class="select-auto">
               <option value="area" selected>Area</option>
               <option value="line">Line</option>
@@ -179,16 +217,24 @@
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">TradingView Overview</h3>
+        <div class="card stock-overview-card">
+          <div class="row space section-head">
+            <div>
+              <span class="stock-eyebrow">Snapshot</span>
+              <h3 class="section-title">TradingView Overview</h3>
+            </div>
+          </div>
           <div id="tv-overview"></div>
         </div>
       </section>
 
       <section class="stack">
-        <div class="card">
+        <div class="card stock-engine-card">
           <div class="row space section-head">
-            <h3 class="section-title">AI Engine</h3>
+            <div>
+              <span class="stock-eyebrow">Decision Core</span>
+              <h3 class="section-title">AI Engine</h3>
+            </div>
             <div class="row row-tight">
               <select id="strategySelect" class="select-auto">
                 <option value="scalping">Scalping</option>
@@ -217,14 +263,20 @@
           <div class="kpis kpis-space-top" id="aiBacktest"></div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">TradingView Symbol Info</h3>
+        <div class="card stock-symbol-card">
+          <div class="row space section-head">
+            <div>
+              <span class="stock-eyebrow">Reference</span>
+              <h3 class="section-title">TradingView Symbol Info</h3>
+            </div>
+          </div>
           <div id="tv-symbol-info"></div>
         </div>
 
-        <div class="card">
+        <div class="card stock-technical-card">
           <div class="technical-head">
             <div>
+              <span class="stock-eyebrow">Signal Matrix</span>
               <h3 class="section-title">Technical Analysis</h3>
               <p class="technical-sub">Momentum, moving averages, and oscillator bias in one panel.</p>
             </div>
@@ -240,8 +292,13 @@
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">News Feed</h3>
+        <div class="card stock-news-card">
+          <div class="row space section-head">
+            <div>
+              <span class="stock-eyebrow">Narrative Flow</span>
+              <h3 class="section-title">News Feed</h3>
+            </div>
+          </div>
           <div id="tv-news"></div>
         </div>
       </section>
