@@ -35,6 +35,7 @@
   const THEME_KEY = "tp_theme";
   const CURRENCY_KEY = "tp_currency";
   const CURRENCY_RATES_KEY = "tp_currency_rates_usd";
+  const CURRENCY_RATES_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
   const RELOAD_MARKER_KEY = "tp_pending_reload";
   const DEFAULT_SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
   const SUPPORTED_CURRENCIES = (() => {
@@ -55,15 +56,15 @@
   })();
   const FALLBACK_USD_RATES = {
     USD: 1,
-    EUR: 0.92,
-    INR: 83.0,
-    GBP: 0.79,
-    JPY: 150.0,
-    AUD: 1.52,
-    CAD: 1.36,
-    AED: 3.67,
-    SGD: 1.35,
-    CHF: 0.88
+    EUR: 0.855006,
+    INR: 91.575808,
+    GBP: 0.74573,
+    JPY: 157.255893,
+    AUD: 1.407539,
+    CAD: 1.367195,
+    AED: 3.6725,
+    SGD: 1.272525,
+    CHF: 0.778767
   };
   let currencyCode = "USD";
   let usdRates = { ...FALLBACK_USD_RATES };
@@ -281,6 +282,11 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object" || typeof parsed.rates !== "object") return null;
+      const ts = Number(parsed.ts || 0);
+      if (!Number.isFinite(ts) || (Date.now() - ts) > CURRENCY_RATES_MAX_AGE_MS) {
+        localStorage.removeItem(CURRENCY_RATES_KEY);
+        return null;
+      }
       return parsed;
     } catch {
       return null;

@@ -2071,6 +2071,147 @@ html[data-theme="light"] .value-line {
   height: 380px !important;
 }
 
+.forecast-visual-deck {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.forecast-visual-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8fa8cb;
+}
+
+.forecast-visual-value {
+  color: #edf5ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.forecast-bias-bar,
+.forecast-target-ribbon,
+.forecast-takeaway-panel,
+.forecast-mini-path,
+.forecast-risk-box,
+.forecast-badge-strip {
+  border: 1px solid rgba(103, 164, 255, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 27, 50, 0.88), rgba(8, 16, 31, 0.9));
+  padding: 12px 13px;
+  min-width: 0;
+}
+
+.forecast-bias-head,
+.forecast-ribbon-top,
+.forecast-mini-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.forecast-bias-track {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.forecast-bias-segment {
+  height: 100%;
+}
+
+.forecast-bias-segment.bull {
+  background: linear-gradient(90deg, #3dd89a, #2fd08b);
+}
+
+.forecast-bias-segment.neutral {
+  background: linear-gradient(90deg, #7fb9ff, #57b6ff);
+}
+
+.forecast-bias-segment.bear {
+  background: linear-gradient(90deg, #ff8d98, #ff6d7b);
+}
+
+.forecast-ribbon-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  color: #c2d3ee;
+  font-size: 12px;
+}
+
+.forecast-takeaway-panel p {
+  margin: 8px 0 0;
+  color: #d6e4fb;
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.forecast-lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 12px;
+}
+
+.forecast-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.forecast-risk-item {
+  border-radius: 12px;
+  padding: 10px 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(103, 164, 255, 0.1);
+}
+
+.forecast-risk-label {
+  display: block;
+  color: #8fa8cb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.forecast-risk-item strong {
+  display: block;
+  margin-top: 6px;
+  color: #edf5ff;
+  font-size: 15px;
+}
+
+.forecast-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.forecast-badge {
+  border: 1px solid rgba(103, 164, 255, 0.16);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d9e8ff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.forecast-feed-note {
+  margin-top: 10px;
+  color: #9db4d5;
+  font-size: 12px;
+}
+
 .forecast-side {
   display: grid;
   gap: 14px;
@@ -2210,6 +2351,12 @@ html[data-theme="light"] .value-line {
   }
 
   .forecast-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .forecast-ribbon-values,
+  .forecast-lower-grid,
+  .forecast-risk-grid {
     grid-template-columns: 1fr;
   }
 

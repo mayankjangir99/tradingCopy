@@ -58,6 +58,7 @@ const forecastPatternScore = document.getElementById("forecastPatternScore");
 const forecastPatternBullets = document.getElementById("forecastPatternBullets");
 const forecastStatus = document.getElementById("forecastStatus");
 const forecastKeypoints = document.getElementById("forecastKeypoints");
+const forecastVisualDeck = document.getElementById("forecastVisualDeck");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -248,6 +249,120 @@ function renderForecastKeypoints(forecast, source) {
       <p>${item.body}</p>
     </div>
   `).join("");
+}
+
+function renderForecastVisualDeck(forecast, source) {
+  if (!forecastVisualDeck) return;
+  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.lastClose };
+  const movePct = Number(forecast.stats.expectedMovePct || 0);
+  const direction = String(forecast.pattern?.direction || "neutral").toLowerCase();
+  const sourceLabel = source === "yahoo" ? "Live market candles" : "Local fallback model";
+  const upperEnd = Number(forecast.upperBand[forecast.upperBand.length - 1] || lastProjection.close || 0);
+  const lowerEnd = Number(forecast.lowerBand[forecast.lowerBand.length - 1] || lastProjection.close || 0);
+  const lastClose = Number(forecast.stats.lastClose || 0);
+  const upsidePct = lastClose > 0 ? Math.max(0, ((upperEnd - lastClose) / lastClose) * 100) : 0;
+  const downsidePct = lastClose > 0 ? Math.max(0, ((lastClose - lowerEnd) / lastClose) * 100) : 0;
+  const rewardRisk = downsidePct > 0 ? (upsidePct / downsidePct) : upsidePct;
+  const takeawayLead = movePct >= 0 ? "AI leans upward" : "AI leans lower";
+  const takeawayTone = forecast.pattern.probability >= 75 ? "with conviction" : forecast.pattern.probability >= 55 ? "with moderate confidence" : "with caution";
+  const badges = [
+    forecast.pattern?.name || "Pattern",
+    `${forecast.pattern?.probability || 0}% confidence`,
+    `${forecastHorizonSelect?.value || 14}D horizon`,
+    source === "yahoo" ? "Live feed" : "Fallback feed"
+  ];
+
+  const rawBull = Math.max(8, 46 + (movePct * 4.5) + (direction.includes("bull") ? 12 : 0));
+  const rawBear = Math.max(8, 46 + (-movePct * 4.5) + (direction.includes("bear") ? 12 : 0));
+  const rawNeutral = Math.max(10, 70 - Math.abs(movePct * 5) - ((forecast.pattern?.probability || 0) * 0.25));
+  const totalBias = rawBull + rawBear + rawNeutral || 1;
+  const bullPct = Math.round((rawBull / totalBias) * 100);
+  const bearPct = Math.round((rawBear / totalBias) * 100);
+  const neutralPct = Math.max(0, 100 - bullPct - bearPct);
+
+  const closes = forecast.projection.map((item) => Number(item.close)).filter(Number.isFinite);
+  const sparkMin = Math.min(...closes, lastClose);
+  const sparkMax = Math.max(...closes, lastClose);
+  const sparkRange = Math.max(0.0001, sparkMax - sparkMin);
+  const sparkWidth = 220;
+  const sparkHeight = 56;
+  const sparkPoints = [lastClose, ...closes].map((value, index, list) => {
+    const x = (index / Math.max(list.length - 1, 1)) * sparkWidth;
+    const y = sparkHeight - (((value - sparkMin) / sparkRange) * sparkHeight);
+    return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(" ");
+
+  forecastVisualDeck.innerHTML = `
+    <div class="forecast-bias-bar">
+      <div class="forecast-bias-head">
+        <span class="forecast-visual-label">Forecast Confidence Bar</span>
+        <span class="forecast-visual-value">${bullPct}% bull / ${neutralPct}% neutral / ${bearPct}% bear</span>
+      </div>
+      <div class="forecast-bias-track" aria-hidden="true">
+        <span class="forecast-bias-segment bull" style="width:${bullPct}%"></span>
+        <span class="forecast-bias-segment neutral" style="width:${neutralPct}%"></span>
+        <span class="forecast-bias-segment bear" style="width:${bearPct}%"></span>
+      </div>
+    </div>
+    <div class="forecast-target-ribbon">
+      <div class="forecast-ribbon-top">
+        <span class="forecast-visual-label">Target Zone Ribbon</span>
+        <span class="forecast-visual-value">${formatMoney(lowerEnd, 2)} to ${formatMoney(upperEnd, 2)}</span>
+      </div>
+      <div class="forecast-ribbon-values">
+        <span>Now ${formatMoney(lastClose, 2)}</span>
+        <span>Target ${formatMoney(lastProjection.close, 2)}</span>
+        <span>Range ${formatMoney(lowerEnd, 2)} / ${formatMoney(upperEnd, 2)}</span>
+      </div>
+    </div>
+    <div class="forecast-takeaway-panel">
+      <span class="forecast-visual-label">AI Takeaway Panel</span>
+      <p>${takeawayLead} ${takeawayTone}. The model sees a ${movePct > 0 ? "rise" : "pullback"} toward ${formatMoney(lastProjection.close, 2)} over the selected horizon.</p>
+    </div>
+    <div class="forecast-lower-grid">
+      <div class="forecast-mini-path">
+        <div class="forecast-mini-head">
+          <span class="forecast-visual-label">Mini Trend Path</span>
+          <span class="forecast-visual-value">${movePct > 0 ? "+" : ""}${movePct}%</span>
+        </div>
+        <svg viewBox="0 0 ${sparkWidth} ${sparkHeight}" width="100%" height="68" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="forecastPathLine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#57b6ff"></stop>
+              <stop offset="100%" stop-color="${movePct >= 0 ? "#2fd08b" : "#ff6d7b"}"></stop>
+            </linearGradient>
+          </defs>
+          <path d="${sparkPoints}" fill="none" stroke="url(#forecastPathLine)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <div class="forecast-risk-box">
+        <div class="forecast-mini-head">
+          <span class="forecast-visual-label">Risk / Reward Box</span>
+        </div>
+        <div class="forecast-risk-grid">
+          <div class="forecast-risk-item">
+            <span class="forecast-risk-label">Downside Risk</span>
+            <strong>${downsidePct.toFixed(2)}%</strong>
+          </div>
+          <div class="forecast-risk-item">
+            <span class="forecast-risk-label">Upside Room</span>
+            <strong>${upsidePct.toFixed(2)}%</strong>
+          </div>
+          <div class="forecast-risk-item">
+            <span class="forecast-risk-label">R/R</span>
+            <strong>${Number.isFinite(rewardRisk) ? rewardRisk.toFixed(2) : "-"}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="forecast-badge-strip">
+      <span class="forecast-visual-label">Pattern Badge Strip</span>
+      <div class="forecast-badges">
+        ${badges.map((badge) => `<span class="forecast-badge">${badge}</span>`).join("")}
+      </div>
+      <div class="forecast-feed-note">${sourceLabel}</div>
+    </div>
+  `;
 }
 
 function movingAverage(values, period) {
@@ -772,6 +887,7 @@ async function loadForecastWidget() {
     }
     const forecast = buildForecast(forecastRows, horizon);
     renderForecastChart(forecastRows, forecast);
+    renderForecastVisualDeck(forecast, source);
     renderForecastStats(forecast.stats, source);
     renderForecastKeypoints(forecast, source);
     setForecastPattern(forecast.pattern);
@@ -782,6 +898,14 @@ async function loadForecastWidget() {
     }
   } catch (error) {
     if (forecastStats) forecastStats.innerHTML = `<div class="kpi"><div class="kpi-label">Forecast</div><div class="kpi-value bad">Unavailable</div></div>`;
+    if (forecastVisualDeck) {
+      forecastVisualDeck.innerHTML = `
+        <div class="forecast-takeaway-panel">
+          <span class="forecast-visual-label">Forecast Feed</span>
+          <p class="bad">Unavailable right now. The visual deck will return once enough forecast data is loaded.</p>
+        </div>
+      `;
+    }
     if (forecastKeypoints) {
       forecastKeypoints.innerHTML = `
         <div class="forecast-keypoint">
