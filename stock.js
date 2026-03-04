@@ -704,7 +704,7 @@ const forecastCandlestickPlugin = {
 
 function renderForecastChart(rows, forecast) {
   if (!forecastChartCanvas || typeof Chart === "undefined") return;
-  const history = rows.slice(-60);
+  const history = rows.slice(-42);
   const historyLabels = history.map((row) => new Date(Number(row.ts) * 1000).toLocaleDateString(undefined, { month: "short", day: "2-digit" }));
   const futureLabels = forecast.projection.map((item) => `D+${item.day}`);
   const labels = [...historyLabels, ...futureLabels];
@@ -772,29 +772,29 @@ function renderForecastChart(rows, forecast) {
       labels,
       datasets: [
         {
-          label: "Upper Band",
+          label: "Upper Range",
           data: upperDataset,
-          borderColor: hexToRgba(projectionColor, 0.28),
-          backgroundColor: hexToRgba(projectionColor, 0.14),
+          borderColor: hexToRgba(projectionColor, 0.42),
+          backgroundColor: hexToRgba(projectionColor, 0.16),
           pointRadius: 0,
           tension: 0.18,
-          borderWidth: 1.2,
+          borderWidth: 1.4,
           borderDash: [4, 4],
           fill: false
         },
         {
-          label: "Lower Band",
+          label: "Lower Range",
           data: lowerDataset,
-          borderColor: hexToRgba(projectionColor, 0.28),
-          backgroundColor: hexToRgba(projectionColor, 0.16),
+          borderColor: hexToRgba(projectionColor, 0.42),
+          backgroundColor: hexToRgba(projectionColor, 0.18),
           pointRadius: 0,
           tension: 0.18,
-          borderWidth: 1.2,
+          borderWidth: 1.4,
           fill: "-1"
         },
         {
           type: "scatter",
-          label: "History Candles",
+          label: "History",
           data: historyCandles,
           parsing: false,
           showLine: false,
@@ -811,11 +811,12 @@ function renderForecastChart(rows, forecast) {
           downFillColor: "#ff6d7b",
           upStrokeColor: "#85f5c5",
           downStrokeColor: "#ffb0b9",
-          candleFillOpacity: 0.22
+          candleFillOpacity: 0.34,
+          wickWidth: 1.8
         },
         {
           type: "scatter",
-          label: "Forecast Candles",
+          label: "Forecast",
           data: projectionCandles,
           parsing: false,
           showLine: false,
@@ -832,11 +833,12 @@ function renderForecastChart(rows, forecast) {
           downFillColor: projectionColor,
           upStrokeColor: "#9cf7cb",
           downStrokeColor: "#ffb0b9",
-          candleFillOpacity: 0.34
+          candleFillOpacity: 0.44,
+          wickWidth: 1.9
         },
         {
           type: "scatter",
-          label: "Pattern Points",
+          label: "Signals",
           data: markerPoints,
           parsing: false,
           showLine: false,
@@ -876,14 +878,14 @@ function renderForecastChart(rows, forecast) {
       plugins: {
         title: {
           display: true,
-          text: "AI Projection Chart",
+          text: "AI Candlestick Projection",
           color: "#FFFFFF",
           padding: {
             top: 8,
-            bottom: 12
+            bottom: 14
           },
           font: {
-            size: 18,
+            size: 20,
             weight: "700",
             family: "'Segoe UI', Tahoma, sans-serif"
           }
@@ -891,16 +893,16 @@ function renderForecastChart(rows, forecast) {
         legend: {
           position: "top",
           align: "start",
-          maxHeight: 58,
+          maxHeight: 64,
           labels: {
             color: "#E6EDF3",
             usePointStyle: true,
             pointStyle: "rectRounded",
-            boxWidth: 28,
-            boxHeight: 12,
-            padding: 16,
+            boxWidth: 22,
+            boxHeight: 10,
+            padding: 14,
             font: {
-              size: 14,
+              size: 13,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
@@ -925,13 +927,13 @@ function renderForecastChart(rows, forecast) {
           },
           callbacks: {
             label(context) {
-              if (context.dataset.label === "Pattern Points") {
+              if (context.dataset.label === "Signals") {
                 return `${context.raw.label}: ${formatChartMoney(context.parsed.y)}`;
               }
               if (context.dataset.isCandlestick) {
                 const candle = context.raw?.candle || context.dataset.candles?.[context.dataIndex];
                 if (candle) {
-                  return `${context.dataset.label}: O ${formatChartMoney(candle.open)}  H ${formatChartMoney(candle.high)}  L ${formatChartMoney(candle.low)}  C ${formatChartMoney(candle.close)}`;
+                  return `${context.dataset.label}  Open ${formatChartMoney(candle.open)}  High ${formatChartMoney(candle.high)}  Low ${formatChartMoney(candle.low)}  Close ${formatChartMoney(candle.close)}`;
                 }
               }
               return `${context.dataset.label}: ${formatChartMoney(context.parsed.y)}`;
@@ -945,23 +947,29 @@ function renderForecastChart(rows, forecast) {
             color: "#E6EDF3",
             maxRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 7,
-            padding: 12,
+            maxTicksLimit: 6,
+            padding: 14,
             font: {
-              size: 14,
+              size: 13,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
           },
-          grid: { color: "rgba(255,255,255,0.08)" }
+          grid: {
+            color: "rgba(255,255,255,0.07)",
+            drawTicks: false
+          },
+          border: {
+            color: "rgba(255,255,255,0.12)"
+          }
         },
         y: {
           ticks: {
             color: "#E6EDF3",
-            maxTicksLimit: 7,
-            padding: 12,
+            maxTicksLimit: 6,
+            padding: 14,
             font: {
-              size: 14,
+              size: 13,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             },
@@ -969,7 +977,13 @@ function renderForecastChart(rows, forecast) {
               return formatCompactAxisMoney(value);
             }
           },
-          grid: { color: "rgba(255,255,255,0.08)" }
+          grid: {
+            color: "rgba(255,255,255,0.07)",
+            drawTicks: false
+          },
+          border: {
+            color: "rgba(255,255,255,0.12)"
+          }
         }
       }
     }
