@@ -2095,7 +2095,7 @@ html[data-theme="light"] .value-line {
 
 .forecast-chart-shell canvas {
   width: 100% !important;
-  height: 500px !important;
+  height: 560px !important;
 }
 
 .forecast-visual-deck {
@@ -2194,11 +2194,49 @@ html[data-theme="light"] .value-line {
   gap: 10px;
 }
 
+.forecast-risk-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 164, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.forecast-risk-summary {
+  margin-bottom: 12px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(103, 164, 255, 0.12);
+}
+
+.forecast-risk-summary strong {
+  display: block;
+  color: #f4f8ff;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.forecast-risk-summary span {
+  display: block;
+  margin-top: 6px;
+  color: #b9cce7;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .forecast-risk-item {
   border-radius: 14px;
   padding: 12px 11px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(103, 164, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-risk-label {
@@ -2215,6 +2253,21 @@ html[data-theme="light"] .value-line {
   margin-top: 8px;
   color: #f4f8ff;
   font-size: 18px;
+}
+
+.forecast-risk-item-danger {
+  background: linear-gradient(180deg, rgba(255, 109, 123, 0.1), rgba(255, 109, 123, 0.04));
+  border-color: rgba(255, 109, 123, 0.18);
+}
+
+.forecast-risk-item-success {
+  background: linear-gradient(180deg, rgba(47, 208, 139, 0.1), rgba(47, 208, 139, 0.04));
+  border-color: rgba(47, 208, 139, 0.18);
+}
+
+.forecast-risk-item-balance {
+  background: linear-gradient(180deg, rgba(87, 182, 255, 0.1), rgba(87, 182, 255, 0.04));
+  border-color: rgba(87, 182, 255, 0.18);
 }
 
 .forecast-badges {
@@ -2401,7 +2454,7 @@ html[data-theme="light"] .value-line {
   }
 
   .forecast-chart-shell canvas {
-    height: 360px !important;
+    height: 400px !important;
   }
 
   .currency-converter-value,

@@ -338,18 +338,23 @@ function renderForecastVisualDeck(forecast, source) {
       <div class="forecast-risk-box">
         <div class="forecast-mini-head">
           <span class="forecast-visual-label">Risk / Reward Box</span>
+          <span class="forecast-risk-balance ${rewardRisk >= 1 ? "good" : "bad"}">${Number.isFinite(rewardRisk) ? `${rewardRisk.toFixed(2)}x` : "-"}</span>
+        </div>
+        <div class="forecast-risk-summary">
+          <strong>${rewardRisk >= 1 ? "Reward setup is stronger than downside risk." : "Downside risk is still heavier than reward."}</strong>
+          <span>Based on projected upper and lower range versus the latest close.</span>
         </div>
         <div class="forecast-risk-grid">
-          <div class="forecast-risk-item">
+          <div class="forecast-risk-item forecast-risk-item-danger">
             <span class="forecast-risk-label">Downside Risk</span>
             <strong>${downsidePct.toFixed(2)}%</strong>
           </div>
-          <div class="forecast-risk-item">
+          <div class="forecast-risk-item forecast-risk-item-success">
             <span class="forecast-risk-label">Upside Room</span>
             <strong>${upsidePct.toFixed(2)}%</strong>
           </div>
-          <div class="forecast-risk-item">
-            <span class="forecast-risk-label">R/R</span>
+          <div class="forecast-risk-item forecast-risk-item-balance">
+            <span class="forecast-risk-label">Risk Ratio</span>
             <strong>${Number.isFinite(rewardRisk) ? rewardRisk.toFixed(2) : "-"}</strong>
           </div>
         </div>
@@ -633,25 +638,119 @@ function formatChartMoney(value) {
   return formatMoney(n, 2);
 }
 
+const forecastCandlestickPlugin = {
+  id: "forecastCandlestickPlugin",
+  afterDatasetDraw(chart, args) {
+    const dataset = chart.data.datasets?.[args.index];
+    if (!dataset?.isCandlestick || !chart.isDatasetVisible(args.index)) return;
+
+    const points = args.meta?.data || [];
+    const candles = dataset.candles || [];
+    if (!points.length || !candles.length) return;
+
+    const { ctx, scales } = chart;
+    const yScale = scales.y;
+    let bodyWidth = 10;
+
+    for (let i = 1; i < points.length; i += 1) {
+      const gap = Math.abs(points[i].x - points[i - 1].x);
+      if (gap > 0) {
+        bodyWidth = Math.max(8, Math.min(18, gap * 0.56));
+        break;
+      }
+    }
+
+    ctx.save();
+    ctx.lineJoin = "round";
+
+    points.forEach((point, pointIndex) => {
+      const candle = candles[pointIndex];
+      if (!candle) return;
+
+      const open = Number(candle.open);
+      const high = Number(candle.high);
+      const low = Number(candle.low);
+      const close = Number(candle.close);
+      if (![open, high, low, close].every(Number.isFinite)) return;
+
+      const bullish = close >= open;
+      const fillColor = bullish ? (dataset.upFillColor || "#2fd08b") : (dataset.downFillColor || "#ff6d7b");
+      const strokeColor = bullish ? (dataset.upStrokeColor || "#79efb5") : (dataset.downStrokeColor || "#ff97a1");
+      const centerX = point.x;
+      const openY = yScale.getPixelForValue(open);
+      const closeY = yScale.getPixelForValue(close);
+      const highY = yScale.getPixelForValue(high);
+      const lowY = yScale.getPixelForValue(low);
+      const bodyTop = Math.min(openY, closeY);
+      const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
+      const bodyLeft = centerX - bodyWidth / 2;
+
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = hexToRgba(fillColor, dataset.candleFillOpacity ?? 0.28);
+      ctx.lineWidth = dataset.wickWidth || 1.5;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, highY);
+      ctx.lineTo(centerX, lowY);
+      ctx.stroke();
+
+      ctx.fillRect(bodyLeft, bodyTop, bodyWidth, bodyHeight);
+      ctx.strokeRect(bodyLeft, bodyTop, bodyWidth, bodyHeight);
+    });
+
+    ctx.restore();
+  }
+};
+
 function renderForecastChart(rows, forecast) {
   if (!forecastChartCanvas || typeof Chart === "undefined") return;
   const history = rows.slice(-60);
   const historyLabels = history.map((row) => new Date(Number(row.ts) * 1000).toLocaleDateString(undefined, { month: "short", day: "2-digit" }));
-  const historyClose = history.map((row) => Number(row.close));
   const futureLabels = forecast.projection.map((item) => `D+${item.day}`);
   const labels = [...historyLabels, ...futureLabels];
-  const historicalDataset = [...historyClose, ...new Array(forecast.projection.length).fill(null)];
-  const projectionDataset = [
-    ...new Array(Math.max(historyClose.length - 1, 0)).fill(null),
-    historyClose[historyClose.length - 1] ?? null,
-    ...forecast.projection.map((item) => item.close)
-  ];
+  const historyCandles = history.map((row, index) => {
+    const open = Number(row.open ?? row.close);
+    const high = Number(row.high ?? row.close);
+    const low = Number(row.low ?? row.close);
+    const close = Number(row.close);
+    return {
+      x: historyLabels[index],
+      y: close,
+      candle: {
+        open,
+        high,
+        low,
+        close
+      }
+    };
+  });
+
+  let previousClose = historyCandles[historyCandles.length - 1]?.candle?.close ?? Number(rows[rows.length - 1]?.close || 0);
+  const projectionCandles = forecast.projection.map((item, index) => {
+    const close = Number(item.close);
+    const open = Number.isFinite(previousClose) ? previousClose : close;
+    const highBand = Number(forecast.upperBand?.[index]);
+    const lowBand = Number(forecast.lowerBand?.[index]);
+    const high = Math.max(open, close, Number.isFinite(highBand) ? highBand : close);
+    const low = Math.min(open, close, Number.isFinite(lowBand) ? lowBand : close);
+    previousClose = close;
+    return {
+      x: futureLabels[index],
+      y: close,
+      candle: {
+        open,
+        high,
+        low,
+        close
+      }
+    };
+  });
   const upperDataset = [
-    ...new Array(historyClose.length).fill(null),
+    ...new Array(historyCandles.length).fill(null),
     ...forecast.upperBand
   ];
   const lowerDataset = [
-    ...new Array(historyClose.length).fill(null),
+    ...new Array(historyCandles.length).fill(null),
     ...forecast.lowerBand
   ];
   const projectionColor = forecast.pattern.direction.includes("bear") ? "#ff6d7b" : "#2fd08b";
@@ -668,57 +767,80 @@ function renderForecastChart(rows, forecast) {
   forecastChart?.destroy();
   forecastChart = new Chart(forecastChartCanvas.getContext("2d"), {
     type: "line",
+    plugins: [forecastCandlestickPlugin],
     data: {
       labels,
       datasets: [
         {
-          label: "Price",
-          data: historicalDataset,
-          borderColor: "#57b6ff",
-          backgroundColor: "rgba(87, 182, 255, 0.16)",
-          pointRadius: 0,
-          tension: 0.22,
-          borderWidth: 2.4,
-          pointHitRadius: 14
-        },
-        {
-          label: "Upper",
+          label: "Upper Band",
           data: upperDataset,
-          borderColor: hexToRgba(projectionColor, 0.2),
+          borderColor: hexToRgba(projectionColor, 0.28),
           backgroundColor: hexToRgba(projectionColor, 0.14),
           pointRadius: 0,
           tension: 0.18,
-          borderWidth: 1,
-          borderDash: [3, 4],
+          borderWidth: 1.2,
+          borderDash: [4, 4],
           fill: false
         },
         {
-          label: "Lower",
+          label: "Lower Band",
           data: lowerDataset,
-          borderColor: hexToRgba(projectionColor, 0.2),
-          backgroundColor: hexToRgba(projectionColor, 0.14),
+          borderColor: hexToRgba(projectionColor, 0.28),
+          backgroundColor: hexToRgba(projectionColor, 0.16),
           pointRadius: 0,
           tension: 0.18,
-          borderWidth: 1,
+          borderWidth: 1.2,
           fill: "-1"
         },
         {
-          label: "Forecast",
-          data: projectionDataset,
-          borderColor: projectionColor,
-          backgroundColor: hexToRgba(projectionColor, 0.12),
+          type: "scatter",
+          label: "History Candles",
+          data: historyCandles,
+          parsing: false,
+          showLine: false,
+          borderWidth: 0,
           pointRadius: 0,
-          tension: 0.18,
-          borderDash: [7, 5],
-          borderWidth: 2.6,
-          pointHitRadius: 14
+          pointHoverRadius: 0,
+          pointHitRadius: 18,
+          pointStyle: "rectRounded",
+          backgroundColor: "#57b6ff",
+          borderColor: "#57b6ff",
+          isCandlestick: true,
+          candles: historyCandles.map((entry) => entry.candle),
+          upFillColor: "#43c59e",
+          downFillColor: "#ff6d7b",
+          upStrokeColor: "#85f5c5",
+          downStrokeColor: "#ffb0b9",
+          candleFillOpacity: 0.22
         },
         {
           type: "scatter",
-          label: "Pattern",
+          label: "Forecast Candles",
+          data: projectionCandles,
+          parsing: false,
+          showLine: false,
+          borderWidth: 0,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          pointHitRadius: 18,
+          pointStyle: "rectRounded",
+          backgroundColor: projectionColor,
+          borderColor: projectionColor,
+          isCandlestick: true,
+          candles: projectionCandles.map((entry) => entry.candle),
+          upFillColor: "#3ae39f",
+          downFillColor: projectionColor,
+          upStrokeColor: "#9cf7cb",
+          downStrokeColor: "#ffb0b9",
+          candleFillOpacity: 0.34
+        },
+        {
+          type: "scatter",
+          label: "Pattern Points",
           data: markerPoints,
           parsing: false,
           showLine: false,
+          pointStyle: "circle",
           pointRadius(context) {
             const point = context.raw || {};
             if (point.type === "peak" || point.type === "trough") return 5;
@@ -747,35 +869,35 @@ function renderForecastChart(rows, forecast) {
         padding: {
           top: 10,
           right: 10,
-          bottom: 2,
-          left: 2
+          bottom: 8,
+          left: 6
         }
       },
-    plugins: {
-      title: {
-        display: true,
-        text: "AI Projection Chart",
-        color: "#FFFFFF",
-        padding: {
-          top: 8,
-          bottom: 12
+      plugins: {
+        title: {
+          display: true,
+          text: "AI Projection Chart",
+          color: "#FFFFFF",
+          padding: {
+            top: 8,
+            bottom: 12
+          },
+          font: {
+            size: 18,
+            weight: "700",
+            family: "'Segoe UI', Tahoma, sans-serif"
+          }
         },
-        font: {
-          size: 18,
-          weight: "700",
-          family: "'Segoe UI', Tahoma, sans-serif"
-        }
-      },
-      legend: {
-        position: "top",
-        align: "start",
-        maxHeight: 52,
-        labels: {
+        legend: {
+          position: "top",
+          align: "start",
+          maxHeight: 58,
+          labels: {
             color: "#E6EDF3",
             usePointStyle: true,
-            pointStyle: "line",
+            pointStyle: "rectRounded",
             boxWidth: 28,
-            boxHeight: 10,
+            boxHeight: 12,
             padding: 16,
             font: {
               size: 14,
@@ -803,8 +925,14 @@ function renderForecastChart(rows, forecast) {
           },
           callbacks: {
             label(context) {
-              if (context.dataset.label === "Pattern") {
+              if (context.dataset.label === "Pattern Points") {
                 return `${context.raw.label}: ${formatChartMoney(context.parsed.y)}`;
+              }
+              if (context.dataset.isCandlestick) {
+                const candle = context.raw?.candle || context.dataset.candles?.[context.dataIndex];
+                if (candle) {
+                  return `${context.dataset.label}: O ${formatChartMoney(candle.open)}  H ${formatChartMoney(candle.high)}  L ${formatChartMoney(candle.low)}  C ${formatChartMoney(candle.close)}`;
+                }
               }
               return `${context.dataset.label}: ${formatChartMoney(context.parsed.y)}`;
             }
