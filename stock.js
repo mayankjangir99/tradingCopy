@@ -672,7 +672,7 @@ function renderForecastChart(rows, forecast) {
       labels,
       datasets: [
         {
-          label: "Price History",
+          label: "Price",
           data: historicalDataset,
           borderColor: "#57b6ff",
           backgroundColor: "rgba(87, 182, 255, 0.16)",
@@ -682,7 +682,7 @@ function renderForecastChart(rows, forecast) {
           pointHitRadius: 14
         },
         {
-          label: "Upper Band",
+          label: "Upper",
           data: upperDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
@@ -693,7 +693,7 @@ function renderForecastChart(rows, forecast) {
           fill: false
         },
         {
-          label: "Lower Band",
+          label: "Lower",
           data: lowerDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
@@ -703,7 +703,7 @@ function renderForecastChart(rows, forecast) {
           fill: "-1"
         },
         {
-          label: "AI Forecast",
+          label: "Forecast",
           data: projectionDataset,
           borderColor: projectionColor,
           backgroundColor: hexToRgba(projectionColor, 0.12),
@@ -715,7 +715,7 @@ function renderForecastChart(rows, forecast) {
         },
         {
           type: "scatter",
-          label: "Pattern Points",
+          label: "Pattern",
           data: markerPoints,
           parsing: false,
           showLine: false,
@@ -803,7 +803,7 @@ function renderForecastChart(rows, forecast) {
           },
           callbacks: {
             label(context) {
-              if (context.dataset.label === "Pattern Points") {
+              if (context.dataset.label === "Pattern") {
                 return `${context.raw.label}: ${formatChartMoney(context.parsed.y)}`;
               }
               return `${context.dataset.label}: ${formatChartMoney(context.parsed.y)}`;

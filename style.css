@@ -2015,35 +2015,62 @@ html[data-theme="light"] .value-line {
     radial-gradient(circle at top right, rgba(47, 208, 139, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(9, 18, 34, 0.96), rgba(5, 12, 24, 0.98));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 18px 42px rgba(0, 0, 0, 0.28);
+  padding: 20px;
 }
 
 .forecast-card-head {
   align-items: flex-start;
-  gap: 16px;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+
+.forecast-card-head .section-title {
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #f5f9ff;
+}
+
+.forecast-card-head .technical-sub {
+  margin-top: 10px;
+  max-width: 720px;
+  color: #b8cae6;
+  font-size: 16px;
+  line-height: 1.65;
 }
 
 .forecast-controls {
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
+}
+
+.forecast-controls .btn,
+.forecast-controls .select-auto {
+  min-height: 48px;
+  border-radius: 14px;
+  padding: 11px 16px;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .forecast-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
-  gap: 18px;
-  margin-top: 14px;
+  grid-template-columns: minmax(0, 1.85fr) minmax(360px, 0.95fr);
+  gap: 22px;
+  margin-top: 18px;
   align-items: start;
 }
 
 .forecast-chart-shell {
   position: relative;
-  min-height: 420px;
+  min-height: 560px;
   border: 1px solid rgba(103, 164, 255, 0.2);
-  border-radius: 18px;
+  border-radius: 22px;
   background:
     linear-gradient(180deg, rgba(12, 24, 46, 0.94), rgba(6, 15, 29, 0.98)),
     linear-gradient(90deg, rgba(87, 182, 255, 0.06), transparent 32%);
-  padding: 18px 18px 14px;
+  padding: 22px 22px 18px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     inset 0 0 0 1px rgba(8, 14, 28, 0.45),
@@ -2054,40 +2081,40 @@ html[data-theme="light"] .value-line {
   content: "AI projection chart";
   display: inline-flex;
   align-items: center;
-  margin-bottom: 10px;
-  padding: 6px 10px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid rgba(111, 199, 255, 0.18);
   background: rgba(255, 255, 255, 0.03);
-  color: #dceaff;
-  font-size: 11px;
+  color: #eef5ff;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .forecast-chart-shell canvas {
   width: 100% !important;
-  height: 380px !important;
+  height: 500px !important;
 }
 
 .forecast-visual-deck {
   display: grid;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .forecast-visual-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #8fa8cb;
+  color: #9bb7dc;
 }
 
 .forecast-visual-value {
-  color: #edf5ff;
-  font-size: 12px;
+  color: #f4f8ff;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -2098,9 +2125,9 @@ html[data-theme="light"] .value-line {
 .forecast-risk-box,
 .forecast-badge-strip {
   border: 1px solid rgba(103, 164, 255, 0.14);
-  border-radius: 14px;
+  border-radius: 16px;
   background: linear-gradient(180deg, rgba(15, 27, 50, 0.88), rgba(8, 16, 31, 0.9));
-  padding: 12px 13px;
+  padding: 14px 15px;
   min-width: 0;
 }
 
@@ -2111,7 +2138,7 @@ html[data-theme="light"] .value-line {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .forecast-bias-track {
@@ -2142,16 +2169,17 @@ html[data-theme="light"] .value-line {
 .forecast-ribbon-values {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  color: #c2d3ee;
-  font-size: 12px;
+  gap: 10px;
+  color: #d3e1f6;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .forecast-takeaway-panel p {
-  margin: 8px 0 0;
-  color: #d6e4fb;
-  line-height: 1.55;
-  font-size: 13px;
+  margin: 10px 0 0;
+  color: #e1ecfb;
+  line-height: 1.7;
+  font-size: 15px;
 }
 
 .forecast-lower-grid {
@@ -2163,30 +2191,30 @@ html[data-theme="light"] .value-line {
 .forecast-risk-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .forecast-risk-item {
-  border-radius: 12px;
-  padding: 10px 9px;
+  border-radius: 14px;
+  padding: 12px 11px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(103, 164, 255, 0.1);
 }
 
 .forecast-risk-label {
   display: block;
-  color: #8fa8cb;
-  font-size: 10px;
+  color: #9bb7dc;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .forecast-risk-item strong {
   display: block;
-  margin-top: 6px;
-  color: #edf5ff;
-  font-size: 15px;
+  margin-top: 8px;
+  color: #f4f8ff;
+  font-size: 18px;
 }
 
 .forecast-badges {
@@ -2199,22 +2227,22 @@ html[data-theme="light"] .value-line {
 .forecast-badge {
   border: 1px solid rgba(103, 164, 255, 0.16);
   border-radius: 999px;
-  padding: 7px 10px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.04);
-  color: #d9e8ff;
-  font-size: 12px;
+  color: #edf5ff;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .forecast-feed-note {
-  margin-top: 10px;
-  color: #9db4d5;
-  font-size: 12px;
+  margin-top: 12px;
+  color: #b4c7e3;
+  font-size: 13px;
 }
 
 .forecast-side {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .forecast-stats {
@@ -2224,22 +2252,24 @@ html[data-theme="light"] .value-line {
 }
 
 .forecast-stats .kpi {
-  border-radius: 16px;
-  padding: 12px 13px;
+  border-radius: 18px;
+  padding: 14px 15px;
   background: linear-gradient(180deg, rgba(15, 27, 50, 0.96), rgba(9, 18, 34, 0.96));
   border-color: rgba(103, 164, 255, 0.16);
 }
 
 .forecast-stats .kpi-label {
   font-size: 11px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #9cb7da;
 }
 
 .forecast-stats .kpi-value {
-  margin-top: 6px;
-  font-size: clamp(18px, 1.6vw, 24px);
-  line-height: 1.1;
+  margin-top: 8px;
+  font-size: clamp(22px, 1.9vw, 30px);
+  line-height: 1.05;
+  color: #f8fbff;
 }
 
 .forecast-keypoints {
@@ -2249,63 +2279,68 @@ html[data-theme="light"] .value-line {
 
 .forecast-keypoint {
   border: 1px solid rgba(103, 164, 255, 0.14);
-  border-radius: 16px;
+  border-radius: 18px;
   background: linear-gradient(180deg, rgba(12, 23, 44, 0.94), rgba(8, 16, 31, 0.96));
-  padding: 14px 15px;
+  padding: 16px 17px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-keypoint h4 {
-  margin: 0 0 7px;
-  font-size: 12px;
+  margin: 0 0 9px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #edf5ff;
+  color: #f4f8ff;
 }
 
 .forecast-keypoint p {
   margin: 0;
-  color: #a9bcda;
-  font-size: 13px;
-  line-height: 1.55;
+  color: #d6e2f5;
+  font-size: 15px;
+  line-height: 1.7;
 }
 
 .forecast-pattern-card {
-  border-radius: 16px;
+  border-radius: 18px;
   border-color: rgba(103, 164, 255, 0.16);
   background: linear-gradient(180deg, rgba(13, 25, 47, 0.96), rgba(8, 16, 31, 0.96));
-  padding: 14px 15px;
+  padding: 16px 17px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-pattern-card h4 {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   color: #f3f8ff;
-  font-size: 14px;
+  font-size: 18px;
+  line-height: 1.35;
 }
 
 .forecast-pattern-card p {
-  color: #8dddc0;
+  color: #9bf0c7;
   font-weight: 700;
+  font-size: 16px;
 }
 
 .forecast-bullets {
-  margin: 12px 0 0;
-  padding-left: 18px;
-  color: #a9bcda;
+  margin: 14px 0 0;
+  padding-left: 22px;
+  color: #d7e3f6;
   display: grid;
-  gap: 8px;
-  line-height: 1.5;
+  gap: 10px;
+  line-height: 1.7;
+  font-size: 15px;
 }
 
 #forecastStatus {
   display: block;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
   border: 1px solid rgba(103, 164, 255, 0.12);
   background: rgba(255, 255, 255, 0.03);
-  line-height: 1.5;
+  line-height: 1.7;
+  font-size: 14px;
+  color: #d8e4f7;
 }
 
 .helper-note.bad,
@@ -2361,12 +2396,12 @@ html[data-theme="light"] .value-line {
   }
 
   .forecast-chart-shell {
-    min-height: 340px;
+    min-height: 380px;
     padding: 15px 14px 12px;
   }
 
   .forecast-chart-shell canvas {
-    height: 300px !important;
+    height: 360px !important;
   }
 
   .currency-converter-value,
