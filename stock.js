@@ -225,26 +225,44 @@ function renderForecastKeypoints(forecast, source) {
   const sourceText = source === "yahoo"
     ? "Built from live daily candles."
     : "Built from local fallback candles.";
+  const moveLabel = `${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}%`;
+  const rangeLabel = `${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 2)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 2)}`;
 
   forecastKeypoints.innerHTML = [
     {
+      eyebrow: "Directional Read",
       title: "Bias",
-      body: `${directionLabel}. Expected move is ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% over the selected horizon.`
+      body: `${directionLabel}. Expected move is ${moveLabel} over the selected horizon.`,
+      tag: moveLabel,
+      tone: forecast.pattern.direction.includes("bear") ? "negative" : forecast.pattern.direction.includes("bull") ? "positive" : "neutral"
     },
     {
+      eyebrow: "Projected Zone",
       title: "Target Zone",
-      body: `Projected close is near ${formatMoney(lastProjection.close, 4)} with a range from ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`
+      body: `Projected close is near ${formatMoney(lastProjection.close, 4)} with a range from ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`,
+      tag: rangeLabel,
+      tone: "neutral"
     },
     {
+      eyebrow: "Model Read",
       title: "Confidence",
-      body: `${confidenceText}. Pattern score is ${forecast.pattern.probability}% from recent structure and slope.`
+      body: `${confidenceText}. Pattern score is ${forecast.pattern.probability}% from recent structure and slope.`,
+      tag: `${forecast.pattern.probability}% score`,
+      tone: forecast.pattern.probability >= 75 ? "positive" : forecast.pattern.probability >= 55 ? "neutral" : "negative"
     },
     {
+      eyebrow: "Feed State",
       title: "Data Source",
-      body: sourceText
+      body: sourceText,
+      tag: source === "yahoo" ? "Live candles" : "Fallback candles",
+      tone: source === "yahoo" ? "positive" : "neutral"
     }
   ].map((item) => `
-    <div class="forecast-keypoint">
+    <div class="forecast-keypoint forecast-keypoint-${item.tone}">
+      <div class="forecast-keypoint-top">
+        <span class="forecast-keypoint-eyebrow">${item.eyebrow}</span>
+        <span class="forecast-keypoint-tag">${item.tag}</span>
+      </div>
       <h4>${item.title}</h4>
       <p>${item.body}</p>
     </div>
@@ -263,6 +281,9 @@ function renderForecastVisualDeck(forecast, source) {
   const upsidePct = lastClose > 0 ? Math.max(0, ((upperEnd - lastClose) / lastClose) * 100) : 0;
   const downsidePct = lastClose > 0 ? Math.max(0, ((lastClose - lowerEnd) / lastClose) * 100) : 0;
   const rewardRisk = downsidePct > 0 ? (upsidePct / downsidePct) : upsidePct;
+  const totalRiskRoom = Math.max(upsidePct + downsidePct, 0.0001);
+  const upsideShare = Math.max(10, Math.round((upsidePct / totalRiskRoom) * 100));
+  const downsideShare = Math.max(10, 100 - upsideShare);
   const takeawayLead = movePct >= 0 ? "AI leans upward" : "AI leans lower";
   const takeawayTone = forecast.pattern.probability >= 75 ? "with conviction" : forecast.pattern.probability >= 55 ? "with moderate confidence" : "with caution";
   const badges = [
@@ -339,6 +360,16 @@ function renderForecastVisualDeck(forecast, source) {
         <div class="forecast-mini-head">
           <span class="forecast-visual-label">Risk / Reward Box</span>
           <span class="forecast-risk-balance ${rewardRisk >= 1 ? "good" : "bad"}">${Number.isFinite(rewardRisk) ? `${rewardRisk.toFixed(2)}x` : "-"}</span>
+        </div>
+        <div class="forecast-risk-meter" aria-hidden="true">
+          <span class="forecast-risk-meter-track">
+            <span class="forecast-risk-meter-down" style="width:${downsideShare}%"></span>
+            <span class="forecast-risk-meter-up" style="width:${upsideShare}%"></span>
+          </span>
+          <div class="forecast-risk-meter-labels">
+            <span>Risk ${downsidePct.toFixed(2)}%</span>
+            <span>Reward ${upsidePct.toFixed(2)}%</span>
+          </div>
         </div>
         <div class="forecast-risk-summary">
           <strong>${rewardRisk >= 1 ? "Reward setup is stronger than downside risk." : "Downside risk is still heavier than reward."}</strong>

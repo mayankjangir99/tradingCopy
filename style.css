@@ -2011,11 +2011,35 @@ html[data-theme="light"] .value-line {
   overflow: hidden;
   border-color: rgba(103, 164, 255, 0.22);
   background:
-    radial-gradient(circle at top left, rgba(80, 164, 255, 0.12), transparent 32%),
-    radial-gradient(circle at top right, rgba(47, 208, 139, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(9, 18, 34, 0.96), rgba(5, 12, 24, 0.98));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 18px 42px rgba(0, 0, 0, 0.28);
-  padding: 20px;
+    radial-gradient(circle at top left, rgba(80, 164, 255, 0.14), transparent 34%),
+    radial-gradient(circle at top right, rgba(47, 208, 139, 0.1), transparent 30%),
+    linear-gradient(135deg, rgba(14, 27, 49, 0.98), rgba(6, 13, 25, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 60px rgba(0, 0, 0, 0.32);
+  padding: 24px;
+}
+
+.forecast-card::before,
+.forecast-card::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.forecast-card::before {
+  width: 320px;
+  height: 320px;
+  top: -180px;
+  left: -90px;
+  background: radial-gradient(circle, rgba(87, 182, 255, 0.16), transparent 68%);
+}
+
+.forecast-card::after {
+  width: 260px;
+  height: 260px;
+  right: -100px;
+  bottom: -120px;
+  background: radial-gradient(circle, rgba(47, 208, 139, 0.12), transparent 70%);
 }
 
 .forecast-card-head {
@@ -2039,6 +2063,28 @@ html[data-theme="light"] .value-line {
   line-height: 1.65;
 }
 
+.forecast-head-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.forecast-head-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(115, 182, 255, 0.18);
+  background: rgba(255, 255, 255, 0.045);
+  color: #eff5ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .forecast-controls {
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -2056,33 +2102,33 @@ html[data-theme="light"] .value-line {
 
 .forecast-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) minmax(360px, 0.95fr);
-  gap: 22px;
-  margin-top: 18px;
+  grid-template-columns: minmax(0, 1.8fr) minmax(360px, 1fr);
+  gap: 24px;
+  margin-top: 22px;
   align-items: start;
 }
 
 .forecast-chart-shell {
   position: relative;
   min-height: 600px;
-  border: 1px solid rgba(103, 164, 255, 0.2);
-  border-radius: 22px;
+  border: 1px solid rgba(103, 164, 255, 0.18);
+  border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(12, 24, 46, 0.94), rgba(6, 15, 29, 0.98)),
-    linear-gradient(90deg, rgba(87, 182, 255, 0.06), transparent 32%);
-  padding: 22px 22px 18px;
+    linear-gradient(180deg, rgba(10, 22, 42, 0.96), rgba(5, 13, 26, 0.98)),
+    linear-gradient(90deg, rgba(87, 182, 255, 0.07), transparent 34%);
+  padding: 24px 24px 20px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 0 0 1px rgba(8, 14, 28, 0.45),
-    0 16px 36px rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(8, 14, 28, 0.48),
+    0 22px 48px rgba(0, 0, 0, 0.28);
 }
 
 .forecast-chart-shell::before {
   content: "AI candlestick projection";
   display: inline-flex;
   align-items: center;
-  margin-bottom: 14px;
-  padding: 8px 12px;
+  margin-bottom: 18px;
+  padding: 9px 13px;
   border-radius: 999px;
   border: 1px solid rgba(111, 199, 255, 0.18);
   background: rgba(255, 255, 255, 0.03);
@@ -2100,8 +2146,8 @@ html[data-theme="light"] .value-line {
 
 .forecast-visual-deck {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 16px;
+  margin-top: 22px;
 }
 
 .forecast-visual-label {
@@ -2125,10 +2171,11 @@ html[data-theme="light"] .value-line {
 .forecast-risk-box,
 .forecast-badge-strip {
   border: 1px solid rgba(103, 164, 255, 0.14);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(15, 27, 50, 0.88), rgba(8, 16, 31, 0.9));
-  padding: 14px 15px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(17, 31, 57, 0.88), rgba(8, 16, 31, 0.92));
+  padding: 16px 17px;
   min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-bias-head,
@@ -2144,7 +2191,7 @@ html[data-theme="light"] .value-line {
 .forecast-bias-track {
   display: flex;
   width: 100%;
-  height: 12px;
+  height: 14px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
@@ -2169,10 +2216,17 @@ html[data-theme="light"] .value-line {
 .forecast-ribbon-values {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   color: #d3e1f6;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.forecast-ribbon-values span {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(103, 164, 255, 0.1);
 }
 
 .forecast-takeaway-panel p {
@@ -2184,8 +2238,8 @@ html[data-theme="light"] .value-line {
 
 .forecast-lower-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 14px;
 }
 
 .forecast-risk-grid {
@@ -2206,6 +2260,38 @@ html[data-theme="light"] .value-line {
   background: rgba(255, 255, 255, 0.05);
   font-size: 14px;
   font-weight: 800;
+}
+
+.forecast-risk-meter {
+  margin-bottom: 12px;
+}
+
+.forecast-risk-meter-track {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 164, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.forecast-risk-meter-down {
+  background: linear-gradient(90deg, rgba(255, 109, 123, 0.9), rgba(255, 142, 153, 0.72));
+}
+
+.forecast-risk-meter-up {
+  background: linear-gradient(90deg, rgba(77, 214, 160, 0.82), rgba(47, 208, 139, 0.95));
+}
+
+.forecast-risk-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: #c8d8ee;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .forecast-risk-summary {
@@ -2295,20 +2381,22 @@ html[data-theme="light"] .value-line {
 
 .forecast-side {
   display: grid;
-  gap: 16px;
+  gap: 18px;
+  padding: 4px 0;
 }
 
 .forecast-stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 0;
 }
 
 .forecast-stats .kpi {
-  border-radius: 18px;
-  padding: 14px 15px;
-  background: linear-gradient(180deg, rgba(15, 27, 50, 0.96), rgba(9, 18, 34, 0.96));
-  border-color: rgba(103, 164, 255, 0.16);
+  border-radius: 20px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(16, 29, 54, 0.96), rgba(8, 16, 31, 0.96));
+  border-color: rgba(103, 164, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-stats .kpi-label {
@@ -2325,17 +2413,59 @@ html[data-theme="light"] .value-line {
   color: #f8fbff;
 }
 
+.forecast-stats .kpi:nth-child(1),
+.forecast-stats .kpi:nth-child(2) {
+  min-height: 120px;
+}
+
 .forecast-keypoints {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .forecast-keypoint {
   border: 1px solid rgba(103, 164, 255, 0.14);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(12, 23, 44, 0.94), rgba(8, 16, 31, 0.96));
-  padding: 16px 17px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(13, 25, 47, 0.96), rgba(8, 16, 31, 0.98));
+  padding: 17px 18px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.forecast-keypoint-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.forecast-keypoint-eyebrow {
+  color: #9db8dc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.forecast-keypoint-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(103, 164, 255, 0.12);
+  color: #eef5ff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.forecast-keypoint-positive {
+  border-color: rgba(47, 208, 139, 0.18);
+}
+
+.forecast-keypoint-negative {
+  border-color: rgba(255, 109, 123, 0.2);
 }
 
 .forecast-keypoint h4 {
@@ -2355,10 +2485,12 @@ html[data-theme="light"] .value-line {
 }
 
 .forecast-pattern-card {
-  border-radius: 18px;
+  border-radius: 22px;
   border-color: rgba(103, 164, 255, 0.16);
-  background: linear-gradient(180deg, rgba(13, 25, 47, 0.96), rgba(8, 16, 31, 0.96));
-  padding: 16px 17px;
+  background:
+    radial-gradient(circle at top right, rgba(87, 182, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(13, 25, 47, 0.98), rgba(8, 16, 31, 0.98));
+  padding: 18px 18px 20px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -2387,10 +2519,10 @@ html[data-theme="light"] .value-line {
 
 #forecastStatus {
   display: block;
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
   border: 1px solid rgba(103, 164, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
+  background: linear-gradient(180deg, rgba(18, 30, 54, 0.7), rgba(8, 16, 31, 0.82));
   line-height: 1.7;
   font-size: 14px;
   color: #d8e4f7;
@@ -2431,6 +2563,10 @@ html[data-theme="light"] .value-line {
 
   .forecast-card-head {
     align-items: stretch;
+  }
+
+  .forecast-head-strip {
+    margin-bottom: 4px;
   }
 
   .forecast-controls {
