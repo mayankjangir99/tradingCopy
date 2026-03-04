@@ -69,8 +69,11 @@ function getCurrencyName(code) {
 }
 
 function buildCurrencyData() {
-  const supported = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("currency") : [];
-  const codes = supported.length ? supported : ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
+  const coreSupported = window.TradeProCore?.getSupportedCurrencies?.() || [];
+  const intlSupported = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("currency") : [];
+  const codes = (coreSupported.length ? coreSupported : intlSupported.length ? intlSupported : ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"])
+    .map((code) => String(code || "").toUpperCase().trim())
+    .filter((code, index, list) => /^[A-Z]{3}$/.test(code) && list.indexOf(code) === index);
   return codes
     .map((code) => ({
       code,

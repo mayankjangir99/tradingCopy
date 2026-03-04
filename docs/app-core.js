@@ -36,7 +36,23 @@
   const CURRENCY_KEY = "tp_currency";
   const CURRENCY_RATES_KEY = "tp_currency_rates_usd";
   const RELOAD_MARKER_KEY = "tp_pending_reload";
-  const SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
+  const DEFAULT_SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
+  const SUPPORTED_CURRENCIES = (() => {
+    try {
+      const runtimeSupported = typeof Intl.supportedValuesOf === "function"
+        ? Intl.supportedValuesOf("currency")
+        : [];
+      return Array.from(
+        new Set(
+          ["USD", ...DEFAULT_SUPPORTED_CURRENCIES, ...runtimeSupported]
+            .map((code) => String(code || "").toUpperCase().trim())
+            .filter((code) => /^[A-Z]{3}$/.test(code))
+        )
+      );
+    } catch {
+      return [...DEFAULT_SUPPORTED_CURRENCIES];
+    }
+  })();
   const FALLBACK_USD_RATES = {
     USD: 1,
     EUR: 0.92,
@@ -51,6 +67,7 @@
   };
   let currencyCode = "USD";
   let usdRates = { ...FALLBACK_USD_RATES };
+  let usdRatesUpdatedAt = 0;
   let reloadScheduled = false;
 
   function readStorage(key) {
@@ -271,7 +288,9 @@
 
   function writeCachedRates(rates) {
     try {
-      localStorage.setItem(CURRENCY_RATES_KEY, JSON.stringify({ ts: Date.now(), rates }));
+      const ts = Date.now();
+      usdRatesUpdatedAt = ts;
+      localStorage.setItem(CURRENCY_RATES_KEY, JSON.stringify({ ts, rates }));
     } catch {
       // Ignore storage errors.
     }
@@ -591,6 +610,7 @@
     const storedRates = readCachedRates();
     if (storedRates?.rates) {
       usdRates = { ...FALLBACK_USD_RATES, ...storedRates.rates, USD: 1 };
+      usdRatesUpdatedAt = Number(storedRates.ts || 0);
     }
     refreshCurrencyRates();
 
@@ -664,6 +684,32 @@
     return Boolean(readStorage(ACCESS_KEY) || readStorage(REFRESH_KEY));
   }
 
+  function convertCurrencyAmount(amount, fromCode, toCode) {
+    const value = Number(amount);
+    const from = normalizeCurrency(fromCode);
+    const to = normalizeCurrency(toCode);
+    if (!Number.isFinite(value)) return Number.NaN;
+    const fromRate = Number(usdRates[from] || 1);
+    const toRate = Number(usdRates[to] || 1);
+    if (!Number.isFinite(fromRate) || fromRate <= 0 || !Number.isFinite(toRate) || toRate <= 0) {
+      return Number.NaN;
+    }
+    const usdValue = from === "USD" ? value : value / fromRate;
+    return to === "USD" ? usdValue : usdValue * toRate;
+  }
+
+  function getCurrencyRates() {
+    return {
+      base: "USD",
+      rates: { ...usdRates },
+      updatedAt: usdRatesUpdatedAt
+    };
+  }
+
+  function getSupportedCurrencies() {
+    return [...SUPPORTED_CURRENCIES];
+  }
+
   window.TradeProCore = {
     API_BASE,
     login,
@@ -684,7 +730,10 @@
     hydrateCurrency,
     formatMoney,
     convertFromUSD,
-    refreshCurrencyRates
+    refreshCurrencyRates,
+    convertCurrencyAmount,
+    getCurrencyRates,
+    getSupportedCurrencies
   };
 
   window.addEventListener("storage", (event) => {

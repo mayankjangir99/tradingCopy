@@ -201,8 +201,8 @@ function setForecastStatus(message, isError = false) {
 
 function setForecastPattern(pattern) {
   if (!forecastPatternName || !forecastPatternScore || !forecastPatternBullets) return;
-  forecastPatternName.textContent = `Pattern: ${pattern.name}`;
-  forecastPatternScore.textContent = `Probability: ${pattern.probability}%`;
+  forecastPatternName.textContent = `Pattern Signal: ${pattern.name}`;
+  forecastPatternScore.textContent = `Confidence ${pattern.probability}%`;
   forecastPatternBullets.innerHTML = (pattern.explanations || [])
     .map((item) => `<li>${item}</li>`)
     .join("");
@@ -217,29 +217,29 @@ function renderForecastKeypoints(forecast, source) {
       ? "Bullish pressure"
       : "Balanced / neutral";
   const confidenceText = forecast.pattern.probability >= 75
-    ? "Higher-confidence heuristic setup"
+    ? "Higher-confidence setup"
     : forecast.pattern.probability >= 55
-      ? "Moderate-confidence heuristic setup"
-      : "Low-confidence baseline projection";
+      ? "Moderate-confidence setup"
+      : "Baseline projection";
   const sourceText = source === "yahoo"
-    ? "Built from live Yahoo Finance daily candles."
-    : "Built from fallback daily candles because live historical data was unavailable.";
+    ? "Built from live daily candles."
+    : "Built from local fallback candles.";
 
   forecastKeypoints.innerHTML = [
     {
-      title: "Predicted Direction",
-      body: `${directionLabel}. Expected move over the selected horizon is ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% from the last close.`
+      title: "Bias",
+      body: `${directionLabel}. Expected move is ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% over the selected horizon.`
     },
     {
       title: "Target Zone",
-      body: `Projection ends near ${formatMoney(lastProjection.close, 4)} with a confidence band between ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} and ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`
+      body: `Projected close is near ${formatMoney(lastProjection.close, 4)} with a range from ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`
     },
     {
-      title: "Confidence Read",
-      body: `${confidenceText}. Pattern probability is ${forecast.pattern.probability}% based on recent candle structure and trend slope.`
+      title: "Confidence",
+      body: `${confidenceText}. Pattern score is ${forecast.pattern.probability}% from recent structure and slope.`
     },
     {
-      title: "Data Note",
+      title: "Data Source",
       body: sourceText
     }
   ].map((item) => `
@@ -502,6 +502,16 @@ function buildForecast(rows, horizon) {
   };
 }
 
+function formatCompactAxisMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  const abs = Math.abs(n);
+  if (abs >= 1000) {
+    return n.toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 2 });
+  }
+  return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
 function renderForecastChart(rows, forecast) {
   if (!forecastChartCanvas || typeof Chart === "undefined") return;
   const history = rows.slice(-60);
@@ -541,26 +551,28 @@ function renderForecastChart(rows, forecast) {
       labels,
       datasets: [
         {
-          label: "Historical Close",
+          label: "History",
           data: historicalDataset,
           borderColor: "#57b6ff",
           backgroundColor: "rgba(87, 182, 255, 0.16)",
           pointRadius: 0,
           tension: 0.22,
-          borderWidth: 2
+          borderWidth: 2.4,
+          pointHitRadius: 14
         },
         {
-          label: "Confidence Ceiling",
+          label: "Range High",
           data: upperDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
           pointRadius: 0,
           tension: 0.18,
           borderWidth: 1,
+          borderDash: [3, 4],
           fill: false
         },
         {
-          label: "Confidence Band",
+          label: "Range Low",
           data: lowerDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
@@ -570,18 +582,19 @@ function renderForecastChart(rows, forecast) {
           fill: "-1"
         },
         {
-          label: "AI Projection",
+          label: "Projection",
           data: projectionDataset,
           borderColor: projectionColor,
           backgroundColor: hexToRgba(projectionColor, 0.12),
           pointRadius: 0,
           tension: 0.18,
           borderDash: [7, 5],
-          borderWidth: 2
+          borderWidth: 2.6,
+          pointHitRadius: 14
         },
         {
           type: "scatter",
-          label: "Pattern Markers",
+          label: "Markers",
           data: markerPoints,
           parsing: false,
           showLine: false,
@@ -604,14 +617,54 @@ function renderForecastChart(rows, forecast) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      layout: {
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 2,
+          left: 2
+        }
+      },
       plugins: {
         legend: {
-          labels: { color: "#dbe8ff" }
+          position: "top",
+          align: "start",
+          labels: {
+            color: "#dbe8ff",
+            usePointStyle: true,
+            pointStyle: "line",
+            boxWidth: 26,
+            boxHeight: 8,
+            padding: 14,
+            font: {
+              size: 11,
+              weight: "600",
+              family: "'Segoe UI', Tahoma, sans-serif"
+            }
+          }
         },
         tooltip: {
+          backgroundColor: "rgba(8, 15, 29, 0.96)",
+          borderColor: "rgba(103, 164, 255, 0.2)",
+          borderWidth: 1,
+          titleColor: "#f4f8ff",
+          bodyColor: "#d6e5ff",
+          padding: 12,
+          displayColors: true,
+          titleFont: {
+            size: 12,
+            weight: "700"
+          },
+          bodyFont: {
+            size: 12
+          },
           callbacks: {
             label(context) {
-              if (context.dataset.label === "Pattern Markers") {
+              if (context.dataset.label === "Markers") {
                 return `${context.raw.label}: ${formatMoney(context.parsed.y, 4)}`;
               }
               return `${context.dataset.label}: ${formatMoney(context.parsed.y, 4)}`;
@@ -621,14 +674,32 @@ function renderForecastChart(rows, forecast) {
       },
       scales: {
         x: {
-          ticks: { color: "#8ea6c9", maxRotation: 0, autoSkip: true },
+          ticks: {
+            color: "#96afcf",
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 8,
+            padding: 10,
+            font: {
+              size: 11,
+              weight: "600",
+              family: "'Segoe UI', Tahoma, sans-serif"
+            }
+          },
           grid: { color: "rgba(87, 182, 255, 0.08)" }
         },
         y: {
           ticks: {
-            color: "#8ea6c9",
+            color: "#96afcf",
+            maxTicksLimit: 7,
+            padding: 10,
+            font: {
+              size: 11,
+              weight: "600",
+              family: "'Segoe UI', Tahoma, sans-serif"
+            },
             callback(value) {
-              return formatMoney(value, 2);
+              return formatCompactAxisMoney(value);
             }
           },
           grid: { color: "rgba(87, 182, 255, 0.08)" }
@@ -640,12 +711,13 @@ function renderForecastChart(rows, forecast) {
 
 function renderForecastStats(stats, source) {
   if (!forecastStats) return;
+  const sourceLabel = source === "yahoo" ? "Live" : source === "fallback" ? "Local" : (source || "-");
   forecastStats.innerHTML = [
     kpi("Last Close", formatMoney(stats.lastClose, 4)),
-    kpi("Projected Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
+    kpi("Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
     kpi("Volatility", `${stats.volatilityPct}%`),
     kpi("Candles", formatNumber(stats.dataPoints, 0)),
-    kpi("Source", source || "-"),
+    kpi("Source", sourceLabel),
     kpi("Horizon", `${forecastHorizonSelect?.value || 14}D`)
   ].join("");
 }
@@ -863,29 +935,30 @@ async function createStockPageAlert() {
 
 function getResponsiveChartHeights() {
   const w = window.innerWidth || 1200;
+  const h = window.innerHeight || 900;
   if (w <= 540) {
     return {
-      main: 360,
-      overview: 300,
-      technical: 340,
-      news: 340,
+      main: Math.max(320, Math.min(440, Math.round(h * 0.5))),
+      overview: 280,
+      technical: 320,
+      news: 320,
       area: 180
     };
   }
   if (w <= 980) {
     return {
-      main: 500,
-      overview: 340,
-      technical: 380,
-      news: 380,
+      main: Math.max(420, Math.min(560, Math.round(h * 0.58))),
+      overview: 320,
+      technical: 360,
+      news: 360,
       area: 200
     };
   }
   return {
-    main: 760,
-    overview: 390,
-    technical: 420,
-    news: 420,
+    main: Math.max(520, Math.min(700, Math.round(h * 0.7))),
+    overview: 340,
+    technical: 380,
+    news: 380,
     area: 220
   };
 }

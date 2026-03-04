@@ -699,6 +699,10 @@ select:focus {
   gap: 18px;
 }
 
+.app-shell-stock .layout {
+  align-items: start;
+}
+
 .card {
   border: 1px solid var(--line);
   background: rgba(10, 17, 31, 0.84);
@@ -716,6 +720,35 @@ select:focus {
 .stack {
   display: grid;
   gap: 12px;
+}
+
+.app-shell-stock .stack {
+  align-content: start;
+}
+
+.app-shell-stock .card {
+  height: auto;
+  align-self: start;
+  border-radius: 18px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(87, 182, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(12, 21, 40, 0.95), rgba(8, 16, 31, 0.96));
+  border-color: rgba(103, 164, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 12px 28px rgba(0, 0, 0, 0.24);
+}
+
+.app-shell-stock .card:hover {
+  border-color: rgba(108, 247, 212, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.app-shell-stock .section-head {
+  margin-bottom: 14px;
 }
 
 .kpis {
@@ -1155,16 +1188,22 @@ select:focus {
 #tv-news,
 #tv-symbol-info {
   width: 100%;
-  min-height: 260px;
+  min-height: 220px;
 }
 
 #tv-overview {
-  min-height: 300px;
+  min-height: 280px;
 }
 
 #technical-widget,
 #tv-news {
-  min-height: 340px;
+  min-height: 320px;
+}
+
+.app-shell-stock .technical-shell,
+.app-shell-stock .allocation-wrap,
+.app-shell-stock .area-chart-wrap {
+  border-radius: 16px;
 }
 
 @media (max-width: 980px) {
@@ -1218,11 +1257,11 @@ select:focus {
     height: clamp(320px, 56vh, 460px);
   }
   #tv-overview {
-    min-height: 280px;
+    min-height: 250px;
   }
   #technical-widget,
   #tv-news {
-    min-height: 320px;
+    min-height: 280px;
   }
 }
 
@@ -1967,64 +2006,165 @@ html[data-theme="light"] .value-line {
   background: rgba(87, 182, 255, 0.12);
 }
 
+.forecast-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(103, 164, 255, 0.22);
+  background:
+    radial-gradient(circle at top left, rgba(80, 164, 255, 0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(47, 208, 139, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(9, 18, 34, 0.96), rgba(5, 12, 24, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.forecast-card-head {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.forecast-controls {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .forecast-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.85fr);
-  gap: 14px;
-  margin-top: 10px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  margin-top: 14px;
+  align-items: start;
 }
 
 .forecast-chart-shell {
-  min-height: 320px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(14, 23, 42, 0.68);
-  padding: 12px;
+  position: relative;
+  min-height: 420px;
+  border: 1px solid rgba(103, 164, 255, 0.2);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(12, 24, 46, 0.94), rgba(6, 15, 29, 0.98)),
+    linear-gradient(90deg, rgba(87, 182, 255, 0.06), transparent 32%);
+  padding: 18px 18px 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(8, 14, 28, 0.45),
+    0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.forecast-chart-shell::before {
+  content: "AI projection chart";
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 199, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: #dceaff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .forecast-chart-shell canvas {
   width: 100% !important;
-  height: 320px !important;
+  height: 380px !important;
 }
 
 .forecast-side {
   display: grid;
+  gap: 14px;
+}
+
+.forecast-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-bottom: 0;
+}
+
+.forecast-stats .kpi {
+  border-radius: 16px;
+  padding: 12px 13px;
+  background: linear-gradient(180deg, rgba(15, 27, 50, 0.96), rgba(9, 18, 34, 0.96));
+  border-color: rgba(103, 164, 255, 0.16);
+}
+
+.forecast-stats .kpi-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.forecast-stats .kpi-value {
+  margin-top: 6px;
+  font-size: clamp(18px, 1.6vw, 24px);
+  line-height: 1.1;
 }
 
 .forecast-keypoints {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .forecast-keypoint {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(14, 23, 42, 0.8);
-  padding: 12px;
+  border: 1px solid rgba(103, 164, 255, 0.14);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(12, 23, 44, 0.94), rgba(8, 16, 31, 0.96));
+  padding: 14px 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-keypoint h4 {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin: 0 0 7px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #edf5ff;
 }
 
 .forecast-keypoint p {
   margin: 0;
-  color: var(--muted);
+  color: #a9bcda;
   font-size: 13px;
+  line-height: 1.55;
+}
+
+.forecast-pattern-card {
+  border-radius: 16px;
+  border-color: rgba(103, 164, 255, 0.16);
+  background: linear-gradient(180deg, rgba(13, 25, 47, 0.96), rgba(8, 16, 31, 0.96));
+  padding: 14px 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .forecast-pattern-card h4 {
   margin: 0 0 6px;
+  color: #f3f8ff;
+  font-size: 14px;
+}
+
+.forecast-pattern-card p {
+  color: #8dddc0;
+  font-weight: 700;
 }
 
 .forecast-bullets {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   padding-left: 18px;
-  color: var(--muted);
+  color: #a9bcda;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+#forecastStatus {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(103, 164, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  line-height: 1.5;
 }
 
 .helper-note.bad,
@@ -2038,6 +2178,10 @@ html[data-theme="light"] .value-line {
   .kpis,
   .forecast-grid {
     grid-template-columns: 1fr;
+  }
+
+  .forecast-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .app-shell-stock .layout {
@@ -2054,6 +2198,28 @@ html[data-theme="light"] .value-line {
   .page-actions,
   .app-shell-stock .row {
     flex-wrap: wrap;
+  }
+
+  .forecast-card-head {
+    align-items: stretch;
+  }
+
+  .forecast-controls {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .forecast-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .forecast-chart-shell {
+    min-height: 340px;
+    padding: 15px 14px 12px;
+  }
+
+  .forecast-chart-shell canvas {
+    height: 300px !important;
   }
 
   .currency-converter-value,

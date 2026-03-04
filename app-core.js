@@ -36,7 +36,23 @@
   const CURRENCY_KEY = "tp_currency";
   const CURRENCY_RATES_KEY = "tp_currency_rates_usd";
   const RELOAD_MARKER_KEY = "tp_pending_reload";
-  const SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
+  const DEFAULT_SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
+  const SUPPORTED_CURRENCIES = (() => {
+    try {
+      const runtimeSupported = typeof Intl.supportedValuesOf === "function"
+        ? Intl.supportedValuesOf("currency")
+        : [];
+      return Array.from(
+        new Set(
+          ["USD", ...DEFAULT_SUPPORTED_CURRENCIES, ...runtimeSupported]
+            .map((code) => String(code || "").toUpperCase().trim())
+            .filter((code) => /^[A-Z]{3}$/.test(code))
+        )
+      );
+    } catch {
+      return [...DEFAULT_SUPPORTED_CURRENCIES];
+    }
+  })();
   const FALLBACK_USD_RATES = {
     USD: 1,
     EUR: 0.92,
@@ -738,6 +754,10 @@
     };
   }
 
+  function getSupportedCurrencies() {
+    return [...SUPPORTED_CURRENCIES];
+  }
+
   window.TradeProCore = {
     API_BASE,
     login,
@@ -760,7 +780,8 @@
     convertFromUSD,
     refreshCurrencyRates,
     convertCurrencyAmount,
-    getCurrencyRates
+    getCurrencyRates,
+    getSupportedCurrencies
   };
 
   window.addEventListener("storage", (event) => {

@@ -139,13 +139,13 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="row space section-head">
+        <div class="card forecast-card">
+          <div class="row space section-head forecast-card-head">
             <div>
               <h3 class="section-title">AI Forecast</h3>
               <p class="technical-sub">Six-month daily candles, heuristic pattern detection, and projected next trading days.</p>
             </div>
-            <div class="row row-tight">
+            <div class="row row-tight forecast-controls">
               <select id="forecastHorizon" class="select-auto">
                 <option value="7">7D</option>
                 <option value="14" selected>14D</option>
@@ -161,7 +161,7 @@
               <canvas id="forecastChart" aria-label="AI forecast projection chart"></canvas>
             </div>
             <div class="forecast-side">
-              <div class="kpis" id="forecastStats"></div>
+              <div class="kpis forecast-stats" id="forecastStats"></div>
               <div class="forecast-keypoints" id="forecastKeypoints"></div>
               <div class="news-item forecast-pattern-card">
                 <h4 id="forecastPatternName">Pattern: Loading...</h4>
@@ -242,8 +242,8 @@
     </main>
   </section>
 
-  <script src="app-core.js"></script>
-  <script src="stock.js"></script>
+  <script src="app-core.js?v=20260304b"></script>
+  <script src="stock.js?v=20260304b"></script>
 </body>
 </html>
 
