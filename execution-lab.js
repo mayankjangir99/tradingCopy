@@ -18,6 +18,15 @@ function fmt(v, d = 2) {
   return n.toLocaleString(undefined, { maximumFractionDigits: d });
 }
 
+function money(v, d = 2) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "-";
+  if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
+    return window.TradeProCore.formatMoney(n, { digits: d, assumeUSD: true });
+  }
+  return n.toLocaleString(undefined, { maximumFractionDigits: d });
+}
+
 function kpi(label, value, cls = "") {
   return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div></div>`;
 }
@@ -117,7 +126,7 @@ function renderBacktestMetrics(item) {
     kpi("Expectancy", `${fmt(m.expectancyPct || 0, 4)}%`),
     kpi("Max Drawdown", `${fmt(m.maxDrawdownPct || 0, 2)}%`, Number(m.maxDrawdownPct || 0) > 10 ? "bad" : ""),
     kpi("Sharpe", fmt(m.sharpe || 0, 3), Number(m.sharpe || 0) >= 1 ? "good" : ""),
-    kpi("Ending Equity", fmt(m.endingEquity || 0, 4))
+    kpi("Ending Equity", money(m.endingEquity || 0, 2))
   ].join("");
 }
 

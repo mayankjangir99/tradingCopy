@@ -140,7 +140,7 @@ async function calculateGoalSip() {
   document.getElementById("goalResult").innerHTML = [
     `<div class="kpi"><div class="kpi-label">Required Monthly Investment</div><div class="kpi-value">${money(data.requiredMonthlyInvestment, 0)}</div></div>`,
     `<div class="kpi"><div class="kpi-label">Target Amount</div><div class="kpi-value">${money(data.targetAmount, 0)}</div></div>`,
-    `<div class="kpi"><div class="kpi-label">Duration</div><div class="kpi-value">${money(data.durationYears, 1)} Years</div></div>`
+    `<div class="kpi"><div class="kpi-label">Duration</div><div class="kpi-value">${Number(data.durationYears || 0).toFixed(1)} Years</div></div>`
   ].join("");
 }
 

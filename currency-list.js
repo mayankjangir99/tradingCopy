@@ -203,6 +203,7 @@ function bootstrap() {
   });
   window.addEventListener("storage", renderConverter);
   window.addEventListener("tp:currency-changed", renderConverter);
+  window.addEventListener("tp:currency-rates-updated", renderConverter);
 
   refreshRates().catch(() => {
     renderConverter();

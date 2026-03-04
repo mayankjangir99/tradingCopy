@@ -655,6 +655,7 @@ dashboardFxFromEl?.addEventListener("change", renderDashboardConverter);
 dashboardFxToEl?.addEventListener("change", renderDashboardConverter);
 window.addEventListener("storage", renderDashboardConverter);
 window.addEventListener("tp:currency-changed", renderDashboardConverter);
+window.addEventListener("tp:currency-rates-updated", renderDashboardConverter);
 
 populateFxSelect(dashboardFxFromEl, "USD");
 populateFxSelect(dashboardFxToEl, window.TradeProCore?.getCurrency?.() || "INR");

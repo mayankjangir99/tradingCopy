@@ -27,6 +27,7 @@ Example for a persistent disk mount:
 DATA_DIR=/var/data/tradingcopy
 ALLOWED_ORIGINS=https://yourname.github.io
 AUTH_SECRET=replace-with-a-long-random-secret
+EXCHANGE_RATE_API_KEY=your-exchangerate-api-key
 ```
 
 If your hosting provider supports persistent disks, point `DATA_DIR` to that mount path.

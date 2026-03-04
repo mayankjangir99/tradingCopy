@@ -70,6 +70,7 @@
   let usdRates = { ...FALLBACK_USD_RATES };
   let usdRatesUpdatedAt = 0;
   let reloadScheduled = false;
+  const IS_AUTH_PAGE = /\/?(index\.html)?$/i.test(window.location.pathname);
 
   function readStorage(key) {
     return localStorage.getItem(key) || sessionStorage.getItem(key) || "";
@@ -292,9 +293,8 @@
     }
   }
 
-  function writeCachedRates(rates) {
+  function writeCachedRates(rates, ts = Date.now()) {
     try {
-      const ts = Date.now();
       usdRatesUpdatedAt = ts;
       localStorage.setItem(CURRENCY_RATES_KEY, JSON.stringify({ ts, rates }));
     } catch {
@@ -302,20 +302,99 @@
     }
   }
 
-  async function refreshCurrencyRates() {
-    try {
-      const symbols = SUPPORTED_CURRENCIES.join(",");
-      const response = await fetch(`https://api.exchangerate.host/latest?base=USD&symbols=${symbols}`);
-      if (!response.ok) return usdRates;
-      const data = await response.json();
-      const nextRates = data && data.rates && typeof data.rates === "object" ? data.rates : null;
-      if (!nextRates || !Number.isFinite(Number(nextRates.USD || 1))) return usdRates;
-      usdRates = { ...FALLBACK_USD_RATES, ...nextRates, USD: 1 };
-      writeCachedRates(usdRates);
-      return usdRates;
-    } catch {
-      return usdRates;
+  function emitCurrencyRatesUpdated(source = "live") {
+    window.dispatchEvent(new CustomEvent("tp:currency-rates-updated", {
+      detail: {
+        base: "USD",
+        updatedAt: usdRatesUpdatedAt,
+        rates: { ...usdRates },
+        source
+      }
+    }));
+  }
+
+  function normalizeRateMap(rawRates) {
+    if (!rawRates || typeof rawRates !== "object") return null;
+    const normalized = { ...FALLBACK_USD_RATES };
+    for (const code of SUPPORTED_CURRENCIES) {
+      if (code === "USD") {
+        normalized.USD = 1;
+        continue;
+      }
+      const rate = Number(rawRates[code]);
+      if (Number.isFinite(rate) && rate > 0) {
+        normalized[code] = rate;
+      }
     }
+    return Number.isFinite(Number(normalized.USD)) ? normalized : null;
+  }
+
+  async function fetchRatesFromBackendApi() {
+    const response = await fetch(`${API_BASE}/api/fx/latest`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Backend FX ${response.status}`);
+    const data = await response.json();
+    const rates = normalizeRateMap(data?.rates);
+    if (!rates) {
+      throw new Error("Backend FX returned invalid payload");
+    }
+    return {
+      rates,
+      updatedAt: Number(data?.updatedAt || Date.now())
+    };
+  }
+
+  async function fetchRatesFromOpenErApi() {
+    const response = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
+    if (!response.ok) throw new Error(`OpenER API ${response.status}`);
+    const data = await response.json();
+    if (data?.result !== "success") {
+      throw new Error("OpenER API returned invalid payload");
+    }
+    return {
+      rates: normalizeRateMap(data.rates),
+      updatedAt: Date.now()
+    };
+  }
+
+  async function fetchRatesFromExchangeRateHost() {
+    const symbols = SUPPORTED_CURRENCIES.join(",");
+    const response = await fetch(`https://api.exchangerate.host/latest?base=USD&symbols=${symbols}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`ExchangeRateHost ${response.status}`);
+    const data = await response.json();
+    return {
+      rates: normalizeRateMap(data?.rates),
+      updatedAt: Date.now()
+    };
+  }
+
+  async function fetchRatesFromFrankfurter() {
+    const symbols = SUPPORTED_CURRENCIES.filter((code) => code !== "USD").join(",");
+    const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${symbols}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Frankfurter ${response.status}`);
+    const data = await response.json();
+    return {
+      rates: normalizeRateMap({ ...(data?.rates || {}), USD: 1 }),
+      updatedAt: Date.now()
+    };
+  }
+
+  async function refreshCurrencyRates() {
+    if (IS_AUTH_PAGE) return usdRates;
+    const providers = [fetchRatesFromBackendApi, fetchRatesFromOpenErApi, fetchRatesFromExchangeRateHost, fetchRatesFromFrankfurter];
+    for (const provider of providers) {
+      try {
+        const nextResult = await provider();
+        const nextRates = nextResult?.rates;
+        if (!nextRates) continue;
+        usdRates = nextRates;
+        writeCachedRates(usdRates, Number(nextResult?.updatedAt || Date.now()));
+        emitCurrencyRatesUpdated("live");
+        return usdRates;
+      } catch (error) {
+        console.log("Currency rates warning:", error.message);
+      }
+    }
+    return usdRates;
   }
 
   function getCurrency() {
@@ -592,9 +671,15 @@
   }
 
   async function setCurrency(nextCode) {
-    currencyCode = normalizeCurrency(nextCode);
+    const normalized = normalizeCurrency(nextCode);
+    if (normalized === currencyCode) {
+      updateCurrencyBadges();
+      return currencyCode;
+    }
+    currencyCode = normalized;
     localStorage.setItem(CURRENCY_KEY, currencyCode);
     updateCurrencyBadges();
+    await refreshCurrencyRates();
     if (hasSession()) {
       try {
         await apiFetch("/api/preferences", {
@@ -611,12 +696,17 @@
   }
 
   async function hydrateCurrency() {
+    if (IS_AUTH_PAGE) {
+      updateCurrencyBadges();
+      return currencyCode;
+    }
     const cached = normalizeCurrency(localStorage.getItem(CURRENCY_KEY) || "USD");
     currencyCode = cached;
     const storedRates = readCachedRates();
     if (storedRates?.rates) {
       usdRates = { ...FALLBACK_USD_RATES, ...storedRates.rates, USD: 1 };
       usdRatesUpdatedAt = Number(storedRates.ts || 0);
+      emitCurrencyRatesUpdated("cache");
     }
     refreshCurrencyRates();
 
@@ -749,6 +839,14 @@
       window.dispatchEvent(new CustomEvent("tp:currency-changed", { detail: { currency: currencyCode, source: "storage" } }));
       return;
     }
+    if (event.key === CURRENCY_RATES_KEY) {
+      const storedRates = readCachedRates();
+      if (!storedRates?.rates) return;
+      usdRates = { ...FALLBACK_USD_RATES, ...storedRates.rates, USD: 1 };
+      usdRatesUpdatedAt = Number(storedRates.ts || 0);
+      emitCurrencyRatesUpdated("storage");
+      return;
+    }
     if (event.key === THEME_KEY) {
       const nextTheme = String(event.newValue || "dark");
       applyTheme(nextTheme);
@@ -759,7 +857,7 @@
   window.addEventListener("tp:currency-changed", (event) => {
     const source = String(event?.detail?.source || "local");
     if (source !== "local" && source !== "storage") return;
-    forceReloadWithLoader("currency");
+    updateCurrencyBadges();
   });
 
   window.addEventListener("tp:theme-changed", (event) => {
@@ -782,5 +880,7 @@
   hydrateTheme();
   hydrateCurrency();
   updateCurrencyBadges();
-  registerServiceWorker();
+  if (!IS_AUTH_PAGE) {
+    registerServiceWorker();
+  }
 })();

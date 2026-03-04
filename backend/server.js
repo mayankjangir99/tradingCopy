@@ -21,6 +21,7 @@ const REFRESH_TTL_SECONDS = Number(process.env.REFRESH_TTL_SECONDS || 604800);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || "";
+const EXCHANGE_RATE_API_KEY = process.env.EXCHANGE_RATE_API_KEY || "";
 const DEFAULT_ADMIN_USERNAME = String(process.env.DEFAULT_ADMIN_USERNAME || "").trim().toLowerCase();
 const DEFAULT_ADMIN_PASSWORD = String(process.env.DEFAULT_ADMIN_PASSWORD || "");
 const ALPACA_SANDBOX_KEY = process.env.ALPACA_SANDBOX_KEY || "";
@@ -2154,7 +2155,48 @@ function backtestEmaCross(closes) {
   };
 }
 
+function safeSliceAverage(values) {
+  const nums = values.map(Number).filter(Number.isFinite);
+  if (!nums.length) return 0;
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+
+function linearSlopePct(values) {
+  const points = values.map(Number).filter(Number.isFinite);
+  const n = points.length;
+  if (n < 2) return 0;
+
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+  for (let i = 0; i < n; i += 1) {
+    sumX += i;
+    sumY += points[i];
+    sumXY += i * points[i];
+    sumXX += i * i;
+  }
+
+  const denom = (n * sumXX) - (sumX * sumX);
+  if (!denom) return 0;
+  const slope = ((n * sumXY) - (sumX * sumY)) / denom;
+  const base = Math.abs(points[0]) > 1e-9 ? points[0] : 1;
+  return (slope / base) * 100;
+}
+
+function stdDev(values) {
+  const nums = values.map(Number).filter(Number.isFinite);
+  if (!nums.length) return 0;
+  const mean = nums.reduce((sum, value) => sum + value, 0) / nums.length;
+  const variance = nums.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / nums.length;
+  return Math.sqrt(Math.max(variance, 0));
+}
+
 function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolInfo) {
+  if (!Array.isArray(rows) || rows.length < 35) {
+    throw new Error("Not enough candle data for AI analytics");
+  }
+
   const closes = rows.map((r) => r.close);
   const highs = rows.map((r) => (Number.isFinite(r.high) ? r.high : r.close));
   const lows = rows.map((r) => (Number.isFinite(r.low) ? r.low : r.close));
@@ -2162,11 +2204,12 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
 
   const latest = rows[rows.length - 1];
   const bars24h = (TIMEFRAME_CONFIG[tf] || TIMEFRAME_CONFIG["1D"]).bars24h;
-  const past24hIndex = Math.max(0, rows.length - 1 - bars24h);
+  const effectiveBars24h = clamp(bars24h, 1, Math.max(1, rows.length - 1));
+  const past24hIndex = Math.max(0, rows.length - 1 - effectiveBars24h);
   const close24hAgo = closes[past24hIndex] || closes[rows.length - 2] || latest.close;
   const change24h = ((latest.close - close24hAgo) / close24hAgo) * 100;
 
-  const rangeRows = rows.slice(Math.max(0, rows.length - bars24h));
+  const rangeRows = rows.slice(Math.max(0, rows.length - effectiveBars24h));
   const high24h = Math.max(...rangeRows.map((r) => r.high || r.close));
   const low24h = Math.min(...rangeRows.map((r) => r.low || r.close));
 
@@ -2181,7 +2224,15 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   const emaSlowArr = EMA.calculate({ values: closes, period: 21 });
   const emaFast = emaFastArr[emaFastArr.length - 1];
   const emaSlow = emaSlowArr[emaSlowArr.length - 1];
-  const emaState = emaFast > emaSlow ? "Bullish crossover" : "Bearish crossover";
+  const prevEmaFast = emaFastArr[emaFastArr.length - 2];
+  const prevEmaSlow = emaSlowArr[emaSlowArr.length - 2];
+  let emaState = "Neutral";
+  if (Number.isFinite(prevEmaFast) && Number.isFinite(prevEmaSlow)) {
+    if (prevEmaFast <= prevEmaSlow && emaFast > emaSlow) emaState = "Fresh bullish crossover";
+    else if (prevEmaFast >= prevEmaSlow && emaFast < emaSlow) emaState = "Fresh bearish crossover";
+    else if (emaFast > emaSlow) emaState = "Bullish trend alignment";
+    else if (emaFast < emaSlow) emaState = "Bearish trend alignment";
+  }
 
   const macdArr = MACD.calculate({
     values: closes,
@@ -2192,53 +2243,112 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
     SimpleMASignal: false
   });
   const macd = macdArr[macdArr.length - 1] || {};
-  const macdState = (macd.histogram || 0) >= 0 ? "Bullish" : "Bearish";
+  const prevMacd = macdArr[macdArr.length - 2] || {};
+  let macdState = "Neutral";
+  if ((prevMacd.histogram || 0) <= 0 && (macd.histogram || 0) > 0) macdState = "Bullish momentum turn";
+  else if ((prevMacd.histogram || 0) >= 0 && (macd.histogram || 0) < 0) macdState = "Bearish momentum turn";
+  else if ((macd.histogram || 0) > 0) macdState = "Bullish momentum";
+  else if ((macd.histogram || 0) < 0) macdState = "Bearish momentum";
 
   const bbArr = BollingerBands.calculate({ values: closes, period: 20, stdDev: 2 });
   const bb = bbArr[bbArr.length - 1] || {};
   let bbState = "Neutral";
-  if (Number.isFinite(bb.upper) && latest.close > bb.upper) bbState = "Overbought";
-  if (Number.isFinite(bb.lower) && latest.close < bb.lower) bbState = "Oversold";
+  if (Number.isFinite(bb.upper) && latest.close >= bb.upper) bbState = "Stretching above upper band";
+  else if (Number.isFinite(bb.lower) && latest.close <= bb.lower) bbState = "Testing lower band";
+  else if (Number.isFinite(bb.middle) && latest.close > bb.middle) bbState = "Holding above mid band";
+  else if (Number.isFinite(bb.middle) && latest.close < bb.middle) bbState = "Holding below mid band";
 
   const atrArr = ATR.calculate({ high: highs, low: lows, close: closes, period: 14 });
   const atr = atrArr[atrArr.length - 1] || latest.close * 0.01;
+  const atrPct = latest.close ? (atr / latest.close) * 100 : 0;
 
   const recent20 = closes.slice(-21, -1);
   const previousHigh = Math.max(...recent20);
   const previousLow = Math.min(...recent20);
+  const recentReturns = [];
+  for (let i = Math.max(1, closes.length - 21); i < closes.length; i += 1) {
+    const prev = closes[i - 1];
+    const next = closes[i];
+    if (!Number.isFinite(prev) || !Number.isFinite(next) || Math.abs(prev) < 1e-9) continue;
+    recentReturns.push((next - prev) / prev);
+  }
+  const returnVolPct = stdDev(recentReturns) * 100;
+  const trendSlopePct = linearSlopePct(closes.slice(-20));
+  const support = Math.min(...lows.slice(-20));
+  const resistance = Math.max(...highs.slice(-20));
 
-  let marketMode = "Sideways";
-  if (latest.close > previousHigh * 1.002 && volumeRatio > 1.2) marketMode = "Breakout";
-  else if (latest.close > previousHigh * 1.002 && volumeRatio <= 1.2) marketMode = "Fake breakout";
-  else if (emaFast > emaSlow && (macd.histogram || 0) > 0) marketMode = "Trending";
+  const bullishBreakout = latest.close > previousHigh * 1.002;
+  const bearishBreakdown = latest.close < previousLow * 0.998;
+  const bullishTrend = emaFast > emaSlow && (macd.histogram || 0) > 0 && trendSlopePct > 0;
+  const bearishTrend = emaFast < emaSlow && (macd.histogram || 0) < 0 && trendSlopePct < 0;
+
+  let marketMode = "Range-bound";
+  if (bullishBreakout && volumeRatio >= 1.15) marketMode = "Bullish breakout";
+  else if (bearishBreakdown && volumeRatio >= 1.15) marketMode = "Bearish breakdown";
+  else if (bullishTrend) marketMode = "Uptrend";
+  else if (bearishTrend) marketMode = "Downtrend";
+  else if (Math.abs(trendSlopePct) < 0.03 && atrPct < 2.2) marketMode = "Sideways consolidation";
 
   let riskLevel = "Medium";
-  let riskEmoji = "??";
-  if (Math.abs(change24h) > 5 || rsi > 75 || rsi < 25) {
+  let riskEmoji = "!";
+  if (atrPct >= 4.5 || returnVolPct >= 3.8 || Math.abs(change24h) >= 6 || rsi >= 78 || rsi <= 22) {
     riskLevel = "High";
-    riskEmoji = "??";
-  } else if (Math.abs(change24h) < 2 && rsi >= 40 && rsi <= 65) {
+    riskEmoji = "HIGH";
+  } else if (atrPct <= 1.8 && returnVolPct <= 1.5 && rsi >= 42 && rsi <= 62) {
     riskLevel = "Low";
-    riskEmoji = "??";
+    riskEmoji = "LOW";
   }
 
-  const rsiScore = Number.isFinite(rsi) ? clamp(100 - Math.abs(rsi - 55) * 2.2, 15, 95) : 50;
-  const emaScore = emaFast > emaSlow ? 82 : 34;
-  const macdScore = (macd.histogram || 0) >= 0 ? 78 : 36;
-  const volumeScore = clamp(45 + volumeRatio * 25, 20, 95);
-  const newsScore = newsSentiment.score;
+  const bullishSignals = [
+    emaFast > emaSlow ? 1 : 0,
+    (macd.histogram || 0) > 0 ? 1 : 0,
+    Number.isFinite(rsi) && rsi >= 50 && rsi <= 68 ? 1 : 0,
+    volumeRatio >= 1.05 ? 1 : 0,
+    trendSlopePct > 0 ? 1 : 0,
+    latest.close > (bb.middle || latest.close) ? 1 : 0,
+    bullishBreakout ? 1 : 0
+  ].reduce((sum, value) => sum + value, 0);
+  const bearishSignals = [
+    emaFast < emaSlow ? 1 : 0,
+    (macd.histogram || 0) < 0 ? 1 : 0,
+    Number.isFinite(rsi) && rsi <= 50 && rsi >= 32 ? 1 : 0,
+    volumeRatio >= 1.05 ? 1 : 0,
+    trendSlopePct < 0 ? 1 : 0,
+    latest.close < (bb.middle || latest.close) ? 1 : 0,
+    bearishBreakdown ? 1 : 0
+  ].reduce((sum, value) => sum + value, 0);
 
-  const confidence = Math.round(
-    rsiScore * 0.2 +
-    emaScore * 0.25 +
-    macdScore * 0.2 +
-    volumeScore * 0.15 +
-    newsScore * 0.2
-  );
+  const directionalEdge = bullishSignals - bearishSignals;
+  const agreementScore = Math.max(bullishSignals, bearishSignals);
+  const rsiScore = Number.isFinite(rsi)
+    ? clamp(100 - Math.abs(rsi - 55) * 2.4, 12, 92)
+    : 50;
+  const emaScore = emaFast > emaSlow ? 72 + Math.min(18, bullishSignals * 3) : 28 + Math.min(18, bearishSignals * 3);
+  const macdScore = (macd.histogram || 0) > 0 ? 68 + Math.min(18, bullishSignals * 2) : 32 + Math.min(18, bearishSignals * 2);
+  const volumeScore = clamp(38 + (volumeRatio * 22), 18, 90);
+  const newsScore = clamp(Number(newsSentiment.score || 50), 10, 90);
+  const trendScore = directionalEdge > 0
+    ? clamp(55 + (directionalEdge * 7) + Math.max(0, trendSlopePct * 40), 20, 92)
+    : clamp(45 + (directionalEdge * 7) - Math.min(0, trendSlopePct * 40), 8, 80);
+
+  let confidence = Math.round(clamp(
+    34 +
+    (agreementScore * 6.5) +
+    (Math.abs(directionalEdge) * 4.5) +
+    (volumeRatio >= 1.15 ? 6 : 0) +
+    ((bullishBreakout || bearishBreakdown) ? 8 : 0) +
+    (Math.abs(trendSlopePct) * 30) -
+    (atrPct > 6 ? 8 : 0),
+    18,
+    96
+  ));
+  confidence = clamp(confidence, 5, 95);
 
   let action = "HOLD";
-  if (confidence >= 68) action = "BUY";
-  if (confidence <= 38) action = "SELL";
+  if (directionalEdge >= 2 && confidence >= 58) action = "BUY";
+  else if (directionalEdge <= -2 && confidence >= 58) action = "SELL";
+  else if (Math.abs(directionalEdge) >= 4) action = directionalEdge > 0 ? "BUY" : "SELL";
+  else confidence = clamp(Math.round((confidence + 50) / 2), 24, 72);
 
   const strategyKey = (strategy || "swing").toLowerCase();
   const strategyMap = {
@@ -2249,11 +2359,14 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   const plan = strategyMap[strategyKey] || strategyMap.swing;
 
   let entry = latest.close;
-  let stopLoss = latest.close - atr * plan.sl;
-  let target = latest.close + atr * plan.tp;
+  let stopLoss = Math.min(latest.close - atr * plan.sl, support - atr * 0.25);
+  let target = Math.max(latest.close + atr * plan.tp, resistance + atr * 0.35);
   if (action === "SELL") {
-    stopLoss = latest.close + atr * plan.sl;
-    target = latest.close - atr * plan.tp;
+    stopLoss = Math.max(latest.close + atr * plan.sl, resistance + atr * 0.25);
+    target = Math.min(latest.close - atr * plan.tp, support - atr * 0.35);
+  } else if (action === "HOLD") {
+    stopLoss = latest.close - atr * Math.max(1.2, plan.sl * 0.7);
+    target = latest.close + atr * Math.max(1.6, plan.tp * 0.6);
   }
 
   const backtest = backtestEmaCross(closes);
@@ -2296,7 +2409,9 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
         lower: toFixedNumber(bb.lower, 4),
         state: bbState
       },
-      volumeSignal: volumeRatio > 1.2 ? "Strong" : volumeRatio < 0.8 ? "Weak" : "Normal"
+      atr: toFixedNumber(atr, 4),
+      atrPct: toFixedNumber(atrPct, 2),
+      volumeSignal: volumeRatio > 1.25 ? "Strong participation" : volumeRatio < 0.8 ? "Thin participation" : "Normal participation"
     },
     risk: {
       level: riskLevel,
@@ -3573,6 +3688,32 @@ app.delete("/api/team/watchlists/:id/items/:symbol", authRequired, (req, res) =>
 
 app.get("/", (req, res) => {
   res.json({ status: "ok", service: "tradepro-ai-backend" });
+});
+
+app.get("/api/fx/latest", async (_req, res) => {
+  try {
+    if (!EXCHANGE_RATE_API_KEY) {
+      return res.status(503).json({ error: "EXCHANGE_RATE_API_KEY is not configured" });
+    }
+
+    const response = await axios.get(`https://v6.exchangerate-api.com/v6/${encodeURIComponent(EXCHANGE_RATE_API_KEY)}/latest/USD`, {
+      timeout: 10000
+    });
+    const payload = response.data && typeof response.data === "object" ? response.data : {};
+    if (payload.result !== "success" || !payload.conversion_rates || typeof payload.conversion_rates !== "object") {
+      throw new Error("ExchangeRate-API returned invalid payload");
+    }
+
+    res.json({
+      base: String(payload.base_code || "USD").toUpperCase(),
+      rates: payload.conversion_rates,
+      provider: "exchangerate-api",
+      updatedAt: payload.time_last_update_unix ? Number(payload.time_last_update_unix) * 1000 : Date.now()
+    });
+  } catch (error) {
+    console.log("FX rates error:", error.response?.data || error.message);
+    res.status(502).json({ error: "FX rates unavailable" });
+  }
 });
 
 app.get("/api/quote/:symbol", async (req, res) => {

@@ -59,6 +59,7 @@ const forecastPatternBullets = document.getElementById("forecastPatternBullets")
 const forecastStatus = document.getElementById("forecastStatus");
 const forecastKeypoints = document.getElementById("forecastKeypoints");
 const forecastVisualDeck = document.getElementById("forecastVisualDeck");
+const stockCurrencySelectEl = document.getElementById("stockCurrencySelect");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -72,6 +73,7 @@ let currentRealtimePrice = Number.NaN;
 let aiRefreshTimer = null;
 let forecastChart = null;
 let forecastRows = [];
+let lastForecastSource = "fallback";
 
 function hexToRgba(hex, alpha) {
   const safe = String(hex || "").replace("#", "");
@@ -1083,6 +1085,7 @@ async function loadForecastWidget() {
       throw new Error("Not enough daily candles for forecast.");
     }
     const forecast = buildForecast(forecastRows, horizon);
+    lastForecastSource = source;
     renderForecastChart(forecastRows, forecast);
     renderForecastVisualDeck(forecast, source);
     renderForecastStats(forecast.stats, source);
@@ -1128,6 +1131,34 @@ async function loadForecastWidget() {
     forecastChart?.destroy();
     forecastChart = null;
   }
+}
+
+function rerenderCurrencySensitiveViews() {
+  if (lastAiSnapshot) {
+    renderAiPayload(lastAiSnapshot);
+  }
+  if (forecastRows.length >= 40) {
+    const horizon = Math.max(7, Number(forecastHorizonSelect?.value || 14));
+    const forecast = buildForecast(forecastRows, horizon);
+    renderForecastChart(forecastRows, forecast);
+    renderForecastVisualDeck(forecast, lastForecastSource);
+    renderForecastStats(forecast.stats, lastForecastSource);
+    renderForecastKeypoints(forecast, lastForecastSource);
+    setForecastPattern(forecast.pattern);
+  }
+}
+
+function bindStockCurrencySelect() {
+  if (!stockCurrencySelectEl || !window.TradeProCore) return;
+  stockCurrencySelectEl.value = window.TradeProCore.getCurrency?.() || "USD";
+  stockCurrencySelectEl.addEventListener("change", () => {
+    window.TradeProCore.setCurrency?.(stockCurrencySelectEl.value);
+  });
+  window.addEventListener("tp:currency-changed", (event) => {
+    const nextCurrency = String(event?.detail?.currency || "").toUpperCase();
+    if (!nextCurrency) return;
+    stockCurrencySelectEl.value = nextCurrency;
+  });
 }
 
 async function validateCurrentSymbol() {
@@ -1425,11 +1456,29 @@ function formatNumber(value, decimals = 2) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
 }
 
+function getSymbolMarketType() {
+  if (SYMBOL.startsWith("FX:")) return "forex";
+  if (SYMBOL.startsWith("BINANCE:")) return "crypto";
+  if (SYMBOL.startsWith("OPRA:")) return "options";
+  if (SYMBOL.includes("1!") || SYMBOL.startsWith("CME_") || SYMBOL.startsWith("NYMEX:") || SYMBOL.startsWith("COMEX:") || SYMBOL.startsWith("CBOT:")) {
+    return "futures";
+  }
+  return "stock";
+}
+
+function shouldConvertMoneyValues() {
+  return getSymbolMarketType() !== "forex";
+}
+
 function formatMoney(value, decimals = 2) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "-";
+  const shouldConvert = shouldConvertMoneyValues();
   if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
-    return window.TradeProCore.formatMoney(n, { digits: decimals, assumeUSD: true });
+    return window.TradeProCore.formatMoney(n, { digits: decimals, assumeUSD: shouldConvert });
+  }
+  if (!shouldConvert) {
+    return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
   }
   const fallbackCurrency = String(localStorage.getItem("tp_currency") || "USD").toUpperCase();
   try {
@@ -1967,6 +2016,14 @@ downloadForecastBtn?.addEventListener("click", () => {
   link.click();
 });
 
+window.addEventListener("tp:currency-rates-updated", () => {
+  rerenderCurrencySensitiveViews();
+});
+
+window.addEventListener("tp:currency-changed", () => {
+  rerenderCurrencySensitiveViews();
+});
+
 function refreshResponsiveCharts() {
   renderChart();
   renderOverviewWidget();
@@ -2014,6 +2071,7 @@ function handleVisibilityChange() {
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 async function bootstrapStockPage() {
+  bindStockCurrencySelect();
   hydrateStockPreferences();
   updateWatchlistButton();
   renderChart();

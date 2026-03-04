@@ -27,10 +27,7 @@ function n(value, fallback = 0) {
 }
 
 function money(value) {
-  if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
-    return window.TradeProCore.formatMoney(n(value), { digits: 2, assumeUSD: true });
-  }
-  return n(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return n(value).toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
 async function api(path, options = {}) {
@@ -79,7 +76,7 @@ function startStream() {
     const rows = Object.entries(quotes).map(([symbol, px]) => `
       <div class="news-item">
         <h4>${esc(symbol)}</h4>
-        <p>${px === null ? "N/A" : Number(px).toFixed(4)}</p>
+        <p>${px === null ? "N/A" : money(px)}</p>
       </div>
     `);
     streamQuotesEl.innerHTML = rows.join("") || "<p class='brand-sub'>No quote updates yet.</p>";

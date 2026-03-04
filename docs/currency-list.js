@@ -33,6 +33,10 @@ const FLAG_OVERRIDES = {
   XCD: "🇦🇬", XOF: "🇸🇳", XPF: "🇵🇫", YER: "🇾🇪", ZAR: "🇿🇦", ZMW: "🇿🇲", ZWL: "🇿🇼"
 };
 
+function q(id) {
+  return document.getElementById(id);
+}
+
 function toFlagEmoji(countryCode) {
   if (!countryCode || countryCode.length !== 2) return "🏳️";
   const base = 127397;
@@ -199,6 +203,7 @@ function bootstrap() {
   });
   window.addEventListener("storage", renderConverter);
   window.addEventListener("tp:currency-changed", renderConverter);
+  window.addEventListener("tp:currency-rates-updated", renderConverter);
 
   refreshRates().catch(() => {
     renderConverter();

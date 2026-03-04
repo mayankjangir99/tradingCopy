@@ -370,11 +370,11 @@ select:focus {
 
 .app-shell {
   margin: 18px auto;
-  width: min(1400px, calc(100% - 24px));
+  width: min(1680px, calc(100% - 20px));
 }
 
 .app-shell-dashboard {
-  width: min(1140px, calc(100% - 24px));
+  width: min(1540px, calc(100% - 20px));
 }
 
 .brand-row-tight {
@@ -407,7 +407,7 @@ select:focus {
 }
 
 .page-main {
-  padding: 20px;
+  padding: 24px 26px;
 }
 
 .control-center-main {
@@ -451,7 +451,7 @@ select:focus {
 }
 
 .notes-shell {
-  width: min(1120px, calc(100% - 24px));
+  width: min(1500px, calc(100% - 20px));
   margin: 18px auto;
 }
 
@@ -695,8 +695,8 @@ select:focus {
 
 .layout {
   display: grid;
-  grid-template-columns: 1.75fr 0.95fr;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.95fr) minmax(340px, 1fr);
+  gap: 22px;
 }
 
 .app-shell-stock .layout {
@@ -707,6 +707,7 @@ select:focus {
   position: relative;
   overflow: hidden;
   padding: 28px 28px 24px;
+  display: block;
   background:
     radial-gradient(circle at top left, rgba(87, 182, 255, 0.12), transparent 34%),
     radial-gradient(circle at top right, rgba(47, 208, 139, 0.1), transparent 28%),
@@ -715,8 +716,8 @@ select:focus {
 
 .stock-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
@@ -812,6 +813,12 @@ select:focus {
   gap: 10px;
 }
 
+.stock-currency-select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+}
+
 .stock-action-grid > * {
   min-width: 0;
 }
@@ -883,6 +890,10 @@ select:focus {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px 14px;
+}
+
+.stock-toolbar .row {
+  flex-wrap: wrap;
 }
 
 .stock-chart-card,
@@ -2751,6 +2762,11 @@ html[data-theme="light"] .value-line {
     justify-content: flex-start;
   }
 
+  .stock-actions-card,
+  .stock-hero-note {
+    padding: 16px 14px;
+  }
+
   .forecast-card-head {
     align-items: stretch;
   }
@@ -2794,5 +2810,11 @@ html[data-theme="light"] .value-line {
 
   .app-shell-stock #chart {
     min-height: 320px;
+  }
+
+  .stock-action-grid .btn,
+  .stock-action-grid .stock-currency-select,
+  .stock-action-grid .stock-currency-badge {
+    width: 100%;
   }
 }
