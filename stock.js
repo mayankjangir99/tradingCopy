@@ -749,15 +749,15 @@ function renderForecastChart(rows, forecast) {
           position: "top",
           align: "start",
           labels: {
-            color: "#dbe8ff",
+            color: "#f2f7ff",
             usePointStyle: true,
             pointStyle: "line",
-            boxWidth: 26,
-            boxHeight: 8,
-            padding: 14,
+            boxWidth: 32,
+            boxHeight: 10,
+            padding: 18,
             font: {
-              size: 11,
-              weight: "600",
+              size: 13,
+              weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
           }
@@ -766,16 +766,18 @@ function renderForecastChart(rows, forecast) {
           backgroundColor: "rgba(8, 15, 29, 0.96)",
           borderColor: "rgba(103, 164, 255, 0.2)",
           borderWidth: 1,
-          titleColor: "#f4f8ff",
-          bodyColor: "#d6e5ff",
-          padding: 12,
+          titleColor: "#ffffff",
+          bodyColor: "#eef5ff",
+          padding: 14,
           displayColors: true,
+          caretSize: 7,
           titleFont: {
-            size: 12,
+            size: 14,
             weight: "700"
           },
           bodyFont: {
-            size: 12
+            size: 13,
+            weight: "600"
           },
           callbacks: {
             label(context) {
@@ -790,14 +792,14 @@ function renderForecastChart(rows, forecast) {
       scales: {
         x: {
           ticks: {
-            color: "#96afcf",
+            color: "#c9dcf6",
             maxRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 8,
-            padding: 10,
+            maxTicksLimit: 7,
+            padding: 12,
             font: {
-              size: 11,
-              weight: "600",
+              size: 13,
+              weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
           },
@@ -805,12 +807,12 @@ function renderForecastChart(rows, forecast) {
         },
         y: {
           ticks: {
-            color: "#96afcf",
+            color: "#c9dcf6",
             maxTicksLimit: 7,
-            padding: 10,
+            padding: 12,
             font: {
-              size: 11,
-              weight: "600",
+              size: 13,
+              weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             },
             callback(value) {
