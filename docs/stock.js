@@ -627,10 +627,16 @@ function formatCompactAxisMoney(value) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+function formatChartMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  return formatMoney(n, 2);
+}
+
 function renderForecastChart(rows, forecast) {
   if (!forecastChartCanvas || typeof Chart === "undefined") return;
   const history = rows.slice(-60);
-  const historyLabels = history.map((row) => new Date(Number(row.ts) * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }));
+  const historyLabels = history.map((row) => new Date(Number(row.ts) * 1000).toLocaleDateString(undefined, { month: "short", day: "2-digit" }));
   const historyClose = history.map((row) => Number(row.close));
   const futureLabels = forecast.projection.map((item) => `D+${item.day}`);
   const labels = [...historyLabels, ...futureLabels];
@@ -666,7 +672,7 @@ function renderForecastChart(rows, forecast) {
       labels,
       datasets: [
         {
-          label: "History",
+          label: "Price History",
           data: historicalDataset,
           borderColor: "#57b6ff",
           backgroundColor: "rgba(87, 182, 255, 0.16)",
@@ -676,7 +682,7 @@ function renderForecastChart(rows, forecast) {
           pointHitRadius: 14
         },
         {
-          label: "Range High",
+          label: "Upper Band",
           data: upperDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
@@ -687,7 +693,7 @@ function renderForecastChart(rows, forecast) {
           fill: false
         },
         {
-          label: "Range Low",
+          label: "Lower Band",
           data: lowerDataset,
           borderColor: hexToRgba(projectionColor, 0.2),
           backgroundColor: hexToRgba(projectionColor, 0.14),
@@ -697,7 +703,7 @@ function renderForecastChart(rows, forecast) {
           fill: "-1"
         },
         {
-          label: "Projection",
+          label: "AI Forecast",
           data: projectionDataset,
           borderColor: projectionColor,
           backgroundColor: hexToRgba(projectionColor, 0.12),
@@ -709,7 +715,7 @@ function renderForecastChart(rows, forecast) {
         },
         {
           type: "scatter",
-          label: "Markers",
+          label: "Pattern Points",
           data: markerPoints,
           parsing: false,
           showLine: false,
@@ -748,15 +754,16 @@ function renderForecastChart(rows, forecast) {
         legend: {
           position: "top",
           align: "start",
+          maxHeight: 52,
           labels: {
             color: "#f2f7ff",
             usePointStyle: true,
             pointStyle: "line",
-            boxWidth: 32,
+            boxWidth: 28,
             boxHeight: 10,
-            padding: 18,
+            padding: 16,
             font: {
-              size: 13,
+              size: 12,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
@@ -781,10 +788,10 @@ function renderForecastChart(rows, forecast) {
           },
           callbacks: {
             label(context) {
-              if (context.dataset.label === "Markers") {
-                return `${context.raw.label}: ${formatMoney(context.parsed.y, 4)}`;
+              if (context.dataset.label === "Pattern Points") {
+                return `${context.raw.label}: ${formatChartMoney(context.parsed.y)}`;
               }
-              return `${context.dataset.label}: ${formatMoney(context.parsed.y, 4)}`;
+              return `${context.dataset.label}: ${formatChartMoney(context.parsed.y)}`;
             }
           }
         }
@@ -798,7 +805,7 @@ function renderForecastChart(rows, forecast) {
             maxTicksLimit: 7,
             padding: 12,
             font: {
-              size: 13,
+              size: 12,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
@@ -811,7 +818,7 @@ function renderForecastChart(rows, forecast) {
             maxTicksLimit: 7,
             padding: 12,
             font: {
-              size: 13,
+              size: 12,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             },
