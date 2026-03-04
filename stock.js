@@ -48,6 +48,11 @@ const stockPageStatus = document.getElementById("stockPageStatus");
 const stockDataModeBadge = document.getElementById("stockDataModeBadge");
 const stockHealthBadge = document.getElementById("stockHealthBadge");
 const stockLastUpdated = document.getElementById("stockLastUpdated");
+const stockHeaderPrice = document.getElementById("stockHeaderPrice");
+const stockHeaderChange = document.getElementById("stockHeaderChange");
+const stockHeaderMarketCap = document.getElementById("stockHeaderMarketCap");
+const stockSideQuotePrice = document.getElementById("stockSideQuotePrice");
+const stockSideQuoteMeta = document.getElementById("stockSideQuoteMeta");
 const forecastHorizonSelect = document.getElementById("forecastHorizon");
 const refreshForecastBtn = document.getElementById("refreshForecastBtn");
 const downloadForecastBtn = document.getElementById("downloadForecastBtn");
@@ -59,7 +64,6 @@ const forecastPatternBullets = document.getElementById("forecastPatternBullets")
 const forecastStatus = document.getElementById("forecastStatus");
 const forecastKeypoints = document.getElementById("forecastKeypoints");
 const forecastVisualDeck = document.getElementById("forecastVisualDeck");
-const stockCurrencySelectEl = document.getElementById("stockCurrencySelect");
 
 stockNameEl.textContent = SYMBOL;
 subTitleEl.textContent = `TradingView market stream + AI analytics for ${SYMBOL}`;
@@ -74,6 +78,9 @@ let aiRefreshTimer = null;
 let forecastChart = null;
 let forecastRows = [];
 let lastForecastSource = "fallback";
+let currentMarketSnapshot = null;
+let marketSnapshotRequest = null;
+let lastManualRefreshAt = 0;
 
 function hexToRgba(hex, alpha) {
   const safe = String(hex || "").replace("#", "");
@@ -111,7 +118,97 @@ function setStockHealthStatus(label, mode = "neutral") {
 
 function updateLastUpdated(ts = Date.now()) {
   if (!stockLastUpdated) return;
-  stockLastUpdated.textContent = `Last updated ${new Date(ts).toLocaleTimeString()}`;
+  const date = new Date(ts);
+  if (!Number.isFinite(date.getTime())) {
+    stockLastUpdated.textContent = "Last updated unavailable";
+    return;
+  }
+  stockLastUpdated.textContent = `Last updated ${date.toLocaleString()}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMarketCap(value, unavailableReason = "") {
+  const n = Number(value);
+  if (Number.isFinite(n) && n > 0) {
+    return formatMoney(n, 0);
+  }
+  const title = unavailableReason ? ` title="${escapeHtml(unavailableReason)}"` : "";
+  return `<span${title}>Unavailable</span>`;
+}
+
+function freshnessLabel(snapshot) {
+  const freshness = snapshot?.freshness || {};
+  if (snapshot?.stale) return { label: "Cached Snapshot", mode: "neutral" };
+  if (freshness.isRealtime) return { label: "Live", mode: "positive" };
+  if (freshness.delayed) return { label: "Delayed", mode: "negative" };
+  return { label: "Snapshot", mode: "neutral" };
+}
+
+function describeFreshness(snapshot) {
+  const quote = snapshot?.quote || {};
+  const freshness = snapshot?.freshness || {};
+  const ageSeconds = Math.max(0, Math.round(Number(freshness.quoteAgeMs || 0) / 1000));
+  const provider = quote.providerName || snapshot?.providerName || "Provider";
+  const state = freshness.isRealtime ? "Live" : freshness.delayed ? "Delayed" : "Snapshot";
+  return `${state} via ${provider}. Quote age ${formatNumber(ageSeconds, 0)}s.`;
+}
+
+function assertMarketSnapshotConsistency(snapshot) {
+  const quote = snapshot?.quote || {};
+  const signal = snapshot?.ai?.signal || {};
+  const numericQuote = Number(quote.price);
+  if (!Number.isFinite(numericQuote) || numericQuote <= 0) {
+    throw new Error("Snapshot quote price is invalid.");
+  }
+  if (Number.isFinite(Number(quote.marketCap)) && Number(quote.marketCap) < 0) {
+    throw new Error("Snapshot market cap is invalid.");
+  }
+  if (signal.trend === "range" && signal.action === "SELL" && Number(signal.confidence) > 70) {
+    throw new Error("AI signal is contradictory.");
+  }
+}
+
+function assertRenderedQuoteConsistency(snapshot) {
+  const quote = snapshot?.quote || {};
+  const expected = formatMoney(quote.price, 4);
+  if (stockHeaderPrice && stockHeaderPrice.textContent !== expected) {
+    throw new Error("Header quote is out of sync with snapshot quote.");
+  }
+  if (stockSideQuotePrice && stockSideQuotePrice.textContent !== expected) {
+    throw new Error("Side quote is out of sync with snapshot quote.");
+  }
+  if (!Number.isFinite(currentRealtimePrice) || Math.abs(currentRealtimePrice - Number(quote.price || 0)) > 1e-8) {
+    throw new Error("Alert quote is out of sync with snapshot quote.");
+  }
+}
+
+function renderQuoteSummary(snapshot) {
+  const quote = snapshot?.quote || {};
+  const freshness = snapshot?.freshness || {};
+  const marketCapWarning = snapshot?.warnings?.find((item) => String(item || "").toLowerCase().includes("market cap")) || "";
+  const changeText = `${formatMoney(quote.change, 2)} (${formatPercent(quote.changePercent)})`;
+  const changeClass = Number(quote.change) >= 0 ? "good" : "bad";
+
+  if (stockHeaderPrice) stockHeaderPrice.textContent = formatMoney(quote.price, 4);
+  if (stockHeaderChange) {
+    stockHeaderChange.textContent = changeText;
+    stockHeaderChange.className = `stock-strip-price ${changeClass}`;
+  }
+  if (stockHeaderMarketCap) {
+    stockHeaderMarketCap.innerHTML = formatMarketCap(quote.marketCap, marketCapWarning);
+  }
+  if (stockSideQuotePrice) stockSideQuotePrice.textContent = formatMoney(quote.price, 4);
+  if (stockSideQuoteMeta) {
+    stockSideQuoteMeta.textContent = freshness.warning || describeFreshness(snapshot);
+  }
 }
 
 function getStoredWatchlist() {
@@ -1133,34 +1230,6 @@ async function loadForecastWidget() {
   }
 }
 
-function rerenderCurrencySensitiveViews() {
-  if (lastAiSnapshot) {
-    renderAiPayload(lastAiSnapshot);
-  }
-  if (forecastRows.length >= 40) {
-    const horizon = Math.max(7, Number(forecastHorizonSelect?.value || 14));
-    const forecast = buildForecast(forecastRows, horizon);
-    renderForecastChart(forecastRows, forecast);
-    renderForecastVisualDeck(forecast, lastForecastSource);
-    renderForecastStats(forecast.stats, lastForecastSource);
-    renderForecastKeypoints(forecast, lastForecastSource);
-    setForecastPattern(forecast.pattern);
-  }
-}
-
-function bindStockCurrencySelect() {
-  if (!stockCurrencySelectEl || !window.TradeProCore) return;
-  stockCurrencySelectEl.value = window.TradeProCore.getCurrency?.() || "USD";
-  stockCurrencySelectEl.addEventListener("change", () => {
-    window.TradeProCore.setCurrency?.(stockCurrencySelectEl.value);
-  });
-  window.addEventListener("tp:currency-changed", (event) => {
-    const nextCurrency = String(event?.detail?.currency || "").toUpperCase();
-    if (!nextCurrency) return;
-    stockCurrencySelectEl.value = nextCurrency;
-  });
-}
-
 async function validateCurrentSymbol() {
   try {
     const data = await apiFetchJson(`/api/symbol/resolve?symbol=${encodeURIComponent(SYMBOL)}`);
@@ -1339,15 +1408,18 @@ function changeTimeframe() {
 }
 
 function refreshStockPageData() {
+  if (Date.now() - lastManualRefreshAt < 2000) {
+    setStockPageStatus("Refresh is cooling down for a moment.");
+    return;
+  }
+  lastManualRefreshAt = Date.now();
   setStockPageStatus("Refreshing stock page...");
   renderChart();
   renderSymbolInfoWidget();
   renderOverviewWidget();
   renderTechnicalWidget();
   renderNewsWidget();
-  loadAiData();
-  loadStockAlertMeta();
-  loadForecastWidget();
+  Promise.allSettled([loadAiData(), loadStockAlertMeta(), loadForecastWidget()]).catch(() => {});
 }
 
 function renderChart() {
@@ -1473,23 +1545,23 @@ function shouldConvertMoneyValues() {
 function formatMoney(value, decimals = 2) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "-";
-  const shouldConvert = shouldConvertMoneyValues();
   if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
-    return window.TradeProCore.formatMoney(n, { digits: decimals, assumeUSD: shouldConvert });
+    return shouldConvertMoneyValues()
+      ? window.TradeProCore.formatMoney(n, { digits: decimals })
+      : n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
   }
-  if (!shouldConvert) {
+  if (!shouldConvertMoneyValues()) {
     return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
   }
-  const fallbackCurrency = String(localStorage.getItem("tp_currency") || "USD").toUpperCase();
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
-      currency: fallbackCurrency,
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: decimals
     }).format(n);
   } catch {
-    return `${fallbackCurrency} ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals })}`;
+    return `USD ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals })}`;
   }
 }
 
@@ -1506,8 +1578,8 @@ function kpi(label, value, className = "") {
 
 function statusClass(text) {
   const t = String(text || "").toLowerCase();
-  if (t.includes("positive") || t.includes("buy") || t.includes("breakout") || t.includes("low")) return "positive";
-  if (t.includes("negative") || t.includes("sell") || t.includes("fake") || t.includes("high")) return "negative";
+  if (t.includes("positive") || t.includes("buy") || t.includes("breakout") || t.includes("low") || t.includes("bullish") || t.includes("live")) return "positive";
+  if (t.includes("negative") || t.includes("sell") || t.includes("fake") || t.includes("high") || t.includes("bearish") || t.includes("delayed")) return "negative";
   return "neutral";
 }
 
@@ -1834,57 +1906,73 @@ function renderAiLoading() {
   weightGrid.innerHTML = "<div class='weight-item'><div class='kpi-label'>Loading confidence components...</div></div>";
 }
 
-function renderAiPayload(data, warningText = "") {
-  const safeData = data || {};
+function renderAiPayload(snapshot, warningText = "") {
+  const safeSnapshot = snapshot || {};
+  const safeData = safeSnapshot.ai || {};
+  const quote = safeSnapshot.quote || {};
   const metrics = safeData.metrics || {};
   const indicators = safeData.indicators || {};
   const suggestion = safeData.suggestion || {};
+  const signal = safeData.signal || {};
   const sentiment = safeData.sentiment || {};
   const backtest = safeData.backtest || {};
   const confidence = safeData.confidence || {};
   const weights = confidence.components || {};
-  const warningCard = warningText
-    ? `<div class="kpi"><div class="kpi-label">Data Status</div><div class="kpi-value">${warningText}</div></div>`
+  const marketCapWarning = safeSnapshot?.warnings?.find((item) => String(item || "").toLowerCase().includes("market cap")) || "";
+  const reasonsCard = Array.isArray(signal.reasons) && signal.reasons.length
+    ? `<div class="kpi"><div class="kpi-label">Signal Reasons</div><div class="kpi-value">${signal.reasons.map((item) => `<div>${escapeHtml(item)}</div>`).join("")}</div></div>`
+    : "";
+  const mergedWarningText = warningText || safeSnapshot?.freshness?.warning || "";
+  const warningCard = mergedWarningText
+    ? `<div class="kpi"><div class="kpi-label">Data Status</div><div class="kpi-value">${escapeHtml(mergedWarningText)}</div></div>`
     : "";
 
-  const ch = Number(metrics.change24hPct);
-  currentRealtimePrice = Number(metrics.realtimePrice);
+  const ch = Number(quote.changePercent ?? metrics.change24hPct);
+  currentRealtimePrice = Number(quote.price ?? metrics.realtimePrice);
+  renderQuoteSummary(safeSnapshot);
+
   aiPrimary.innerHTML = [
     warningCard,
-    kpi("Real-time Price", formatMoney(metrics.realtimePrice, 4)),
-    kpi("24h % Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
-    kpi("Volume", formatNumber(metrics.volume, 0)),
-    kpi("24h High", formatMoney(metrics.high24h, 4)),
-    kpi("24h Low", formatMoney(metrics.low24h, 4)),
-    kpi("Market Cap", metrics.marketCap ? formatMoney(metrics.marketCap, 0) : "N/A")
+    kpi("Current Price", formatMoney(quote.price ?? metrics.realtimePrice, 4)),
+    kpi("Session Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
+    kpi("Volume", formatNumber(quote.volume ?? metrics.volume, 0)),
+    kpi("Session High", formatMoney(quote.high ?? metrics.high24h, 4)),
+    kpi("Session Low", formatMoney(quote.low ?? metrics.low24h, 4)),
+    kpi("Market Cap", formatMarketCap(quote.marketCap ?? metrics.marketCap, marketCapWarning)),
+    kpi("Feed", `${safeSnapshot.freshness?.isRealtime ? "Live" : "Delayed"} / ${escapeHtml(quote.providerName || safeSnapshot.providerName || "Provider")}`)
   ].join("");
 
   aiIndicators.innerHTML = [
     kpi("RSI", formatNumber(indicators.rsi, 2)),
     kpi("EMA Crossover", indicators.emaCrossover || "N/A"),
+    kpi("EMA 20 / 50 / 200", `${formatNumber(indicators.ema20, 2)} / ${formatNumber(indicators.ema50, 2)} / ${formatNumber(indicators.ema200, 2)}`),
     kpi("MACD", `${formatNumber(indicators.macd?.value, 3)} / ${indicators.macd?.state || "N/A"}`),
     kpi("Bollinger", indicators.bollinger?.state || "N/A"),
     kpi("Volume Signal", indicators.volumeSignal || "N/A"),
-    kpi("Risk", `${safeData.risk?.level || "Unknown"} ${safeData.risk?.emoji || ""}`)
+    kpi("Risk", safeData.risk?.level || "Unknown"),
+    reasonsCard
   ].join("");
 
   aiSignals.innerHTML = [
-    kpi("Strategy", safeData.strategy || "-"),
-    kpi("Action", suggestion.action || "-"),
-    kpi("Entry", formatMoney(suggestion.entry, 4)),
+    kpi("Trend", signal.trend || safeData.marketMode || "-"),
+    kpi("Momentum", signal.momentum || "-"),
+    kpi("Volatility", signal.volatility || "-"),
+    kpi("Strategy", signal.strategy || safeData.strategy || "-"),
+    kpi("Action", signal.action || suggestion.action || "-"),
+    kpi(suggestion.label || "Suggested Entry", formatMoney(suggestion.entry, 4)),
     kpi("Stoploss", formatMoney(suggestion.stopLoss, 4)),
     kpi("Target", formatMoney(suggestion.target, 4)),
-    kpi("News", `${sentiment.label || "Neutral"} ${sentiment.emoji || ""}`)
+    kpi("News", sentiment.label || "Neutral")
   ].join("");
 
   confidenceScore.textContent = Number.isFinite(Number(confidence.score)) ? `${confidence.score}%` : "-";
-  marketModeBadge.textContent = safeData.marketMode || "Neutral";
-  marketModeBadge.className = `status ${statusClass(safeData.marketMode || "Neutral")}`;
+  marketModeBadge.textContent = signal.trend || safeData.marketMode || "Neutral";
+  marketModeBadge.className = `status ${statusClass(signal.trend || safeData.marketMode || "Neutral")}`;
 
   weightGrid.innerHTML = [
-    `RSI ${weights.rsi?.weight || 0}% -> ${weights.rsi?.score ?? "-"}`,
-    `EMA ${weights.ema?.weight || 0}% -> ${weights.ema?.score ?? "-"}`,
-    `MACD ${weights.macd?.weight || 0}% -> ${weights.macd?.score ?? "-"}`,
+    `Trend ${weights.trend?.weight || 0}% -> ${weights.trend?.score ?? "-"}`,
+    `Momentum ${weights.momentum?.weight || 0}% -> ${weights.momentum?.score ?? "-"}`,
+    `Volatility ${weights.volatility?.weight || 0}% -> ${weights.volatility?.score ?? "-"}`,
     `Volume ${weights.volume?.weight || 0}% -> ${weights.volume?.score ?? "-"}`,
     `News ${weights.news?.weight || 0}% -> ${weights.news?.score ?? "-"}`
   ].map((line) => `<div class="weight-item"><div class="kpi-label">${line}</div></div>`).join("");
@@ -1894,7 +1982,7 @@ function renderAiPayload(data, warningText = "") {
     kpi("Profit %", `${formatNumber(backtest.profitPct, 2)}%`, Number(backtest.profitPct) >= 0 ? "good" : "bad"),
     kpi("Max drawdown", `${formatNumber(backtest.maxDrawdownPct, 2)}%`),
     kpi("Trades", formatNumber(backtest.trades, 0)),
-    kpi("Trend", safeData.marketMode || "-"),
+    kpi("Trend", signal.trend || safeData.marketMode || "-"),
     kpi("Sentiment + / -", `${sentiment.positive ?? 0} / ${sentiment.negative ?? 0}`)
   ].join("");
 
@@ -1902,60 +1990,74 @@ function renderAiPayload(data, warningText = "") {
   renderAreaChart(safeData);
 }
 
-async function fetchAiPayloadOnce(strategy) {
-  const url = `${API_BASE}/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`;
+async function fetchMarketSnapshotOnce(strategy) {
+  const url = `${API_BASE}/api/market/snapshot?symbol=${encodeURIComponent(SYMBOL)}&tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`;
   const response = window.TradeProCore && window.TradeProCore.hasSession()
-    ? await window.TradeProCore.apiFetch(`/api/ai/${encodeURIComponent(SYMBOL)}?tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`)
+    ? await window.TradeProCore.apiFetch(`/api/market/snapshot?symbol=${encodeURIComponent(SYMBOL)}&tf=${encodeURIComponent(currentAiTf)}&strategy=${encodeURIComponent(strategy)}`)
     : await fetch(url);
-  if (!response.ok) throw new Error(`AI API ${response.status}`);
+  if (!response.ok) throw new Error(`Market snapshot API ${response.status}`);
   return response.json();
 }
 
-async function loadAiData() {
+async function loadAiData(options = {}) {
+  const { force = false } = options;
+  if (marketSnapshotRequest && !force) return marketSnapshotRequest;
   const strategy = strategySelect.value;
   rememberStockPreferences();
   const hadSnapshot = Boolean(lastAiSnapshot);
   if (!hadSnapshot) renderAiLoading();
-  setStockPageStatus("Loading analytics...");
-  try {
-    let data;
+  setStockPageStatus("Loading market snapshot...");
+  marketSnapshotRequest = (async () => {
     try {
-      data = await fetchAiPayloadOnce(strategy);
-    } catch (firstError) {
-      console.log("AI fetch warning:", firstError.message);
-      data = await fetchAiPayloadOnce(strategy);
+      let data;
+      try {
+        data = await fetchMarketSnapshotOnce(strategy);
+      } catch (firstError) {
+        console.log("Market snapshot warning:", firstError.message);
+        data = await fetchMarketSnapshotOnce(strategy);
+      }
+      assertMarketSnapshotConsistency(data);
+      currentMarketSnapshot = data;
+      lastAiSnapshot = data.ai;
+      const freshness = freshnessLabel(data);
+      const warningText = [data?.freshness?.warning, ...(data?.warnings || [])].filter(Boolean).join(" ");
+      renderAiPayload(data, warningText);
+      assertRenderedQuoteConsistency(data);
+      setStockDataMode(freshness.label, freshness.mode);
+      applyProviderHealth(data?.providerHealth, Boolean(data?.stale));
+      setStockPageStatus(warningText || "Market snapshot loaded.");
+      updateLastUpdated(data?.freshness?.lastUpdated || data?.quote?.timestamp || Date.now());
+      return data;
+    } catch (error) {
+      if (currentMarketSnapshot) {
+        renderAiPayload(currentMarketSnapshot, `Live refresh failed: ${error.message}. Showing last successful snapshot.`);
+        setStockDataMode("Cached Snapshot", "neutral");
+        setStockPageStatus(`Refresh failed: ${error.message}`, true);
+        updateLastUpdated(currentMarketSnapshot?.freshness?.lastUpdated || currentMarketSnapshot?.quote?.timestamp || Date.now());
+        return currentMarketSnapshot;
+      }
+      const err = `<div class="kpi"><div class="kpi-label">Market Error</div><div class="kpi-value">${escapeHtml(error.message)}</div></div>`;
+      aiPrimary.innerHTML = err;
+      aiIndicators.innerHTML = "";
+      aiSignals.innerHTML = "";
+      aiBacktest.innerHTML = "";
+      confidenceScore.textContent = "-";
+      marketModeBadge.textContent = "Neutral";
+      marketModeBadge.className = "status neutral";
+      weightGrid.innerHTML = "";
+      renderAllocationPie(null);
+      renderAreaChart(null);
+      currentMarketSnapshot = null;
+      lastAiSnapshot = null;
+      setStockDataMode("Unavailable", "negative");
+      setStockHealthStatus("Provider Error", "negative");
+      setStockPageStatus(error.message, true);
+      throw error;
+    } finally {
+      marketSnapshotRequest = null;
     }
-    const warningText = data?.warning || (data?.degraded ? "Showing fallback analytics." : "");
-    renderAiPayload(data, warningText);
-    lastAiSnapshot = data;
-    setStockDataMode(data?.degraded ? "Fallback Data" : "Live Data", data?.degraded ? "negative" : "positive");
-    applyProviderHealth(data?.providerHealth, Boolean(data?.degraded));
-    setStockPageStatus(data?.degraded ? warningText || "Showing fallback analytics." : "Live analytics loaded.");
-    updateLastUpdated(Date.now());
-  } catch (error) {
-    if (lastAiSnapshot) {
-      renderAiPayload(lastAiSnapshot, `Live refresh failed: ${error.message}. Showing last successful data.`);
-      setStockDataMode("Last Good Snapshot", "neutral");
-      setStockPageStatus(`Refresh failed: ${error.message}`, true);
-      updateLastUpdated(Date.now());
-      return;
-    }
-    const err = `<div class="kpi"><div class="kpi-label">AI Error</div><div class="kpi-value">${error.message}</div></div>`;
-    aiPrimary.innerHTML = err;
-    aiIndicators.innerHTML = "";
-    aiSignals.innerHTML = "";
-    aiBacktest.innerHTML = "";
-    confidenceScore.textContent = "-";
-    marketModeBadge.textContent = "Neutral";
-    marketModeBadge.className = "status neutral";
-    weightGrid.innerHTML = "";
-    renderAllocationPie(null);
-    renderAreaChart(null);
-    lastAiSnapshot = null;
-    setStockDataMode("Unavailable", "negative");
-    setStockHealthStatus("Provider Error", "negative");
-    setStockPageStatus(error.message, true);
-  }
+  })();
+  return marketSnapshotRequest;
 }
 
 strategySelect.addEventListener("change", () => {
@@ -2016,14 +2118,6 @@ downloadForecastBtn?.addEventListener("click", () => {
   link.click();
 });
 
-window.addEventListener("tp:currency-rates-updated", () => {
-  rerenderCurrencySensitiveViews();
-});
-
-window.addEventListener("tp:currency-changed", () => {
-  rerenderCurrencySensitiveViews();
-});
-
 function refreshResponsiveCharts() {
   renderChart();
   renderOverviewWidget();
@@ -2071,7 +2165,6 @@ function handleVisibilityChange() {
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 async function bootstrapStockPage() {
-  bindStockCurrencySelect();
   hydrateStockPreferences();
   updateWatchlistButton();
   renderChart();

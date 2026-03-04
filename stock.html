@@ -13,11 +13,12 @@
   <script src="https://s3.tradingview.com/tv.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="page-stock">
   <section class="panel app-shell app-shell-stock">
     <header class="page-head stock-hero">
       <div class="stock-hero-grid">
         <div class="stock-hero-main">
+          <span class="page-flag">AI market detail terminal</span>
           <div class="brand-row brand-row-tight stock-brand-block">
             <div class="brand-mark" aria-hidden="true">
               <svg viewBox="0 0 100 100" fill="none">
@@ -39,6 +40,18 @@
           </div>
           <div class="stock-hero-strip">
             <div class="stock-strip-card">
+              <span class="stock-strip-label">Current Quote</span>
+              <span class="stock-strip-price" id="stockHeaderPrice">-</span>
+            </div>
+            <div class="stock-strip-card">
+              <span class="stock-strip-label">Session Move</span>
+              <span class="stock-strip-price" id="stockHeaderChange">-</span>
+            </div>
+            <div class="stock-strip-card">
+              <span class="stock-strip-label">Market Cap</span>
+              <span class="stock-strip-price" id="stockHeaderMarketCap">-</span>
+            </div>
+            <div class="stock-strip-card">
               <span class="stock-strip-label">Data Mode</span>
               <span class="technical-badge" id="stockDataModeBadge">Checking Data</span>
             </div>
@@ -55,20 +68,12 @@
         <aside class="stock-hero-side">
           <div class="stock-actions-card">
             <span class="stock-eyebrow">Quick Actions</span>
+            <div class="stock-quote-card">
+              <span class="stock-strip-label">Current Price</span>
+              <div class="stock-quote-value" id="stockSideQuotePrice">-</div>
+              <div class="stock-quote-meta" id="stockSideQuoteMeta">Waiting for first market snapshot...</div>
+            </div>
             <div class="stock-action-grid">
-              <span class="currency-badge stock-currency-badge" data-currency-badge>Currency: USD</span>
-              <select id="stockCurrencySelect" class="stock-currency-select" aria-label="Stock page currency">
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="INR">INR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
-                <option value="AUD">AUD</option>
-                <option value="CAD">CAD</option>
-                <option value="AED">AED</option>
-                <option value="SGD">SGD</option>
-                <option value="CHF">CHF</option>
-              </select>
               <button class="btn ghost btn-auto" type="button" id="stockWatchlistBtn">Add to Watchlist</button>
               <button class="btn ghost btn-auto" type="button" onclick="window.location='execution-lab.html'">Alert Lab</button>
               <button class="btn ghost btn-auto" onclick="window.location='dashboard.html'">Back</button>
