@@ -738,6 +738,7 @@ function renderForecastChart(rows, forecast) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: window.devicePixelRatio || 2,
       interaction: {
         mode: "index",
         intersect: false
@@ -750,20 +751,34 @@ function renderForecastChart(rows, forecast) {
           left: 2
         }
       },
-      plugins: {
-        legend: {
-          position: "top",
-          align: "start",
-          maxHeight: 52,
-          labels: {
-            color: "#f2f7ff",
+    plugins: {
+      title: {
+        display: true,
+        text: "AI Projection Chart",
+        color: "#FFFFFF",
+        padding: {
+          top: 8,
+          bottom: 12
+        },
+        font: {
+          size: 18,
+          weight: "700",
+          family: "'Segoe UI', Tahoma, sans-serif"
+        }
+      },
+      legend: {
+        position: "top",
+        align: "start",
+        maxHeight: 52,
+        labels: {
+            color: "#E6EDF3",
             usePointStyle: true,
             pointStyle: "line",
             boxWidth: 28,
             boxHeight: 10,
             padding: 16,
             font: {
-              size: 12,
+              size: 14,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
@@ -771,10 +786,10 @@ function renderForecastChart(rows, forecast) {
         },
         tooltip: {
           backgroundColor: "rgba(8, 15, 29, 0.96)",
-          borderColor: "rgba(103, 164, 255, 0.2)",
+          borderColor: "rgba(255,255,255,0.10)",
           borderWidth: 1,
           titleColor: "#ffffff",
-          bodyColor: "#eef5ff",
+          bodyColor: "#E6EDF3",
           padding: 14,
           displayColors: true,
           caretSize: 7,
@@ -799,26 +814,26 @@ function renderForecastChart(rows, forecast) {
       scales: {
         x: {
           ticks: {
-            color: "#c9dcf6",
+            color: "#E6EDF3",
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 7,
             padding: 12,
             font: {
-              size: 12,
+              size: 14,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             }
           },
-          grid: { color: "rgba(87, 182, 255, 0.08)" }
+          grid: { color: "rgba(255,255,255,0.08)" }
         },
         y: {
           ticks: {
-            color: "#c9dcf6",
+            color: "#E6EDF3",
             maxTicksLimit: 7,
             padding: 12,
             font: {
-              size: 12,
+              size: 14,
               weight: "700",
               family: "'Segoe UI', Tahoma, sans-serif"
             },
@@ -826,7 +841,7 @@ function renderForecastChart(rows, forecast) {
               return formatCompactAxisMoney(value);
             }
           },
-          grid: { color: "rgba(87, 182, 255, 0.08)" }
+          grid: { color: "rgba(255,255,255,0.08)" }
         }
       }
     }
