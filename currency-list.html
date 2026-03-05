@@ -8,10 +8,10 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="alternate icon" type="image/x-icon" href="favicon.ico">
-  <title>Currency List</title>
+  <title>TradePro AI Tools Notice</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-dashboard">
   <section class="panel app-shell app-shell-dashboard currency-shell">
     <header class="page-head currency-head">
       <div class="brand-row brand-row-tight">
@@ -23,8 +23,9 @@
           </svg>
         </div>
         <div>
-          <h2 class="brand-title dashboard-title">Global Currency Directory</h2>
-          <p class="brand-sub">Active ISO 4217 currencies with flags and symbols</p>
+          <span class="page-flag">Tools notice</span>
+          <h2 class="brand-title dashboard-title">Currency Module Removed</h2>
+          <p class="brand-sub">Currency conversion and currency directory features are no longer part of this project.</p>
         </div>
       </div>
       <div class="page-actions">
@@ -35,47 +36,26 @@
     <main class="page-main currency-main">
       <section class="card currency-card">
         <div class="row space section-head">
-          <h3 class="section-title">Live Currency Converter</h3>
-          <button class="btn ghost btn-auto" type="button" id="refreshRatesBtn">Refresh Rates</button>
+          <h3 class="section-title">Removed Feature</h3>
         </div>
-        <div class="currency-converter-grid">
-          <div>
-            <label class="form-label" for="convertAmount">Amount</label>
-            <input class="input" id="convertAmount" type="number" step="0.01" value="1" placeholder="Enter amount">
+        <div class="news-list">
+          <div class="news-item">
+            <h4>Currency switchers removed</h4>
+            <p>The dashboard, stock page, and control center no longer include currency selection.</p>
           </div>
-          <div>
-            <label class="form-label" for="fromCurrency">From</label>
-            <select id="fromCurrency"></select>
+          <div class="news-item">
+            <h4>FX converter removed</h4>
+            <p>Live exchange-rate fetching and conversion tools have been removed from the frontend workflow.</p>
           </div>
-          <div class="currency-converter-swap">
-            <button class="btn ghost btn-auto" type="button" id="swapCurrenciesBtn">Swap</button>
-          </div>
-          <div>
-            <label class="form-label" for="toCurrency">To</label>
-            <select id="toCurrency"></select>
+          <div class="news-item">
+            <h4>Money values now use USD only</h4>
+            <p>Remaining price and money displays use a fixed USD format where applicable.</p>
           </div>
         </div>
-        <div class="currency-converter-output">
-          <div class="currency-converter-value" id="conversionResult">Loading...</div>
-          <div class="brand-sub" id="conversionRateText"></div>
-          <div class="helper-note" id="ratesUpdatedText"></div>
-        </div>
-      </section>
-
-      <section class="card currency-card">
-        <div class="row space section-head">
-          <h3 class="section-title">Currency List</h3>
-          <span class="helper-note" id="currencyCount">Loading...</span>
-        </div>
-        <div class="currency-search">
-          <input class="input" id="currencySearch" placeholder="Search by country, currency name, or code">
-        </div>
-        <div class="currency-list" id="currencyList" aria-live="polite"></div>
       </section>
     </main>
   </section>
 
   <script src="app-core.js?v=20260304a"></script>
-  <script src="currency-list.js?v=20260304a"></script>
 </body>
 </html>

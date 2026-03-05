@@ -33,42 +33,47 @@
   const REFRESH_KEY = "tp_refresh_token";
   const USER_KEY = "tp_user";
   const THEME_KEY = "tp_theme";
-  const CURRENCY_KEY = "tp_currency";
-  const CURRENCY_RATES_KEY = "tp_currency_rates_usd";
-  const CURRENCY_RATES_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+  const CUSTOM_COLORS_KEY = "tp_custom_colors";
+  const CUSTOM_UI_KEY = "tp_custom_ui";
   const RELOAD_MARKER_KEY = "tp_pending_reload";
-  const DEFAULT_SUPPORTED_CURRENCIES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
-  const SUPPORTED_CURRENCIES = (() => {
-    try {
-      const runtimeSupported = typeof Intl.supportedValuesOf === "function"
-        ? Intl.supportedValuesOf("currency")
-        : [];
-      return Array.from(
-        new Set(
-          ["USD", ...DEFAULT_SUPPORTED_CURRENCIES, ...runtimeSupported]
-            .map((code) => String(code || "").toUpperCase().trim())
-            .filter((code) => /^[A-Z]{3}$/.test(code))
-        )
-      );
-    } catch {
-      return [...DEFAULT_SUPPORTED_CURRENCIES];
-    }
-  })();
-  const FALLBACK_USD_RATES = {
-    USD: 1,
-    EUR: 0.855006,
-    INR: 91.575808,
-    GBP: 0.74573,
-    JPY: 157.255893,
-    AUD: 1.407539,
-    CAD: 1.367195,
-    AED: 3.6725,
-    SGD: 1.272525,
-    CHF: 0.778767
+  const DEFAULT_CURRENCY = "USD";
+  const CUSTOM_COLOR_DEFAULTS = {
+    bg0: "#07111f",
+    bg1: "#0f1c30",
+    bg2: "#17263f",
+    card: "#091222",
+    cardStrong: "#0d182c",
+    line: "#8aacd6",
+    lineStrong: "#85c0ff",
+    text: "#edf3ff",
+    muted: "#92a8c8",
+    accent: "#65c3ff",
+    accent2: "#ffd07a",
+    accent3: "#83f0d0"
   };
-  let currencyCode = "USD";
-  let usdRates = { ...FALLBACK_USD_RATES };
-  let usdRatesUpdatedAt = 0;
+  const CUSTOM_COLOR_VAR_MAP = {
+    bg0: "--bg-0",
+    bg1: "--bg-1",
+    bg2: "--bg-2",
+    card: "--card",
+    cardStrong: "--card-strong",
+    line: "--line",
+    lineStrong: "--line-strong",
+    text: "--text",
+    muted: "--muted",
+    accent: "--accent",
+    accent2: "--accent-2",
+    accent3: "--accent-3"
+  };
+  const CUSTOM_UI_DEFAULTS = {
+    density: "comfortable",
+    motion: "full",
+    panelRadius: 28,
+    cardRadius: 24,
+    inputRadius: 16,
+    blur: 18,
+    shellWidth: 1680
+  };
   let reloadScheduled = false;
   const IS_AUTH_PAGE = /\/?(index\.html)?$/i.test(window.location.pathname);
 
@@ -271,134 +276,160 @@
     }
   }
 
-  function normalizeCurrency(input) {
-    const code = String(input || "").toUpperCase().trim();
-    return SUPPORTED_CURRENCIES.includes(code) ? code : "USD";
+  function normalizeHexColor(value, fallback = "") {
+    const raw = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toUpperCase();
+    if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toUpperCase()}`;
+    return fallback;
   }
 
-  function readCachedRates() {
+  function normalizeCustomColors(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const next = {};
+    for (const [key, fallback] of Object.entries(CUSTOM_COLOR_DEFAULTS)) {
+      const value = normalizeHexColor(source[key], fallback);
+      next[key] = value || fallback;
+    }
+    return next;
+  }
+
+  function readCustomColors() {
     try {
-      const raw = localStorage.getItem(CURRENCY_RATES_KEY);
+      const raw = localStorage.getItem(CUSTOM_COLORS_KEY);
       if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object" || typeof parsed.rates !== "object") return null;
-      const ts = Number(parsed.ts || 0);
-      if (!Number.isFinite(ts) || (Date.now() - ts) > CURRENCY_RATES_MAX_AGE_MS) {
-        localStorage.removeItem(CURRENCY_RATES_KEY);
-        return null;
-      }
-      return parsed;
+      return normalizeCustomColors(JSON.parse(raw));
     } catch {
       return null;
     }
   }
 
-  function writeCachedRates(rates, ts = Date.now()) {
+  function applyCustomColors(colors, options = {}) {
+    const palette = normalizeCustomColors(colors);
+    const root = document.documentElement;
+    for (const [key, cssVar] of Object.entries(CUSTOM_COLOR_VAR_MAP)) {
+      root.style.setProperty(cssVar, palette[key]);
+    }
+    if (options.persist !== false) {
+      localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(palette));
+    }
+    if (options.emit !== false) {
+      window.dispatchEvent(new CustomEvent("tp:colors-changed", {
+        detail: { colors: { ...palette }, source: String(options.source || "local") }
+      }));
+    }
+    return palette;
+  }
+
+  function resetCustomColors(options = {}) {
+    const root = document.documentElement;
+    Object.values(CUSTOM_COLOR_VAR_MAP).forEach((cssVar) => {
+      root.style.removeProperty(cssVar);
+    });
+    if (options.persist !== false) {
+      localStorage.removeItem(CUSTOM_COLORS_KEY);
+    }
+    const palette = { ...CUSTOM_COLOR_DEFAULTS };
+    if (options.emit !== false) {
+      window.dispatchEvent(new CustomEvent("tp:colors-changed", {
+        detail: { colors: palette, source: String(options.source || "local"), reset: true }
+      }));
+    }
+    return palette;
+  }
+
+  function hydrateCustomColors() {
+    const stored = readCustomColors();
+    if (!stored) return { ...CUSTOM_COLOR_DEFAULTS };
+    return applyCustomColors(stored, { persist: false, emit: false, source: "hydrate" });
+  }
+
+  function getCustomColors() {
+    return normalizeCustomColors(readCustomColors() || CUSTOM_COLOR_DEFAULTS);
+  }
+
+  function normalizeUiPreferenceNumber(value, fallback, min, max) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, Math.round(n)));
+  }
+
+  function normalizeCustomUi(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const density = ["compact", "comfortable", "spacious"].includes(String(source.density || ""))
+      ? String(source.density)
+      : CUSTOM_UI_DEFAULTS.density;
+    const motion = ["full", "reduced", "off"].includes(String(source.motion || ""))
+      ? String(source.motion)
+      : CUSTOM_UI_DEFAULTS.motion;
+    return {
+      density,
+      motion,
+      panelRadius: normalizeUiPreferenceNumber(source.panelRadius, CUSTOM_UI_DEFAULTS.panelRadius, 12, 40),
+      cardRadius: normalizeUiPreferenceNumber(source.cardRadius, CUSTOM_UI_DEFAULTS.cardRadius, 10, 34),
+      inputRadius: normalizeUiPreferenceNumber(source.inputRadius, CUSTOM_UI_DEFAULTS.inputRadius, 8, 28),
+      blur: normalizeUiPreferenceNumber(source.blur, CUSTOM_UI_DEFAULTS.blur, 0, 28),
+      shellWidth: normalizeUiPreferenceNumber(source.shellWidth, CUSTOM_UI_DEFAULTS.shellWidth, 1180, 1880)
+    };
+  }
+
+  function readCustomUi() {
     try {
-      usdRatesUpdatedAt = ts;
-      localStorage.setItem(CURRENCY_RATES_KEY, JSON.stringify({ ts, rates }));
+      const raw = localStorage.getItem(CUSTOM_UI_KEY);
+      if (!raw) return null;
+      return normalizeCustomUi(JSON.parse(raw));
     } catch {
-      // Ignore storage errors.
+      return null;
     }
   }
 
-  function emitCurrencyRatesUpdated(source = "live") {
-    window.dispatchEvent(new CustomEvent("tp:currency-rates-updated", {
-      detail: {
-        base: "USD",
-        updatedAt: usdRatesUpdatedAt,
-        rates: { ...usdRates },
-        source
-      }
-    }));
-  }
-
-  function normalizeRateMap(rawRates) {
-    if (!rawRates || typeof rawRates !== "object") return null;
-    const normalized = { ...FALLBACK_USD_RATES };
-    for (const code of SUPPORTED_CURRENCIES) {
-      if (code === "USD") {
-        normalized.USD = 1;
-        continue;
-      }
-      const rate = Number(rawRates[code]);
-      if (Number.isFinite(rate) && rate > 0) {
-        normalized[code] = rate;
-      }
+  function applyCustomUi(uiPrefs, options = {}) {
+    const prefs = normalizeCustomUi(uiPrefs);
+    const root = document.documentElement;
+    root.dataset.density = prefs.density;
+    root.dataset.motion = prefs.motion;
+    root.style.setProperty("--ui-radius-panel", `${prefs.panelRadius}px`);
+    root.style.setProperty("--ui-radius-card", `${prefs.cardRadius}px`);
+    root.style.setProperty("--ui-radius-input", `${prefs.inputRadius}px`);
+    root.style.setProperty("--ui-blur-glass", `${prefs.blur}px`);
+    root.style.setProperty("--ui-shell-width", `${prefs.shellWidth}px`);
+    if (options.persist !== false) {
+      localStorage.setItem(CUSTOM_UI_KEY, JSON.stringify(prefs));
     }
-    return Number.isFinite(Number(normalized.USD)) ? normalized : null;
-  }
-
-  async function fetchRatesFromBackendApi() {
-    const response = await fetch(`${API_BASE}/api/fx/latest`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Backend FX ${response.status}`);
-    const data = await response.json();
-    const rates = normalizeRateMap(data?.rates);
-    if (!rates) {
-      throw new Error("Backend FX returned invalid payload");
+    if (options.emit !== false) {
+      window.dispatchEvent(new CustomEvent("tp:ui-changed", {
+        detail: { ui: { ...prefs }, source: String(options.source || "local") }
+      }));
     }
-    return {
-      rates,
-      updatedAt: Number(data?.updatedAt || Date.now())
-    };
+    return prefs;
   }
 
-  async function fetchRatesFromOpenErApi() {
-    const response = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
-    if (!response.ok) throw new Error(`OpenER API ${response.status}`);
-    const data = await response.json();
-    if (data?.result !== "success") {
-      throw new Error("OpenER API returned invalid payload");
+  function resetCustomUi(options = {}) {
+    const root = document.documentElement;
+    delete root.dataset.density;
+    delete root.dataset.motion;
+    ["--ui-radius-panel", "--ui-radius-card", "--ui-radius-input", "--ui-blur-glass", "--ui-shell-width"].forEach((cssVar) => {
+      root.style.removeProperty(cssVar);
+    });
+    if (options.persist !== false) {
+      localStorage.removeItem(CUSTOM_UI_KEY);
     }
-    return {
-      rates: normalizeRateMap(data.rates),
-      updatedAt: Date.now()
-    };
-  }
-
-  async function fetchRatesFromExchangeRateHost() {
-    const symbols = SUPPORTED_CURRENCIES.join(",");
-    const response = await fetch(`https://api.exchangerate.host/latest?base=USD&symbols=${symbols}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`ExchangeRateHost ${response.status}`);
-    const data = await response.json();
-    return {
-      rates: normalizeRateMap(data?.rates),
-      updatedAt: Date.now()
-    };
-  }
-
-  async function fetchRatesFromFrankfurter() {
-    const symbols = SUPPORTED_CURRENCIES.filter((code) => code !== "USD").join(",");
-    const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${symbols}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Frankfurter ${response.status}`);
-    const data = await response.json();
-    return {
-      rates: normalizeRateMap({ ...(data?.rates || {}), USD: 1 }),
-      updatedAt: Date.now()
-    };
-  }
-
-  async function refreshCurrencyRates() {
-    if (IS_AUTH_PAGE) return usdRates;
-    const providers = [fetchRatesFromBackendApi, fetchRatesFromOpenErApi, fetchRatesFromExchangeRateHost, fetchRatesFromFrankfurter];
-    for (const provider of providers) {
-      try {
-        const nextResult = await provider();
-        const nextRates = nextResult?.rates;
-        if (!nextRates) continue;
-        usdRates = nextRates;
-        writeCachedRates(usdRates, Number(nextResult?.updatedAt || Date.now()));
-        emitCurrencyRatesUpdated("live");
-        return usdRates;
-      } catch (error) {
-        console.log("Currency rates warning:", error.message);
-      }
+    const prefs = { ...CUSTOM_UI_DEFAULTS };
+    if (options.emit !== false) {
+      window.dispatchEvent(new CustomEvent("tp:ui-changed", {
+        detail: { ui: prefs, source: String(options.source || "local"), reset: true }
+      }));
     }
-    return usdRates;
+    return prefs;
   }
 
-  function getCurrency() {
-    return currencyCode;
+  function hydrateCustomUi() {
+    const stored = readCustomUi();
+    if (!stored) return { ...CUSTOM_UI_DEFAULTS };
+    return applyCustomUi(stored, { persist: false, emit: false, source: "hydrate" });
+  }
+
+  function getCustomUi() {
+    return normalizeCustomUi(readCustomUi() || CUSTOM_UI_DEFAULTS);
   }
 
   function ensureGlobalLoader() {
@@ -587,7 +618,7 @@
   function forceReloadWithLoader(reason) {
     if (reloadScheduled) return;
     reloadScheduled = true;
-    const label = reason === "theme" ? "Applying theme..." : reason === "currency" ? "Applying currency..." : "Refreshing page...";
+    const label = reason === "theme" ? "Applying theme..." : "Refreshing page...";
     try {
       sessionStorage.setItem(RELOAD_MARKER_KEY, JSON.stringify({ reason, ts: Date.now() }));
     } catch {
@@ -618,9 +649,7 @@
 
     const label = pending.reason === "theme"
       ? "Theme updated. Reloading..."
-      : pending.reason === "currency"
-        ? "Currency updated. Reloading..."
-        : "Loading...";
+      : "Loading...";
     const show = () => showGlobalLoader(label);
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", show, { once: true });
@@ -638,91 +667,26 @@
     else window.addEventListener("load", clear, { once: true });
   }
 
-  function updateCurrencyBadges() {
-    const badges = document.querySelectorAll("[data-currency-badge]");
-    badges.forEach((node) => {
-      node.textContent = `Currency: ${currencyCode}`;
-    });
-  }
-
   function convertFromUSD(value) {
     const n = Number(value);
     if (!Number.isFinite(n)) return Number.NaN;
-    const rate = Number(usdRates[currencyCode] || 1);
-    if (!Number.isFinite(rate) || rate <= 0) return n;
-    return n * rate;
+    return n;
   }
 
   function formatMoney(value, options = {}) {
     const n = Number(value);
     if (!Number.isFinite(n)) return "-";
     const digits = Number.isFinite(Number(options.digits)) ? Number(options.digits) : 2;
-    const assumeUSD = options.assumeUSD !== false;
-    const converted = assumeUSD ? convertFromUSD(n) : n;
+    const converted = convertFromUSD(n);
     try {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
-        currency: currencyCode,
+        currency: DEFAULT_CURRENCY,
         maximumFractionDigits: digits
       }).format(converted);
     } catch {
-      return `${currencyCode} ${converted.toLocaleString(undefined, { maximumFractionDigits: digits })}`;
+      return `${DEFAULT_CURRENCY} ${converted.toLocaleString(undefined, { maximumFractionDigits: digits })}`;
     }
-  }
-
-  async function setCurrency(nextCode) {
-    const normalized = normalizeCurrency(nextCode);
-    if (normalized === currencyCode) {
-      updateCurrencyBadges();
-      return currencyCode;
-    }
-    currencyCode = normalized;
-    localStorage.setItem(CURRENCY_KEY, currencyCode);
-    updateCurrencyBadges();
-    await refreshCurrencyRates();
-    if (hasSession()) {
-      try {
-        await apiFetch("/api/preferences", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ preferences: { currency: currencyCode } })
-        });
-      } catch (error) {
-        console.log("Currency sync warning:", error.message);
-      }
-    }
-    window.dispatchEvent(new CustomEvent("tp:currency-changed", { detail: { currency: currencyCode, source: "local" } }));
-    return currencyCode;
-  }
-
-  async function hydrateCurrency() {
-    if (IS_AUTH_PAGE) {
-      updateCurrencyBadges();
-      return currencyCode;
-    }
-    const cached = normalizeCurrency(localStorage.getItem(CURRENCY_KEY) || "USD");
-    currencyCode = cached;
-    const storedRates = readCachedRates();
-    if (storedRates?.rates) {
-      usdRates = { ...FALLBACK_USD_RATES, ...storedRates.rates, USD: 1 };
-      usdRatesUpdatedAt = Number(storedRates.ts || 0);
-      emitCurrencyRatesUpdated("cache");
-    }
-    refreshCurrencyRates();
-
-    if (!hasSession()) return currencyCode;
-    try {
-      const response = await apiFetch("/api/preferences");
-      if (!response.ok) return currencyCode;
-      const data = await response.json();
-      const serverCurrency = normalizeCurrency(data?.preferences?.currency || currencyCode);
-      currencyCode = serverCurrency;
-      localStorage.setItem(CURRENCY_KEY, currencyCode);
-    } catch (error) {
-      console.log("Currency hydrate warning:", error.message);
-    }
-    updateCurrencyBadges();
-    return currencyCode;
   }
 
   function applyTheme(theme) {
@@ -780,32 +744,6 @@
     return Boolean(readStorage(ACCESS_KEY) || readStorage(REFRESH_KEY));
   }
 
-  function convertCurrencyAmount(amount, fromCode, toCode) {
-    const value = Number(amount);
-    const from = normalizeCurrency(fromCode);
-    const to = normalizeCurrency(toCode);
-    if (!Number.isFinite(value)) return Number.NaN;
-    const fromRate = Number(usdRates[from] || 1);
-    const toRate = Number(usdRates[to] || 1);
-    if (!Number.isFinite(fromRate) || fromRate <= 0 || !Number.isFinite(toRate) || toRate <= 0) {
-      return Number.NaN;
-    }
-    const usdValue = from === "USD" ? value : value / fromRate;
-    return to === "USD" ? usdValue : usdValue * toRate;
-  }
-
-  function getCurrencyRates() {
-    return {
-      base: "USD",
-      rates: { ...usdRates },
-      updatedAt: usdRatesUpdatedAt
-    };
-  }
-
-  function getSupportedCurrencies() {
-    return [...SUPPORTED_CURRENCIES];
-  }
-
   window.TradeProCore = {
     API_BASE,
     login,
@@ -820,44 +758,51 @@
     applyTheme,
     setTheme,
     hydrateTheme,
+    applyCustomColors,
+    resetCustomColors,
+    hydrateCustomColors,
+    getCustomColors,
+    applyCustomUi,
+    resetCustomUi,
+    hydrateCustomUi,
+    getCustomUi,
     registerServiceWorker,
-    getCurrency,
-    setCurrency,
-    hydrateCurrency,
     formatMoney,
-    convertFromUSD,
-    refreshCurrencyRates,
-    convertCurrencyAmount,
-    getCurrencyRates,
-    getSupportedCurrencies
+    convertFromUSD
   };
 
   window.addEventListener("storage", (event) => {
-    if (event.key === CURRENCY_KEY) {
-      currencyCode = normalizeCurrency(event.newValue || "USD");
-      updateCurrencyBadges();
-      window.dispatchEvent(new CustomEvent("tp:currency-changed", { detail: { currency: currencyCode, source: "storage" } }));
-      return;
-    }
-    if (event.key === CURRENCY_RATES_KEY) {
-      const storedRates = readCachedRates();
-      if (!storedRates?.rates) return;
-      usdRates = { ...FALLBACK_USD_RATES, ...storedRates.rates, USD: 1 };
-      usdRatesUpdatedAt = Number(storedRates.ts || 0);
-      emitCurrencyRatesUpdated("storage");
-      return;
-    }
     if (event.key === THEME_KEY) {
       const nextTheme = String(event.newValue || "dark");
       applyTheme(nextTheme);
       window.dispatchEvent(new CustomEvent("tp:theme-changed", { detail: { theme: nextTheme, source: "storage" } }));
+      return;
     }
-  });
-
-  window.addEventListener("tp:currency-changed", (event) => {
-    const source = String(event?.detail?.source || "local");
-    if (source !== "local" && source !== "storage") return;
-    updateCurrencyBadges();
+    if (event.key === CUSTOM_COLORS_KEY) {
+      if (!event.newValue) {
+        resetCustomColors({ persist: false, source: "storage" });
+        return;
+      }
+      try {
+        const parsed = JSON.parse(event.newValue);
+        applyCustomColors(parsed, { persist: false, source: "storage" });
+      } catch {
+        resetCustomColors({ persist: false, source: "storage" });
+      }
+      return;
+    }
+    if (event.key === CUSTOM_UI_KEY) {
+      if (!event.newValue) {
+        resetCustomUi({ persist: false, source: "storage" });
+        return;
+      }
+      try {
+        const parsed = JSON.parse(event.newValue);
+        applyCustomUi(parsed, { persist: false, source: "storage" });
+      } catch {
+        resetCustomUi({ persist: false, source: "storage" });
+      }
+    }
   });
 
   window.addEventListener("tp:theme-changed", (event) => {
@@ -878,8 +823,8 @@
   installHardRefreshShortcut();
   bootPendingReloadOverlay();
   hydrateTheme();
-  hydrateCurrency();
-  updateCurrencyBadges();
+  hydrateCustomColors();
+  hydrateCustomUi();
   if (!IS_AUTH_PAGE) {
     registerServiceWorker();
   }

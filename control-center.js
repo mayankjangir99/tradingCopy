@@ -12,7 +12,36 @@ const auditListEl = document.getElementById("auditList");
 const workspaceImportInputEl = document.getElementById("workspaceImportInput");
 const workspaceRenameInputEl = document.getElementById("workspaceRenameInput");
 const auditFilterInputEl = document.getElementById("auditFilterInput");
-const currencyPickEl = document.getElementById("currencyPick");
+const uiPrefInputs = {
+  density: document.getElementById("uiDensity"),
+  motion: document.getElementById("uiMotion"),
+  panelRadius: document.getElementById("uiPanelRadius"),
+  cardRadius: document.getElementById("uiCardRadius"),
+  inputRadius: document.getElementById("uiInputRadius"),
+  blur: document.getElementById("uiBlur"),
+  shellWidth: document.getElementById("uiShellWidth")
+};
+const uiPrefValueEls = {
+  panelRadius: document.getElementById("uiPanelRadiusValue"),
+  cardRadius: document.getElementById("uiCardRadiusValue"),
+  inputRadius: document.getElementById("uiInputRadiusValue"),
+  blur: document.getElementById("uiBlurValue"),
+  shellWidth: document.getElementById("uiShellWidthValue")
+};
+const colorInputMap = {
+  bg0: document.getElementById("colorBg0"),
+  bg1: document.getElementById("colorBg1"),
+  bg2: document.getElementById("colorBg2"),
+  card: document.getElementById("colorCard"),
+  cardStrong: document.getElementById("colorCardStrong"),
+  text: document.getElementById("colorText"),
+  muted: document.getElementById("colorMuted"),
+  line: document.getElementById("colorLine"),
+  lineStrong: document.getElementById("colorLineStrong"),
+  accent: document.getElementById("colorAccent"),
+  accent2: document.getElementById("colorAccent2"),
+  accent3: document.getElementById("colorAccent3")
+};
 
 let currentWorkspaces = [];
 let currentActiveWorkspaceId = "";
@@ -56,21 +85,100 @@ async function saveTheme() {
   renderDiagLine("Theme", `Saved as ${theme}`);
 }
 
-async function loadCurrency() {
-  const current = window.TradeProCore.getCurrency?.() || "USD";
-  if (currencyPickEl) currencyPickEl.value = current;
-  renderDiagLine("Currency", `Loaded ${current}`);
+function collectCustomColors() {
+  const colors = {};
+  Object.entries(colorInputMap).forEach(([key, input]) => {
+    if (!input) return;
+    colors[key] = String(input.value || "").trim();
+  });
+  return colors;
 }
 
-async function saveCurrency() {
-  const next = String(currencyPickEl?.value || "USD");
-  const saved = await window.TradeProCore.setCurrency(next);
-  renderDiagLine("Currency", `Saved ${saved} for whole project`);
+function fillCustomColorInputs(colors) {
+  const palette = colors || window.TradeProCore.getCustomColors?.() || {};
+  Object.entries(colorInputMap).forEach(([key, input]) => {
+    if (!input || !palette[key]) return;
+    input.value = palette[key];
+  });
 }
 
-async function refreshFxRates() {
-  await window.TradeProCore.refreshCurrencyRates?.();
-  renderDiagLine("Currency", "Refreshed exchange rates from USD base.");
+function previewCustomColors() {
+  if (!window.TradeProCore?.applyCustomColors) return;
+  window.TradeProCore.applyCustomColors(collectCustomColors(), { persist: false, source: "preview" });
+}
+
+function loadCustomColors() {
+  const colors = window.TradeProCore.getCustomColors?.();
+  fillCustomColorInputs(colors);
+  previewCustomColors();
+  renderDiagLine("Colors", "Loaded current palette.");
+}
+
+function saveCustomColors() {
+  const palette = window.TradeProCore.applyCustomColors?.(collectCustomColors(), { persist: true, source: "local" });
+  renderDiagLine("Colors", `Saved ${Object.keys(palette || {}).length} palette values.`);
+}
+
+function resetCustomColors() {
+  const palette = window.TradeProCore.resetCustomColors?.({ persist: true, source: "local" });
+  fillCustomColorInputs(palette);
+  renderDiagLine("Colors", "Reset to default palette.");
+}
+
+function collectCustomUi() {
+  return {
+    density: String(uiPrefInputs.density?.value || "comfortable"),
+    motion: String(uiPrefInputs.motion?.value || "full"),
+    panelRadius: Number(uiPrefInputs.panelRadius?.value || 28),
+    cardRadius: Number(uiPrefInputs.cardRadius?.value || 24),
+    inputRadius: Number(uiPrefInputs.inputRadius?.value || 16),
+    blur: Number(uiPrefInputs.blur?.value || 18),
+    shellWidth: Number(uiPrefInputs.shellWidth?.value || 1680)
+  };
+}
+
+function renderUiPrefValues(prefs = collectCustomUi()) {
+  if (uiPrefValueEls.panelRadius) uiPrefValueEls.panelRadius.textContent = `${prefs.panelRadius}px`;
+  if (uiPrefValueEls.cardRadius) uiPrefValueEls.cardRadius.textContent = `${prefs.cardRadius}px`;
+  if (uiPrefValueEls.inputRadius) uiPrefValueEls.inputRadius.textContent = `${prefs.inputRadius}px`;
+  if (uiPrefValueEls.blur) uiPrefValueEls.blur.textContent = `${prefs.blur}px`;
+  if (uiPrefValueEls.shellWidth) uiPrefValueEls.shellWidth.textContent = `${prefs.shellWidth}px`;
+}
+
+function fillCustomUiInputs(ui) {
+  const prefs = ui || window.TradeProCore.getCustomUi?.() || {};
+  Object.entries(uiPrefInputs).forEach(([key, input]) => {
+    if (!input || prefs[key] === undefined) return;
+    input.value = String(prefs[key]);
+  });
+  renderUiPrefValues(prefs);
+}
+
+function previewCustomUi() {
+  if (!window.TradeProCore?.applyCustomUi) return;
+  const prefs = collectCustomUi();
+  renderUiPrefValues(prefs);
+  window.TradeProCore.applyCustomUi(prefs, { persist: false, source: "preview" });
+}
+
+function loadCustomUi() {
+  const prefs = window.TradeProCore.getCustomUi?.();
+  fillCustomUiInputs(prefs);
+  previewCustomUi();
+  renderDiagLine("UI", "Loaded interface tuning.");
+}
+
+function saveCustomUi() {
+  const prefs = collectCustomUi();
+  window.TradeProCore.applyCustomUi?.(prefs, { persist: true, source: "local" });
+  renderUiPrefValues(prefs);
+  renderDiagLine("UI", "Saved interface tuning.");
+}
+
+function resetCustomUi() {
+  const prefs = window.TradeProCore.resetCustomUi?.({ persist: true, source: "local" });
+  fillCustomUiInputs(prefs);
+  renderDiagLine("UI", "Reset interface tuning.");
 }
 
 function renderWorkspaces() {
@@ -256,9 +364,12 @@ function downloadAuditCsv() {
 
 on("themeLoadBtn", "click", () => loadTheme().catch((e) => renderDiagLine("Theme", e.message)));
 on("themeSaveBtn", "click", () => saveTheme().catch((e) => renderDiagLine("Theme", e.message)));
-on("currencyLoadBtn", "click", () => loadCurrency().catch((e) => renderDiagLine("Currency", e.message)));
-on("currencySaveBtn", "click", () => saveCurrency().catch((e) => renderDiagLine("Currency", e.message)));
-on("currencyRefreshRatesBtn", "click", () => refreshFxRates().catch((e) => renderDiagLine("Currency", e.message)));
+on("colorsLoadBtn", "click", () => loadCustomColors());
+on("colorsSaveBtn", "click", () => saveCustomColors());
+on("colorsResetBtn", "click", () => resetCustomColors());
+on("uiLoadBtn", "click", () => loadCustomUi());
+on("uiSaveBtn", "click", () => saveCustomUi());
+on("uiResetBtn", "click", () => resetCustomUi());
 on("workspaceRefreshBtn", "click", () => loadWorkspaces().catch((e) => renderDiagLine("Workspace", e.message)));
 on("workspaceCreateBtn", "click", () => createWorkspace().catch((e) => renderDiagLine("Workspace", e.message)));
 on("workspaceRenameBtn", "click", () => renameActiveWorkspace().catch((e) => renderDiagLine("Workspace", e.message)));
@@ -274,6 +385,14 @@ window.activateWorkspace = activateWorkspace;
 window.deleteWorkspace = deleteWorkspace;
 
 loadTheme();
-loadCurrency();
+fillCustomColorInputs(window.TradeProCore.getCustomColors?.());
+Object.values(colorInputMap).forEach((input) => {
+  input?.addEventListener("input", previewCustomColors);
+});
+fillCustomUiInputs(window.TradeProCore.getCustomUi?.());
+Object.values(uiPrefInputs).forEach((input) => {
+  input?.addEventListener("input", previewCustomUi);
+  input?.addEventListener("change", previewCustomUi);
+});
 loadWorkspaces();
 loadAuditLogs();

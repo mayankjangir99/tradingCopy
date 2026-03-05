@@ -7,18 +7,17 @@ function num(v, fallback = 0) {
 
 function money(v) {
   if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
-    return window.TradeProCore.formatMoney(num(v), { digits: 2, assumeUSD: false });
+    return window.TradeProCore.formatMoney(num(v), { digits: 2 });
   }
   const value = num(v);
-  const fallbackCurrency = String(localStorage.getItem("tp_currency") || "USD").toUpperCase();
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
-      currency: fallbackCurrency,
+      currency: "USD",
       maximumFractionDigits: 2
     }).format(value);
   } catch {
-    return `${fallbackCurrency} ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    return `USD ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
 }
 

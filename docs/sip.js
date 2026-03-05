@@ -12,9 +12,17 @@ function money(value, digits = 2) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "-";
   if (window.TradeProCore && typeof window.TradeProCore.formatMoney === "function") {
-    return window.TradeProCore.formatMoney(n, { digits, assumeUSD: false });
+    return window.TradeProCore.formatMoney(n, { digits });
   }
-  return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: digits
+    }).format(n);
+  } catch {
+    return `USD ${n.toLocaleString(undefined, { maximumFractionDigits: digits })}`;
+  }
 }
 
 function renderSipResults(data) {

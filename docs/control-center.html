@@ -11,15 +11,15 @@
   <title>TradePro AI Control Center</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-dashboard">
   <section class="panel app-shell app-shell-dashboard">
     <header class="page-head">
       <div>
+        <span class="page-flag">Preferences and audit</span>
         <h2 class="brand-title dashboard-title">Control Center</h2>
         <p class="brand-sub">Theme, workspaces, and audit activity timeline</p>
       </div>
       <div class="page-actions">
-        <span class="currency-badge" data-currency-badge>Currency: USD</span>
         <button class="btn ghost btn-auto" type="button" onclick="window.location='dashboard.html'">Back</button>
       </div>
     </header>
@@ -40,22 +40,120 @@
             <option value="neon">Neon</option>
           </select>
         </div>
-        <div class="planner-fields control-actions-grid">
-          <select id="currencyPick">
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="INR">INR</option>
-            <option value="GBP">GBP</option>
-            <option value="JPY">JPY</option>
-            <option value="AUD">AUD</option>
-            <option value="CAD">CAD</option>
-            <option value="AED">AED</option>
-            <option value="SGD">SGD</option>
-            <option value="CHF">CHF</option>
-          </select>
-          <button class="btn ghost btn-auto" type="button" id="currencyLoadBtn">Load Currency</button>
-          <button class="btn ghost btn-auto" type="button" id="currencySaveBtn">Save Currency</button>
-          <button class="btn ghost btn-auto" type="button" id="currencyRefreshRatesBtn">Refresh FX Rates</button>
+        <div class="row space section-head" style="margin-top:18px;">
+          <div>
+            <h3 class="section-title">Custom Colors</h3>
+            <p class="brand-sub">Override the site palette with your own colors.</p>
+          </div>
+          <div class="row">
+            <button class="btn ghost btn-auto" type="button" id="colorsLoadBtn">Load Colors</button>
+            <button class="btn ghost btn-auto" type="button" id="colorsResetBtn">Reset Colors</button>
+            <button class="btn ghost btn-auto" type="button" id="colorsSaveBtn">Save Colors</button>
+          </div>
+        </div>
+        <div class="color-grid" id="customColorGrid">
+          <label class="color-field">
+            <span class="color-label">Background 1</span>
+            <input class="color-swatch-input" id="colorBg0" type="color" value="#07111f">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Background 2</span>
+            <input class="color-swatch-input" id="colorBg1" type="color" value="#0f1c30">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Background 3</span>
+            <input class="color-swatch-input" id="colorBg2" type="color" value="#17263f">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Card</span>
+            <input class="color-swatch-input" id="colorCard" type="color" value="#091222">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Card Strong</span>
+            <input class="color-swatch-input" id="colorCardStrong" type="color" value="#0d182c">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Text</span>
+            <input class="color-swatch-input" id="colorText" type="color" value="#edf3ff">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Muted Text</span>
+            <input class="color-swatch-input" id="colorMuted" type="color" value="#92a8c8">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Border</span>
+            <input class="color-swatch-input" id="colorLine" type="color" value="#8aacd6">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Border Strong</span>
+            <input class="color-swatch-input" id="colorLineStrong" type="color" value="#85c0ff">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Accent 1</span>
+            <input class="color-swatch-input" id="colorAccent" type="color" value="#65c3ff">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Accent 2</span>
+            <input class="color-swatch-input" id="colorAccent2" type="color" value="#ffd07a">
+          </label>
+          <label class="color-field">
+            <span class="color-label">Accent 3</span>
+            <input class="color-swatch-input" id="colorAccent3" type="color" value="#83f0d0">
+          </label>
+        </div>
+        <div class="row space section-head" style="margin-top:18px;">
+          <div>
+            <h3 class="section-title">Interface Tuning</h3>
+            <p class="brand-sub">Adjust spacing, motion, blur, rounded corners, and layout width.</p>
+          </div>
+          <div class="row">
+            <button class="btn ghost btn-auto" type="button" id="uiLoadBtn">Load UI</button>
+            <button class="btn ghost btn-auto" type="button" id="uiResetBtn">Reset UI</button>
+            <button class="btn ghost btn-auto" type="button" id="uiSaveBtn">Save UI</button>
+          </div>
+        </div>
+        <div class="ui-tuning-grid">
+          <label class="ui-field">
+            <span class="color-label">Density</span>
+            <select id="uiDensity">
+              <option value="compact">Compact</option>
+              <option value="comfortable" selected>Comfortable</option>
+              <option value="spacious">Spacious</option>
+            </select>
+          </label>
+          <label class="ui-field">
+            <span class="color-label">Motion</span>
+            <select id="uiMotion">
+              <option value="full" selected>Full</option>
+              <option value="reduced">Reduced</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label class="ui-field">
+            <span class="color-label">Panel Radius</span>
+            <input id="uiPanelRadius" type="range" min="12" max="40" value="28">
+            <span class="ui-value" id="uiPanelRadiusValue">28px</span>
+          </label>
+          <label class="ui-field">
+            <span class="color-label">Card Radius</span>
+            <input id="uiCardRadius" type="range" min="10" max="34" value="24">
+            <span class="ui-value" id="uiCardRadiusValue">24px</span>
+          </label>
+          <label class="ui-field">
+            <span class="color-label">Input Radius</span>
+            <input id="uiInputRadius" type="range" min="8" max="28" value="16">
+            <span class="ui-value" id="uiInputRadiusValue">16px</span>
+          </label>
+          <label class="ui-field">
+            <span class="color-label">Glass Blur</span>
+            <input id="uiBlur" type="range" min="0" max="28" value="18">
+            <span class="ui-value" id="uiBlurValue">18px</span>
+          </label>
+          <label class="ui-field ui-field-wide">
+            <span class="color-label">Max Layout Width</span>
+            <input id="uiShellWidth" type="range" min="1180" max="1880" step="20" value="1680">
+            <span class="ui-value" id="uiShellWidthValue">1680px</span>
+          </label>
         </div>
       </section>
 

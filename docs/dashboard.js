@@ -57,15 +57,12 @@ const RISK_BASE_BY_MARKET = {
   futures: 74,
   options: 92
 };
-const DASHBOARD_FX_CODES = ["USD", "EUR", "INR", "GBP", "JPY", "AUD", "CAD", "AED", "SGD", "CHF"];
-
 const quickBox = document.getElementById("quickSymbols");
 const clearListBtn = document.getElementById("clearListBtn");
 const marketTypeEl = document.getElementById("marketType");
 const riskHeatMapEl = document.getElementById("riskHeatMap");
 const symbolInputEl = document.getElementById("symbol");
 const themeSelectEl = document.getElementById("themeSelect");
-const currencySelectEl = document.getElementById("currencySelect");
 const searchStatusEl = document.getElementById("searchStatus");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const dashboardSummaryEl = document.getElementById("dashboardSummary");
@@ -73,12 +70,6 @@ const dashboardSummaryStatusEl = document.getElementById("dashboardSummaryStatus
 const onboardingCardEl = document.getElementById("onboardingCard");
 const onboardingStepsEl = document.getElementById("onboardingSteps");
 const dismissOnboardingBtn = document.getElementById("dismissOnboardingBtn");
-const dashboardFxAmountEl = document.getElementById("dashboardFxAmount");
-const dashboardFxFromEl = document.getElementById("dashboardFxFrom");
-const dashboardFxToEl = document.getElementById("dashboardFxTo");
-const dashboardFxResultEl = document.getElementById("dashboardFxResult");
-const dashboardFxRateEl = document.getElementById("dashboardFxRate");
-const dashboardFxUpdatedEl = document.getElementById("dashboardFxUpdated");
 
 let watchlistRenderSeq = 0;
 
@@ -502,7 +493,7 @@ function renderDashboardSummary(payload = {}) {
     `<div class="kpi"><div class="kpi-label">Top Loser</div><div class="kpi-value ${topLoser && Number(topLoser.change24hPct) < 0 ? "bad" : ""}">${topLoser ? `${escapeHtml(topLoser.symbol)} ${fmtChange(topLoser.change24hPct)}` : "-"}</div></div>`,
     `<div class="kpi"><div class="kpi-label">Alerts Today</div><div class="kpi-value">${alertsTriggeredToday}</div></div>`,
     `<div class="kpi"><div class="kpi-label">Market Feed</div><div class="kpi-value">${escapeHtml(marketStatus)}</div></div>`,
-    `<div class="kpi"><div class="kpi-label">FX Preference</div><div class="kpi-value">${escapeHtml(window.TradeProCore?.getCurrency?.() || "USD")}</div></div>`
+    `<div class="kpi"><div class="kpi-label">Theme</div><div class="kpi-value">${escapeHtml(document.documentElement.getAttribute("data-theme") || "dark")}</div></div>`
   ].join("");
   dashboardSummaryStatusEl.textContent = "Summary updated from your watchlist and alert history.";
 }
@@ -562,45 +553,6 @@ function renderOnboarding() {
   `).join("");
 }
 
-function populateFxSelect(selectEl, defaultCode) {
-  if (!selectEl) return;
-  selectEl.innerHTML = DASHBOARD_FX_CODES
-    .map((code) => `<option value="${code}" ${code === defaultCode ? "selected" : ""}>${code}</option>`)
-    .join("");
-}
-
-function formatCurrencyValue(value, currency) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "-";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 4
-    }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(4)}`;
-  }
-}
-
-function renderDashboardConverter() {
-  if (!window.TradeProCore || !dashboardFxResultEl) return;
-  const amount = Number(dashboardFxAmountEl?.value || 0);
-  const from = dashboardFxFromEl?.value || "USD";
-  const to = dashboardFxToEl?.value || "INR";
-  const converted = window.TradeProCore.convertCurrencyAmount(amount, from, to);
-  const state = window.TradeProCore.getCurrencyRates?.() || { rates: {}, updatedAt: 0 };
-  const fromRate = Number(state.rates?.[from] || 1);
-  const toRate = Number(state.rates?.[to] || 1);
-  const oneUnitRate = Number.isFinite(fromRate) && fromRate > 0 ? toRate / fromRate : Number.NaN;
-
-  dashboardFxResultEl.textContent = formatCurrencyValue(converted, to);
-  dashboardFxRateEl.textContent = Number.isFinite(oneUnitRate) ? `1 ${from} = ${oneUnitRate.toFixed(6)} ${to}` : "FX rate unavailable";
-  dashboardFxUpdatedEl.textContent = state.updatedAt
-    ? `FX updated ${new Date(state.updatedAt).toLocaleString()}`
-    : "Using fallback FX rates until live rates arrive.";
-}
-
 function hydrateSearchDefaults() {
   const recentSymbol = localStorage.getItem("tp_recent_symbol");
   const recentMarketType = localStorage.getItem("tp_recent_market_type");
@@ -624,19 +576,6 @@ if (themeSelectEl && window.TradeProCore) {
   });
 }
 
-if (currencySelectEl && window.TradeProCore) {
-  const currentCurrency = window.TradeProCore.getCurrency?.() || "USD";
-  currencySelectEl.value = currentCurrency;
-  currencySelectEl.addEventListener("change", () => {
-    window.TradeProCore.setCurrency?.(currencySelectEl.value);
-  });
-  window.addEventListener("tp:currency-changed", (event) => {
-    const nextCurrency = String(event?.detail?.currency || "").toUpperCase();
-    if (!nextCurrency) return;
-    currencySelectEl.value = nextCurrency;
-  });
-}
-
 clearListBtn?.addEventListener("click", () => {
   setStoredWatchlist([]);
   renderWishlist();
@@ -650,15 +589,6 @@ dismissOnboardingBtn?.addEventListener("click", () => {
   if (onboardingCardEl) onboardingCardEl.style.display = "none";
 });
 
-dashboardFxAmountEl?.addEventListener("input", renderDashboardConverter);
-dashboardFxFromEl?.addEventListener("change", renderDashboardConverter);
-dashboardFxToEl?.addEventListener("change", renderDashboardConverter);
-window.addEventListener("storage", renderDashboardConverter);
-window.addEventListener("tp:currency-changed", renderDashboardConverter);
-window.addEventListener("tp:currency-rates-updated", renderDashboardConverter);
-
-populateFxSelect(dashboardFxFromEl, "USD");
-populateFxSelect(dashboardFxToEl, window.TradeProCore?.getCurrency?.() || "INR");
 hydrateSearchDefaults();
 renderQuickSymbols();
 hydrateWatchlistFromServer().finally(() => {
@@ -667,7 +597,6 @@ hydrateWatchlistFromServer().finally(() => {
   loadDashboardSummary();
   renderOnboarding();
 });
-renderDashboardConverter();
 setSearchStatus("Validate a symbol before opening the stock page.");
 
 window.go = go;

@@ -11,59 +11,75 @@
   <title>TradePro AI Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-dashboard">
   <section class="panel app-shell app-shell-dashboard">
-    <header class="page-head">
-      <div class="brand-row brand-row-tight">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 100 100" fill="none">
-            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
-            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
-            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
-          </svg>
+    <header class="page-head dashboard-header">
+      <div class="dashboard-header-top">
+        <div class="dashboard-title-wrap">
+          <span class="page-flag">Unified market workspace</span>
+          <div class="brand-row brand-row-tight dashboard-brand-row">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 100 100" fill="none">
+                <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+                <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+                <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="dashboard-head-copy">
+              <div class="dashboard-kicker">TradePro Decision Desk</div>
+              <h2 class="brand-title dashboard-title">TradePro AI Console</h2>
+              <p class="brand-sub">Search stocks, forex, crypto, futures, and options from one execution-first workspace.</p>
+            </div>
+          </div>
         </div>
-        <div>
-          <h2 class="brand-title dashboard-title">TradePro AI Console</h2>
-          <p class="brand-sub">Search stocks, forex, crypto, futures, and options</p>
+        <div class="page-actions dashboard-actions">
+          <select id="themeSelect" aria-label="Theme" style="min-width:120px;">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="neon">Neon</option>
+          </select>
+          <button class="btn ghost btn-auto" type="button" onclick="window.location='control-center.html'">Control</button>
+          <button class="btn ghost btn-auto" type="button" onclick="openNotesWindow()">Notes</button>
+          <button class="btn ghost btn-auto" type="button" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="dashboard-header-body">
+        <div class="dashboard-header-story">
           <div class="page-chips">
             <span class="page-chip">Multi-Market Search</span>
             <span class="page-chip">Risk Heatmap</span>
             <span class="page-chip">Planning Tools</span>
           </div>
+          <p class="dashboard-header-copy">Built for fast symbol triage, cleaner market context, and a tighter flow from search to stock page analysis.</p>
         </div>
-      </div>
-      <div class="page-actions">
-        <span class="currency-badge" data-currency-badge>Currency: USD</span>
-        <select id="currencySelect" aria-label="Currency" style="min-width:120px;">
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="INR">INR</option>
-          <option value="GBP">GBP</option>
-          <option value="JPY">JPY</option>
-          <option value="AUD">AUD</option>
-          <option value="CAD">CAD</option>
-          <option value="AED">AED</option>
-          <option value="SGD">SGD</option>
-          <option value="CHF">CHF</option>
-        </select>
-        <select id="themeSelect" aria-label="Theme" style="min-width:120px;">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-          <option value="neon">Neon</option>
-        </select>
-        <button class="btn ghost btn-auto" type="button" onclick="window.location='control-center.html'">Control</button>
-        <button class="btn ghost btn-auto" type="button" onclick="openNotesWindow()">Notes</button>
-        <button class="btn ghost btn-auto" type="button" onclick="logout()">Logout</button>
+        <div class="dashboard-meta-strip" aria-hidden="true">
+          <div class="dashboard-meta-card">
+            <span class="dashboard-meta-label">Mode</span>
+            <strong>Terminal dashboard</strong>
+          </div>
+          <div class="dashboard-meta-card">
+            <span class="dashboard-meta-label">Coverage</span>
+            <strong>Equity, FX, Crypto</strong>
+          </div>
+          <div class="dashboard-meta-card">
+            <span class="dashboard-meta-label">Flow</span>
+            <strong>Search -> Analyze -> Execute</strong>
+          </div>
+        </div>
       </div>
     </header>
 
     <main class="page-main">
-      <section class="card card-hero">
-        <div class="row space section-head">
-          <h3 class="section-title">Market Search</h3>
-          <span class="helper-note">Tip: Try <span class="mono">AAPL</span>, <span class="mono">EURUSD</span>, <span class="mono">BTCUSDT</span>, <span class="mono">ES1!</span></span>
+      <section class="card card-hero dashboard-search-hero">
+        <div class="dashboard-search-top">
+          <div>
+            <h3 class="section-title">Market Search</h3>
+            <p class="dashboard-search-lead">Start with one symbol and jump into a full detail terminal with AI readings, TradingView context, forecasts, alerts, and execution-focused market context.</p>
+          </div>
+          <div class="dashboard-hero-note">Try <span class="mono">AAPL</span>, <span class="mono">EURUSD</span>, <span class="mono">BTCUSDT</span>, <span class="mono">ES1!</span>, or an option contract.</div>
         </div>
-        <div class="search-row search-row-wide">
+        <div class="dashboard-search-grid">
           <input class="input" id="symbol" placeholder="AAPL, EURUSD, BTCUSDT, ES1!, AAPL240621C00200000">
           <select id="marketType" aria-label="Market type">
             <option value="auto" selected>Auto Detect</option>
@@ -94,31 +110,6 @@
           <button class="btn ghost btn-auto" type="button" id="dismissOnboardingBtn">Dismiss</button>
         </div>
         <div class="news-list" id="onboardingSteps"></div>
-      </section>
-
-      <section class="card">
-        <div class="row space section-head">
-          <h3 class="section-title">Quick Currency Converter</h3>
-          <span class="helper-note" id="dashboardFxUpdated">Using latest cached FX rates.</span>
-        </div>
-        <div class="currency-converter-grid compact-converter-grid">
-          <div>
-            <label class="form-label" for="dashboardFxAmount">Amount</label>
-            <input class="input" id="dashboardFxAmount" type="number" step="0.01" value="1">
-          </div>
-          <div>
-            <label class="form-label" for="dashboardFxFrom">From</label>
-            <select id="dashboardFxFrom"></select>
-          </div>
-          <div>
-            <label class="form-label" for="dashboardFxTo">To</label>
-            <select id="dashboardFxTo"></select>
-          </div>
-        </div>
-        <div class="currency-converter-output compact-converter-output">
-          <div class="currency-converter-value" id="dashboardFxResult">Loading...</div>
-          <div class="brand-sub" id="dashboardFxRate"></div>
-        </div>
       </section>
 
       <section class="card">
