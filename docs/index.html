@@ -6,99 +6,133 @@
   <meta name="theme-color" content="#57b6ff">
   <meta name="tradepro-api-base" content="https://tradingcopy-0p0k.onrender.com">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="alternate icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%2357b6ff'/%3E%3Cstop offset='1' stop-color='%236cf7d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='26' fill='%230b1220'/%3E%3Cpath d='M64 16l36 20v56l-36 20L28 92V36z' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3Ccircle cx='64' cy='64' r='16' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3C/svg%3E">
   <title>TradePro AI Login</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-auth">
   <main class="center-page">
-    <section class="panel login-shell">
-      <div class="brand-row">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 100 100" fill="none">
-            <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
-            <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
-            <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <h1 class="brand-title">TradePro AI</h1>
-          <p class="brand-sub">Neural market intelligence and live signal console</p>
-        </div>
-      </div>
+    <section class="panel login-orbit">
+      <aside class="login-orbit__story">
+        <span class="login-orbit__eyebrow">TradePro Command Deck</span>
+        <h1 class="login-orbit__title">Market clarity at first glance.</h1>
+        <p class="login-orbit__copy">Operate across stocks, crypto, and forex with one workflow for signal analysis, alerting, and decision logging.</p>
 
-      <p class="value-line">Track. Analyze. Execute.</p>
-      <p class="login-intro">Sign in with your account or continue using Google.</p>
-      <p class="helper-note" id="authStatus" aria-live="polite">Fastest path: use your last username, then continue to dashboard.</p>
-
-      <div class="feature-pills" aria-hidden="true">
-        <span class="feature-pill">Live Signals</span>
-        <span class="feature-pill">Risk Heatmap</span>
-        <span class="feature-pill">AI Insights</span>
-      </div>
-
-      <div class="auth-switch" role="tablist" aria-label="Authentication mode">
-        <button class="switch-btn active" id="loginTabBtn" type="button" onclick="switchAuthMode('login')">Login</button>
-        <button class="switch-btn" id="registerTabBtn" type="button" onclick="switchAuthMode('register')">Register</button>
-      </div>
-
-      <form class="auth-grid" id="loginForm" onsubmit="login(event)">
-        <div>
-          <label class="form-label" for="user">Username</label>
-          <input class="input" id="user" placeholder="john_trader" autocomplete="username" required>
-        </div>
-        <div>
-          <label class="form-label" for="pass">Password</label>
-          <input class="input" id="pass" type="password" placeholder="********" autocomplete="current-password" required>
-        </div>
-        <div class="mini-row">
-          <label class="checkline"><input id="remember" type="checkbox"> Remember me</label>
-        </div>
-        <div class="action-grid">
-          <button class="btn" type="submit">Enter Dashboard</button>
-          <button class="btn ghost" type="button" onclick="switchAuthMode('register')">Create Account</button>
+        <div class="login-orbit__board" aria-hidden="true">
+          <div class="login-orbit__ring"></div>
+          <div class="login-orbit__dot login-orbit__dot--a"></div>
+          <div class="login-orbit__dot login-orbit__dot--b"></div>
+          <div class="login-orbit__dot login-orbit__dot--c"></div>
+          <div class="login-orbit__chip">Live feeds</div>
+          <div class="login-orbit__chip">AI outlook</div>
+          <div class="login-orbit__chip">Risk checks</div>
         </div>
 
-        <div class="auth-divider" aria-hidden="true"><span>or continue with</span></div>
+        <section class="login-orbit-live" aria-label="Animated stock market graphics">
+          <div class="login-orbit-live__head">
+            <strong>Market Motion Engine</strong>
+            <span id="loginLivePhase">Initializing...</span>
+          </div>
+          <canvas id="loginLiveChart" class="login-orbit-live__chart" aria-hidden="true"></canvas>
+          <p class="login-orbit-live__caption">Abstract flow transforms into a live-style stock structure.</p>
+        </section>
 
-        <div class="oauth-grid">
-          <button class="btn ghost oauth-btn" type="button" onclick="socialLogin('google')">Continue with Google</button>
+        <div class="login-orbit__stats" aria-hidden="true">
+          <article>
+            <span>Coverage</span>
+            <strong>Stocks / FX / Crypto</strong>
+          </article>
+          <article>
+            <span>Workspace</span>
+            <strong>Alerts + Notes + Journal</strong>
+          </article>
+          <article>
+            <span>Execution</span>
+            <strong>Plan, review, and track</strong>
+          </article>
         </div>
+      </aside>
 
-        <p class="helper-note">OAuth requires backend token exchange and Firebase config.</p>
-      </form>
+      <section class="login-orbit__auth">
+        <div class="login-orbit__card">
+          <p class="login-orbit__kicker">Secure Access</p>
+          <h2 class="login-orbit__heading">Welcome back</h2>
+          <p class="helper-note" id="authStatus" aria-live="polite">Fastest path: use your last username, then continue to dashboard.</p>
 
-      <form class="auth-grid auth-hidden" id="registerForm" onsubmit="registerUser(event)">
-        <div>
-          <label class="form-label" for="newDisplayName">Display Name</label>
-          <input class="input" id="newDisplayName" placeholder="Mayan Trader" autocomplete="name">
+          <div class="auth-switch login-orbit__switch" role="tablist" aria-label="Authentication mode">
+            <button class="switch-btn active" id="loginTabBtn" type="button" onclick="switchAuthMode('login')">Login</button>
+            <button class="switch-btn" id="registerTabBtn" type="button" onclick="switchAuthMode('register')">Register</button>
+          </div>
+
+          <form class="auth-grid login-orbit__form" id="loginForm" onsubmit="login(event)">
+            <div>
+              <label class="form-label" for="user">Username</label>
+              <input class="input" id="user" placeholder="john_trader" autocomplete="username" required>
+            </div>
+            <div>
+              <label class="form-label" for="pass">Password</label>
+              <input class="input" id="pass" type="password" placeholder="********" autocomplete="current-password" required>
+            </div>
+            <div class="mini-row">
+              <label class="checkline"><input id="remember" type="checkbox"> Remember me</label>
+            </div>
+            <div class="action-grid">
+              <button class="btn" type="submit">Enter Dashboard</button>
+              <button class="btn ghost" type="button" onclick="switchAuthMode('register')">Create Account</button>
+            </div>
+
+            <div class="login-orbit__divider" aria-hidden="true"><span>or continue with</span></div>
+
+            <div class="oauth-grid">
+              <button class="btn ghost oauth-btn" type="button" onclick="socialLogin('google')">
+                <span class="oauth-google-logo" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.6 14.5 2.7 12 2.7c-5.1 0-9.3 4.2-9.3 9.3s4.2 9.3 9.3 9.3c5.3 0 8.8-3.7 8.8-8.9 0-.6-.1-1.1-.1-1.6H12z"/>
+                    <path fill="#34A853" d="M2.7 7.4l3.2 2.3C6.7 8 9.1 6 12 6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.6 14.5 2.7 12 2.7 8.4 2.7 5.2 4.8 3.6 7.8l-.9-.4z"/>
+                    <path fill="#FBBC05" d="M12 21.3c2.4 0 4.5-.8 6-2.2l-2.8-2.3c-.8.6-1.8 1-3.2 1-3.8 0-5.2-2.6-5.5-3.9l-3.2 2.5c1.6 3.1 4.8 4.9 8.7 4.9z"/>
+                    <path fill="#4285F4" d="M20.8 12.4c0-.6-.1-1.1-.1-1.6H12v3.9h5.4c-.3 1-1 2-2.2 2.8l2.8 2.3c1.7-1.6 2.8-4 2.8-7.4z"/>
+                  </svg>
+                </span>
+                <span>Continue with Google</span>
+              </button>
+            </div>
+
+            <p class="helper-note">OAuth requires backend token exchange and Firebase config.</p>
+          </form>
+
+          <form class="auth-grid login-orbit__form auth-hidden" id="registerForm" onsubmit="registerUser(event)">
+            <div>
+              <label class="form-label" for="newDisplayName">Display Name</label>
+              <input class="input" id="newDisplayName" placeholder="Mayan Trader" autocomplete="name">
+            </div>
+            <div>
+              <label class="form-label" for="newUser">Username</label>
+              <input class="input" id="newUser" placeholder="mayan_trader" autocomplete="username" required>
+            </div>
+            <div>
+              <label class="form-label" for="newPass">Password</label>
+              <input class="input" id="newPass" type="password" placeholder="at least 8 chars, letter + number" autocomplete="new-password" required>
+            </div>
+            <div>
+              <label class="form-label" for="confirmPass">Confirm Password</label>
+              <input class="input" id="confirmPass" type="password" placeholder="repeat password" autocomplete="new-password" required>
+            </div>
+            <div class="mini-row">
+              <label class="checkline"><input id="registerRemember" type="checkbox"> Stay signed in</label>
+              <span class="helper-note">Username: 3-24 chars, starts with letter</span>
+            </div>
+            <div class="action-grid">
+              <button class="btn" type="submit">Create Account</button>
+              <button class="btn ghost" type="button" onclick="switchAuthMode('login')">Back to Login</button>
+            </div>
+            <p class="helper-note">Use a strong password. Your recent symbol and account preferences will be remembered after sign-in.</p>
+          </form>
         </div>
-        <div>
-          <label class="form-label" for="newUser">Username</label>
-          <input class="input" id="newUser" placeholder="mayan_trader" autocomplete="username" required>
-        </div>
-        <div>
-          <label class="form-label" for="newPass">Password</label>
-          <input class="input" id="newPass" type="password" placeholder="at least 8 chars, letter + number" autocomplete="new-password" required>
-        </div>
-        <div>
-          <label class="form-label" for="confirmPass">Confirm Password</label>
-          <input class="input" id="confirmPass" type="password" placeholder="repeat password" autocomplete="new-password" required>
-        </div>
-        <div class="mini-row">
-          <label class="checkline"><input id="registerRemember" type="checkbox"> Stay signed in</label>
-          <span class="helper-note">Username: 3-24 chars, starts with letter</span>
-        </div>
-        <div class="action-grid">
-          <button class="btn" type="submit">Create Account</button>
-          <button class="btn ghost" type="button" onclick="switchAuthMode('login')">Back to Login</button>
-        </div>
-        <p class="helper-note">Use a strong password. Your preferred currency and recent symbol will be remembered after sign-in.</p>
-      </form>
+      </section>
     </section>
   </main>
 
+  <script src="login-live-graphics.js?v=20260305a"></script>
   <script src="app-core.js?v=20260228a"></script>
   <script src="auth.js?v=20260228a"></script>
 </body>

@@ -89,6 +89,25 @@ const MARKET_INTERVAL_CONFIG = {
 const QUOTE_CACHE_TTL_MS = 30000;
 const FUNDAMENTALS_CACHE_TTL_MS = 30 * 60 * 1000;
 const SNAPSHOT_CACHE_TTL_MS = 15000;
+const CRYPTO_QUOTE_SUFFIXES = ["USDT", "USDC", "BUSD", "USD", "BTC", "ETH", "EUR", "GBP", "JPY", "AUD", "CAD", "TRY"];
+const CRYPTO_TO_COINGECKO_ID = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  BNB: "binancecoin",
+  SOL: "solana",
+  XRP: "ripple",
+  ADA: "cardano",
+  DOGE: "dogecoin",
+  TRX: "tron",
+  AVAX: "avalanche-2",
+  DOT: "polkadot",
+  LINK: "chainlink",
+  LTC: "litecoin",
+  BCH: "bitcoin-cash",
+  XLM: "stellar",
+  TON: "the-open-network",
+  SHIB: "shiba-inu"
+};
 
 app.use(cors({
   origin(origin, callback) {
@@ -699,8 +718,9 @@ function splitSymbol(input) {
   }
 
   if (!symbol.includes(":")) {
-    const marketType = OPTION_PATTERN.test(symbol) ? "options" : "stock";
-    return { original: symbol, apiSymbol: symbol, isCrypto: false, exchange: "", symbolOnly: symbol, marketType };
+    const looksCrypto = /^[A-Z0-9]{2,20}(USDT|USDC|BUSD|USD|BTC|ETH|EUR|GBP|JPY|AUD|CAD|TRY)$/.test(symbol);
+    const marketType = OPTION_PATTERN.test(symbol) ? "options" : looksCrypto ? "crypto" : "stock";
+    return { original: symbol, apiSymbol: symbol, isCrypto: looksCrypto, exchange: "", symbolOnly: symbol, marketType };
   }
 
   const [exchangeRaw, ...rest] = symbol.split(":");
@@ -726,6 +746,21 @@ function splitSymbol(input) {
     symbolOnly,
     marketType
   };
+}
+
+function extractCryptoBaseSymbol(symbolInfo) {
+  const raw = String(symbolInfo?.symbolOnly || symbolInfo?.original || "").toUpperCase().replace("/", "");
+  if (!raw) return "";
+  for (const suffix of CRYPTO_QUOTE_SUFFIXES) {
+    if (raw.endsWith(suffix) && raw.length > suffix.length) {
+      return raw.slice(0, raw.length - suffix.length);
+    }
+  }
+  return raw;
+}
+
+function mapCryptoBaseToCoinGeckoId(baseSymbol) {
+  return CRYPTO_TO_COINGECKO_ID[String(baseSymbol || "").toUpperCase()] || "";
 }
 
 function getLiveFeedHealthSnapshot() {
@@ -1174,27 +1209,147 @@ function buildAuthoritativeQuote(symbolInfo, chart, intervalKey = "1m") {
   };
 }
 
-async function fetchMarketFundamentals(yahooTicker, marketType) {
-  if (marketType !== "stock") {
-    return { marketCap: null, providerName: "Yahoo Finance" };
+async function fetchStockFundamentals(yahooTicker) {
+  // Yahoo quoteSummary intermittently omits marketCap for some equities. Fall back to /v7/finance/quote.
+  try {
+    const response = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooTicker)}`, {
+      params: { modules: "price,summaryDetail,defaultKeyStatistics" },
+      timeout: 10000
+    });
+    const result = response.data?.quoteSummary?.result?.[0] || {};
+    const priceModule = result.price || {};
+    const summaryDetail = result.summaryDetail || {};
+    const defaultKeyStatistics = result.defaultKeyStatistics || {};
+    const marketCap =
+      priceModule?.marketCap?.raw ??
+      summaryDetail?.marketCap?.raw ??
+      defaultKeyStatistics?.marketCap?.raw ??
+      null;
+    if (Number.isFinite(Number(marketCap))) {
+      return {
+        marketCap: Number(marketCap),
+        circulatingSupply: null,
+        totalSupply: null,
+        providerName: "Yahoo Finance",
+        timestamp: Date.now()
+      };
+    }
+  } catch {
+    // Continue to secondary endpoint fallback.
   }
 
-  const response = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooTicker)}`, {
-    params: { modules: "price,summaryDetail" },
-    timeout: 10000
-  });
-  const priceModule = response.data?.quoteSummary?.result?.[0]?.price || {};
-  const summaryDetail = response.data?.quoteSummary?.result?.[0]?.summaryDetail || {};
-  const marketCap = priceModule?.marketCap?.raw ?? summaryDetail?.marketCap?.raw ?? null;
+  try {
+    const quoteResponse = await axios.get("https://query1.finance.yahoo.com/v7/finance/quote", {
+      params: { symbols: yahooTicker },
+      timeout: 10000
+    });
+    const marketCap = quoteResponse.data?.quoteResponse?.result?.[0]?.marketCap ?? null;
+    return {
+      marketCap: Number.isFinite(Number(marketCap)) ? Number(marketCap) : null,
+      circulatingSupply: null,
+      totalSupply: null,
+      providerName: "Yahoo Finance",
+      timestamp: Date.now()
+    };
+  } catch {
+    return {
+      marketCap: null,
+      circulatingSupply: null,
+      totalSupply: null,
+      providerName: "Yahoo Finance",
+      timestamp: Date.now()
+    };
+  }
+}
+
+async function fetchCryptoFundamentals(symbolInfo) {
+  const baseSymbol = extractCryptoBaseSymbol(symbolInfo);
+  const coinGeckoId = mapCryptoBaseToCoinGeckoId(baseSymbol);
+
+  if (coinGeckoId) {
+    try {
+      const response = await axios.get("https://api.coingecko.com/api/v3/coins/markets", {
+        params: {
+          vs_currency: "usd",
+          ids: coinGeckoId
+        },
+        timeout: 10000
+      });
+      const market = Array.isArray(response.data) ? response.data[0] : null;
+      const marketCap = Number(market?.market_cap);
+      const circulatingSupply = Number(market?.circulating_supply);
+      const totalSupplyRaw = market?.total_supply;
+      const totalSupply = Number.isFinite(Number(totalSupplyRaw)) ? Number(totalSupplyRaw) : null;
+      if (Number.isFinite(marketCap) && marketCap > 0) {
+        return {
+          marketCap,
+          circulatingSupply: Number.isFinite(circulatingSupply) ? circulatingSupply : null,
+          totalSupply,
+          providerName: "CoinGecko",
+          timestamp: Date.now()
+        };
+      }
+    } catch {
+      // Fall through to secondary provider.
+    }
+  }
+
+  // Secondary public fallback.
+  if (baseSymbol) {
+    try {
+      const response = await axios.get("https://min-api.cryptocompare.com/data/pricemultifull", {
+        params: {
+          fsyms: baseSymbol,
+          tsyms: "USD"
+        },
+        timeout: 10000
+      });
+      const raw = response.data?.RAW?.[baseSymbol]?.USD || {};
+      const marketCap = Number(raw?.MKTCAP);
+      const supply = Number(raw?.SUPPLY);
+      if (Number.isFinite(marketCap) && marketCap > 0) {
+        return {
+          marketCap,
+          circulatingSupply: Number.isFinite(supply) ? supply : null,
+          totalSupply: null,
+          providerName: "CryptoCompare",
+          timestamp: Date.now()
+        };
+      }
+    } catch {
+      // Keep null fundamentals.
+    }
+  }
+
   return {
-    marketCap: Number.isFinite(Number(marketCap)) ? Number(marketCap) : null,
-    providerName: "Yahoo Finance"
+    marketCap: null,
+    circulatingSupply: null,
+    totalSupply: null,
+    providerName: "Fallback unavailable",
+    timestamp: Date.now()
   };
+}
+
+async function fetchMarketFundamentals(symbolInfo) {
+  const yahooTicker = toYahooTicker(symbolInfo);
+  if (symbolInfo.marketType === "crypto") {
+    return fetchCryptoFundamentals(symbolInfo);
+  }
+  if (symbolInfo.marketType !== "stock") {
+    return {
+      marketCap: null,
+      circulatingSupply: null,
+      totalSupply: null,
+      providerName: "Not supported",
+      timestamp: Date.now()
+    };
+  }
+  return fetchStockFundamentals(yahooTicker);
 }
 
 async function fetchMarketCap(yahooTicker, marketType) {
   try {
-    const data = await fetchMarketFundamentals(yahooTicker, marketType);
+    const data = await fetchStockFundamentals(yahooTicker, marketType);
     return data.marketCap;
   } catch {
     return null;
@@ -1261,18 +1416,18 @@ async function getAuthoritativeCandles(symbolInfo, rawInterval = "1d", rawRange 
 }
 
 async function getAuthoritativeFundamentals(symbolInfo) {
-  const yahooTicker = toYahooTicker(symbolInfo);
-  const cacheKey = `${yahooTicker}:fundamentals`;
+  const cacheKey = `${symbolInfo.original}:fundamentals`;
   const cached = await loadCachedResource(
     marketDataCaches.fundamentals,
     cacheKey,
     FUNDAMENTALS_CACHE_TTL_MS,
-    async () => fetchMarketFundamentals(yahooTicker, symbolInfo.marketType),
+    async () => fetchMarketFundamentals(symbolInfo),
     "Fundamentals provider"
   );
   return {
     ...cached.data,
-    stale: Boolean(cached.stale)
+    stale: Boolean(cached.stale),
+    timestamp: Number(cached.data?.timestamp || cached.cachedAt || Date.now())
   };
 }
 
@@ -2025,25 +2180,38 @@ function describeAlertCondition(conditionResult) {
 
 function buildAlertEmail(alert, event, recipientEmail) {
   const summaryLines = (event.conditionResults || []).map((item) => describeAlertCondition(item));
-  const subject = `TradePro alert: ${alert.symbol} crossed your target`;
+  const triggeredIso = new Date(event.triggeredAt).toISOString();
+  const subject = `TradePro Alert: ${alert.symbol} triggered`;
   const text = [
-    `Alert: ${alert.name}`,
+    "TradePro Alert Triggered",
+    `Alert Name: ${alert.name}`,
     `Symbol: ${alert.symbol}`,
-    `Triggered: ${new Date(event.triggeredAt).toISOString()}`,
+    `Triggered At: ${triggeredIso}`,
     `Recipient: ${recipientEmail}`,
     "",
     "Matched conditions:",
     ...summaryLines.map((line) => `- ${line}`)
   ].join("\n");
   const html = `
-    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#142133">
-      <h2 style="margin:0 0 12px;">TradePro Alert Triggered</h2>
-      <p style="margin:0 0 8px;"><strong>${escapeHtml(alert.name)}</strong> for <strong>${escapeHtml(alert.symbol)}</strong> has fired.</p>
-      <p style="margin:0 0 8px;">Recipient: ${escapeHtml(recipientEmail)}</p>
-      <p style="margin:0 0 16px;">Triggered at ${escapeHtml(new Date(event.triggeredAt).toISOString())}</p>
-      <ul style="padding-left:18px;margin:0;">
-        ${summaryLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
-      </ul>
+    <div style="margin:0;padding:28px;background:#f4f7ff;">
+      <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #dce6ff;border-radius:14px;overflow:hidden;">
+        <div style="padding:18px 22px;background:linear-gradient(135deg,#0a1d45,#0f3b8f);color:#f7fbff;font-family:Segoe UI,Arial,sans-serif;">
+          <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">TradePro Alerts</div>
+          <h2 style="margin:8px 0 0;font-size:22px;line-height:1.3;">Alert Triggered</h2>
+        </div>
+        <div style="padding:22px;font-family:Segoe UI,Arial,sans-serif;color:#13203a;line-height:1.55;">
+          <p style="margin:0 0 10px;"><strong>${escapeHtml(alert.name)}</strong> has been triggered for <strong>${escapeHtml(alert.symbol)}</strong>.</p>
+          <p style="margin:0 0 6px;"><strong>Triggered At:</strong> ${escapeHtml(triggeredIso)}</p>
+          <p style="margin:0 0 16px;"><strong>Recipient:</strong> ${escapeHtml(recipientEmail)}</p>
+          <div style="margin:0 0 8px;font-weight:700;color:#0d2e70;">Matched Conditions</div>
+          <ul style="margin:0;padding-left:18px;">
+            ${summaryLines.map((line) => `<li style="margin:0 0 6px;">${escapeHtml(line)}</li>`).join("")}
+          </ul>
+          <div style="margin-top:20px;padding-top:14px;border-top:1px solid #e7edff;color:#4d5b79;font-size:12px;">
+            Generated by TradePro alert engine.
+          </div>
+        </div>
+      </div>
     </div>
   `;
   return { subject, text, html };
@@ -2285,6 +2453,46 @@ function stdDev(values) {
   return Math.sqrt(Math.max(variance, 0));
 }
 
+function atrRma(highs, lows, closes, period = 14) {
+  const p = Math.max(2, Number(period) || 14);
+  if (!Array.isArray(highs) || !Array.isArray(lows) || !Array.isArray(closes)) return [];
+  const n = Math.min(highs.length, lows.length, closes.length);
+  if (n < 2) return [];
+
+  const tr = [];
+  for (let i = 0; i < n; i += 1) {
+    const high = Number(highs[i]);
+    const low = Number(lows[i]);
+    const close = Number(closes[i]);
+    const prevClose = Number(i > 0 ? closes[i - 1] : close);
+    if (![high, low, close, prevClose].every(Number.isFinite)) {
+      tr.push(Number.NaN);
+      continue;
+    }
+    const range1 = high - low;
+    const range2 = Math.abs(high - prevClose);
+    const range3 = Math.abs(low - prevClose);
+    tr.push(Math.max(range1, range2, range3));
+  }
+
+  const atr = new Array(n).fill(Number.NaN);
+  if (n < p + 1) return atr;
+  const seedSlice = tr.slice(1, p + 1).filter(Number.isFinite);
+  if (seedSlice.length < p) return atr;
+  let lastAtr = seedSlice.reduce((sum, v) => sum + v, 0) / p;
+  atr[p] = lastAtr;
+  for (let i = p + 1; i < n; i += 1) {
+    const trNow = tr[i];
+    if (!Number.isFinite(trNow)) {
+      atr[i] = lastAtr;
+      continue;
+    }
+    lastAtr = ((lastAtr * (p - 1)) + trNow) / p;
+    atr[i] = lastAtr;
+  }
+  return atr;
+}
+
 function correlation(a, b) {
   const n = Math.min(a.length, b.length);
   if (n < 2) return 0;
@@ -2486,7 +2694,11 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   const lows = rows.map((r) => (Number.isFinite(r.low) ? Number(r.low) : Number(r.close)));
   const volumes = rows.map((r) => (Number.isFinite(r.volume) ? Number(r.volume) : 0));
   const latest = rows[rows.length - 1];
-  const latestClose = Number(quote?.price || latest.close || 0);
+  const latestCandleClose = Number(latest.close || closes[closes.length - 1] || 0);
+  const latestQuoteClose = Number(quote?.price);
+  const latestClose = Number.isFinite(latestQuoteClose) && latestQuoteClose > 0
+    ? latestQuoteClose
+    : latestCandleClose;
 
   const bars24h = (TIMEFRAME_CONFIG[tf] || TIMEFRAME_CONFIG["1D"]).bars24h;
   const effectiveBars24h = clamp(bars24h, 1, Math.max(1, rows.length - 1));
@@ -2523,9 +2735,10 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
 
   const bbSeries = BollingerBands.calculate({ values: closes, period: 20, stdDev: 2 });
   const bb = bbSeries[bbSeries.length - 1] || {};
-  const atrSeries = ATR.calculate({ high: highs, low: lows, close: closes, period: 14 });
-  const atr = Number(atrSeries[atrSeries.length - 1] || (latestClose * 0.01));
-  const atrPct = latestClose ? (atr / latestClose) * 100 : 0;
+  const atrSeries = atrRma(highs, lows, closes, 14);
+  const atr = Number(atrSeries[atrSeries.length - 1] || (latestCandleClose * 0.01));
+  const atrBaseClose = Number.isFinite(latestCandleClose) && latestCandleClose > 0 ? latestCandleClose : latestClose;
+  const atrPct = atrBaseClose ? (atr / atrBaseClose) * 100 : 0;
   const avgVolume20 = volumes.slice(-20).reduce((sum, value) => sum + value, 0) / Math.max(1, Math.min(20, volumes.length));
   const volumeNow = Number(quote?.volume || volumes[volumes.length - 1] || 0);
   const volumeRatio = avgVolume20 ? volumeNow / avgVolume20 : 1;
@@ -2542,15 +2755,30 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   const resistance = Math.max(...highs.slice(-20));
   const previousHigh = Math.max(...highs.slice(-21, -1));
   const previousLow = Math.min(...lows.slice(-21, -1));
-  const bullishBreakout = latestClose > previousHigh * 1.002 && volumeRatio >= 1.1;
-  const bearishBreakdown = latestClose < previousLow * 0.998 && volumeRatio >= 1.1;
+  const bullishBreakout = latestCandleClose > previousHigh * 1.002 && volumeRatio >= 1.1;
+  const bearishBreakdown = latestCandleClose < previousLow * 0.998 && volumeRatio >= 1.1;
   const neutralRsi = rsi >= 45 && rsi <= 55;
+  const emaBullishStack = ema20 > ema50 && ema50 > ema200;
+  const emaBearishStack = ema20 < ema50 && ema50 < ema200;
+  const rsiState = rsi >= 75
+    ? "extremely overbought"
+    : rsi >= 65
+      ? "overbought"
+      : rsi > 55
+        ? "bullish"
+        : rsi >= 45
+          ? "neutral"
+          : rsi > 35
+            ? "bearish"
+            : rsi > 25
+              ? "oversold"
+              : "extremely oversold";
 
   let trend = "range";
-  if (latestClose > ema50 && ema20 > ema50 && ema50 > ema200 && macdHistogram >= 0 && trendSlopePct > 0.02) {
-    trend = bullishBreakout ? "bullish" : "bullish";
-  } else if (latestClose < ema50 && ema20 < ema50 && ema50 < ema200 && macdHistogram <= 0 && trendSlopePct < -0.02) {
-    trend = bearishBreakdown ? "bearish" : "bearish";
+  if (emaBullishStack && latestClose >= ema20 && macdHistogram >= -0.02 && trendSlopePct >= 0) {
+    trend = "bullish";
+  } else if (emaBearishStack && latestClose <= ema20 && macdHistogram <= 0.02 && trendSlopePct <= 0) {
+    trend = "bearish";
   }
 
   let momentum = "weak";
@@ -2575,9 +2803,9 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
   else if (atrPct <= 1.8 && returnVolPct <= 1.4) volatility = "low";
 
   const reasons = [];
-  reasons.push(`Price ${latestClose >= ema50 ? "holds above" : "sits below"} EMA50 (${toFixedNumber(ema50, 2)}).`);
-  reasons.push(`EMA stack is ${ema20 > ema50 && ema50 > ema200 ? "bullish" : ema20 < ema50 && ema50 < ema200 ? "bearish" : "mixed"} with EMA20 ${ema20 >= ema50 ? "above" : "below"} EMA50.`);
-  reasons.push(`RSI-14 is ${toFixedNumber(rsi, 2)}, which is ${neutralRsi ? "neutral" : rsi > 55 ? "supportive for bulls" : "supportive for bears"}.`);
+  reasons.push(`Price ${latestCandleClose >= ema50 ? "holds above" : "sits below"} EMA50 (${toFixedNumber(ema50, 2)}).`);
+  reasons.push(`EMA stack is ${emaBullishStack ? "bullish" : emaBearishStack ? "bearish" : "mixed"} with EMA20 ${ema20 >= ema50 ? "above" : "below"} EMA50.`);
+  reasons.push(`RSI-14 is ${toFixedNumber(rsi, 2)} (${rsiState}).`);
   reasons.push(`MACD histogram is ${toFixedNumber(macdHistogram, 4)} and ${macdHistogram >= 0 ? "supports upside momentum" : "shows downside momentum"}.`);
   reasons.push(`ATR is ${toFixedNumber(atrPct, 2)}% of price, indicating ${volatility} volatility.`);
   if (volumeRatio >= 1.15) reasons.push(`Volume is ${toFixedNumber(volumeRatio, 2)}x the 20-bar average, confirming participation.`);
@@ -2589,10 +2817,10 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
 
   let action = "HOLD";
   let strategyKey = "swing";
-  if (trend === "bullish" && bullishMomentumVotes >= 3 && rsi < 70) {
+  if (trend === "bullish" && bullishMomentumVotes >= 3 && rsi < 72) {
     action = "BUY";
     strategyKey = volatility === "high" ? "scalp" : "swing";
-  } else if (trend === "bearish" && bearishMomentumVotes >= 3 && rsi > 30) {
+  } else if (trend === "bearish" && bearishMomentumVotes >= 3 && rsi > 28) {
     action = "SELL";
     strategyKey = volatility === "high" ? "scalp" : "swing";
   } else if (trend === "range") {
@@ -2621,11 +2849,23 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
     trend !== "range" && Math.sign(trendSlopePct) !== (trend === "bullish" ? 1 : -1) ? 1 : 0,
     volatility === "high" ? 1 : 0
   ].reduce((sum, value) => sum + value, 0);
-  confidence += alignmentVotes * 7;
-  confidence -= conflictVotes * 8;
-  if (trend === "range") confidence = Math.min(confidence, 58);
-  if (neutralRsi && action !== "HOLD") confidence = Math.min(confidence, 55);
-  if ((bullishBreakout || bearishBreakdown) && action !== "HOLD") confidence += 6;
+  const confidenceComponents = {
+    trend: { score: Math.round(clamp(45 + (alignmentVotes * 7) - (conflictVotes * 6) + (emaBullishStack || emaBearishStack ? 8 : 0), 20, 92)), weight: 35 },
+    momentum: { score: Math.round(clamp(36 + (dominantMomentumVotes * 12), 20, 90)), weight: 20 },
+    volatility: { score: Math.round(volatility === "low" ? 74 : volatility === "medium" ? 58 : 40), weight: 15 },
+    volume: { score: Math.round(clamp(35 + (volumeRatio * 22), 20, 90)), weight: 15 },
+    news: { score: Math.round(clamp(Number(newsSentiment.score || 50), 20, 90)), weight: 15 }
+  };
+  const weightedConfidence = Object.values(confidenceComponents)
+    .reduce((sum, item) => sum + (item.score * item.weight), 0) / 100;
+  confidence = weightedConfidence;
+  if ((bullishBreakout || bearishBreakdown) && action !== "HOLD") confidence += 4;
+  if (trend === "range") confidence = Math.min(confidence, 62);
+  if (neutralRsi && action !== "HOLD") confidence = Math.min(confidence, 58);
+  if ((rsiState === "extremely overbought" && action === "BUY") || (rsiState === "extremely oversold" && action === "SELL")) {
+    confidence = Math.min(confidence, 54);
+    action = "HOLD";
+  }
   confidence = Math.round(clamp(confidence, 20, 92));
 
   const normalizedSignal = normalizeSignalOutput({
@@ -2642,12 +2882,20 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
     ? "Bullish crossover"
     : prevEma20 >= prevEma50 && ema20 < ema50
       ? "Bearish crossover"
-      : ema20 >= ema50
+      : emaBullishStack && latestCandleClose > ema50
         ? "Bullish alignment"
-        : "Bearish alignment";
-  const macdState = macdHistogram > 0
+        : emaBearishStack && latestCandleClose < ema50
+          ? "Bearish alignment"
+          : latestCandleClose > ema50 && ema20 < ema50
+            ? (latestCandleClose > ema200 ? "Mixed / Range (bullish lean)" : "Mixed / Range (bearish lean)")
+            : "Mixed / Range";
+  const macdRelation = macdValue >= macdSignal ? "above signal" : "below signal";
+  const macdHistogramPolarity = macdHistogram > 0 ? "Positive" : macdHistogram < 0 ? "Negative" : "Flat";
+  const macdBearishConfirmed = macdHistogram < 0 && macdValue < macdSignal;
+  const macdBullishConfirmed = macdHistogram > 0 && macdValue > macdSignal;
+  const macdState = macdBullishConfirmed
     ? (prevMacd.histogram || 0) <= 0 ? "Bullish turn" : "Bullish momentum"
-    : macdHistogram < 0
+    : macdBearishConfirmed
       ? (prevMacd.histogram || 0) >= 0 ? "Bearish turn" : "Bearish momentum"
       : "Flat momentum";
   const bbState = latestClose >= Number(bb.upper || latestClose)
@@ -2694,6 +2942,7 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
     strategy: normalizedSignal.strategy,
     metrics: {
       realtimePrice: toFixedNumber(latestClose, 4),
+      indicatorClose: toFixedNumber(latestCandleClose, 4),
       change24hPct: toFixedNumber(change24h, 2),
       volume: toFixedNumber(volumeNow, 0),
       high24h: toFixedNumber(high24h, 4),
@@ -2710,6 +2959,8 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
         value: toFixedNumber(macdValue, 4),
         signal: toFixedNumber(macdSignal, 4),
         histogram: toFixedNumber(macdHistogram, 4),
+        relation: macdRelation,
+        histogramPolarity: macdHistogramPolarity,
         state: macdState
       },
       bollinger: {
@@ -2728,13 +2979,8 @@ function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolIn
     marketMode: normalizedSignal.trend,
     confidence: {
       score: normalizedSignal.confidence,
-      components: {
-        trend: { score: Math.round(clamp(50 + (alignmentVotes * 8) - (conflictVotes * 6), 20, 90)), weight: 35 },
-        momentum: { score: Math.round(clamp(40 + (dominantMomentumVotes * 12), 20, 88)), weight: 20 },
-        volatility: { score: Math.round(volatility === "low" ? 75 : volatility === "medium" ? 58 : 38), weight: 15 },
-        volume: { score: Math.round(clamp(35 + (volumeRatio * 25), 20, 90)), weight: 15 },
-        news: { score: Math.round(sentimentScore), weight: 15 }
-      }
+      technicalConfidence: normalizedSignal.confidence,
+      components: confidenceComponents
     },
     sentiment: {
       positive: Number(newsSentiment.positive || 0),
@@ -2845,7 +3091,14 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
 
       let quote = null;
       let candles = null;
-      let fundamentals = { marketCap: null, providerName: "Yahoo Finance", stale: false };
+      let fundamentals = {
+        marketCap: null,
+        circulatingSupply: null,
+        totalSupply: null,
+        providerName: "Unavailable",
+        timestamp: Date.now(),
+        stale: false
+      };
       const warnings = [];
 
       if (quoteResult.status === "fulfilled") {
@@ -2908,8 +3161,11 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
 
       if (quote.stale) warnings.push("Quote provider returned cached data.");
       if (candles.stale) warnings.push("Candle provider returned cached data.");
-      if (fundamentals.stale && symbolInfo.marketType === "stock") warnings.push("Fundamentals provider returned cached data.");
+      if (fundamentals.stale) warnings.push("Fundamentals provider returned cached data.");
       if (marketCap === null && symbolInfo.marketType === "stock") warnings.push("Market cap is unavailable from the provider right now.");
+      if (marketCap === null && symbolInfo.marketType === "crypto") {
+        warnings.push("Market cap not returned by Binance; fallback provider failed.");
+      }
 
       const ai = computeAiPayload(
         candles.rows,
@@ -2923,6 +3179,8 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
 
       const quoteAgeMs = Math.max(0, Number(quoteWithMarketCap.ageMs || 0));
       const candleAgeMs = Math.max(0, Number(candles.ageMs || 0));
+      const fundamentalsAgeMs = Math.max(0, Date.now() - Number(fundamentals.timestamp || Date.now()));
+      const dataFreshnessScore = Math.round(clamp(100 - (quoteAgeMs / 3000), 20, 100));
       const freshnessWarning = quoteAgeMs > 120000
         ? "Data may be delayed."
         : candleInterval === "1d" && candleAgeMs > 24 * 60 * 60 * 1000
@@ -2944,11 +3202,21 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
           providerName: candles.providerName,
           stale: Boolean(candles.stale)
         },
+        fundamentals: {
+          marketCap,
+          circulatingSupply: Number.isFinite(Number(fundamentals.circulatingSupply)) ? Number(fundamentals.circulatingSupply) : null,
+          totalSupply: Number.isFinite(Number(fundamentals.totalSupply)) ? Number(fundamentals.totalSupply) : null,
+          providerName: fundamentals.providerName || "Unavailable",
+          timestamp: Number(fundamentals.timestamp || Date.now()),
+          stale: Boolean(fundamentals.stale)
+        },
         ai,
         freshness: {
           lastUpdated,
           quoteAgeMs,
           candleAgeMs,
+          fundamentalsAgeMs,
+          dataFreshnessScore,
           isRealtime: Boolean(quoteWithMarketCap.isRealtime && quoteAgeMs <= 120000),
           delayed: Boolean(quoteWithMarketCap.delayed || quoteAgeMs > 120000),
           warning: freshnessWarning
@@ -2970,12 +3238,36 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
 
 function assertMarketSnapshotInvariants(snapshot) {
   const quote = snapshot?.quote || {};
+  const ai = snapshot?.ai || {};
   const signal = snapshot?.ai?.signal || {};
+  const indicators = ai?.indicators || {};
+  const metrics = ai?.metrics || {};
   if (!Number.isFinite(Number(quote.price)) || Number(quote.price) <= 0) {
     throw new Error("Snapshot quote price is invalid");
   }
   if (quote.marketCap !== null && quote.marketCap !== undefined && !Number.isFinite(Number(quote.marketCap))) {
     throw new Error("Snapshot market cap must be numeric when available");
+  }
+  const atr = Number(indicators.atr);
+  const atrPct = Number(indicators.atrPct);
+  const indicatorClose = Number(metrics.indicatorClose);
+  if (Number.isFinite(atr) && Number.isFinite(atrPct) && Number.isFinite(indicatorClose) && indicatorClose > 0) {
+    const expectedAtrPct = (atr / indicatorClose) * 100;
+    if (Math.abs(expectedAtrPct - atrPct) > 0.25) {
+      throw new Error("Snapshot ATR% is inconsistent with ATR/close formula");
+    }
+  }
+  const macdValue = Number(indicators?.macd?.value);
+  const macdSignal = Number(indicators?.macd?.signal);
+  const hist = Number(indicators?.macd?.histogram);
+  const histPolarity = String(indicators?.macd?.histogramPolarity || "");
+  if (Number.isFinite(hist)) {
+    if (hist > 0 && histPolarity.toLowerCase() !== "positive") throw new Error("MACD histogram polarity mismatch");
+    if (hist < 0 && histPolarity.toLowerCase() !== "negative") throw new Error("MACD histogram polarity mismatch");
+  }
+  if (Number.isFinite(macdValue) && Number.isFinite(macdSignal) && Number.isFinite(hist)) {
+    if (hist < 0 && !(macdValue < macdSignal)) throw new Error("MACD bearish label mismatch");
+    if (hist > 0 && !(macdValue > macdSignal)) throw new Error("MACD bullish label mismatch");
   }
   if (signal.trend === "range" && signal.action === "SELL" && Number(signal.confidence || 0) > 70) {
     throw new Error("Snapshot AI signal is contradictory");
@@ -4266,6 +4558,33 @@ app.get("/api/market/quote", async (req, res) => {
   } catch (error) {
     logProviderError("Market quote error", error);
     return res.status(502).json({ error: "Market quote unavailable" });
+  }
+});
+
+app.get("/api/market/fundamentals", async (req, res) => {
+  const input = String(req.query.symbol || "").trim();
+  if (!input) {
+    return res.status(400).json({ error: "symbol is required" });
+  }
+  const symbolInfo = splitSymbol(input);
+  if (!symbolInfo.original) {
+    return res.status(400).json({ error: "Invalid symbol" });
+  }
+  try {
+    const fundamentals = await getAuthoritativeFundamentals(symbolInfo);
+    return res.json({
+      symbol: symbolInfo.original,
+      marketType: symbolInfo.marketType,
+      marketCap: Number.isFinite(Number(fundamentals.marketCap)) ? Number(fundamentals.marketCap) : null,
+      circulatingSupply: Number.isFinite(Number(fundamentals.circulatingSupply)) ? Number(fundamentals.circulatingSupply) : null,
+      totalSupply: Number.isFinite(Number(fundamentals.totalSupply)) ? Number(fundamentals.totalSupply) : null,
+      providerName: String(fundamentals.providerName || "Unavailable"),
+      timestamp: Number(fundamentals.timestamp || Date.now()),
+      stale: Boolean(fundamentals.stale)
+    });
+  } catch (error) {
+    logProviderError("Market fundamentals error", error);
+    return res.status(502).json({ error: "Market fundamentals unavailable" });
   }
 });
 

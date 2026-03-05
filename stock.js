@@ -81,6 +81,10 @@ let lastForecastSource = "fallback";
 let currentMarketSnapshot = null;
 let marketSnapshotRequest = null;
 let lastManualRefreshAt = 0;
+let latestTechnicalConfidence = 50;
+let latestPatternConfidence = 50;
+let latestDataFreshnessScore = 100;
+let latestFinalConfidence = 50;
 
 function hexToRgba(hex, alpha) {
   const safe = String(hex || "").replace("#", "");
@@ -140,8 +144,61 @@ function formatMarketCap(value, unavailableReason = "") {
   if (Number.isFinite(n) && n > 0) {
     return formatMoney(n, 0);
   }
-  const title = unavailableReason ? ` title="${escapeHtml(unavailableReason)}"` : "";
+  const reason = unavailableReason || "Market cap not returned by Binance; fallback provider failed.";
+  const title = ` title="${escapeHtml(reason)}"`;
   return `<span${title}>Unavailable</span>`;
+}
+
+function computeFreshnessScore(snapshot) {
+  const freshness = snapshot?.freshness || {};
+  const ageMs = Math.max(0, Number(freshness.quoteAgeMs || 0));
+  let score = 100 - (ageMs / 3000);
+  if (freshness.delayed) score -= 20;
+  if (snapshot?.stale) score -= 10;
+  return Math.round(clamp(score, 10, 100));
+}
+
+function computeFinalConfidence(technicalConfidence, patternConfidence, dataFreshnessScore) {
+  const technical = clamp(Number(technicalConfidence), 0, 100);
+  const pattern = clamp(Number(patternConfidence), 0, 100);
+  const freshness = clamp(Number(dataFreshnessScore), 0, 100);
+  const finalConfidence = Math.round((0.55 * technical) + (0.30 * pattern) + (0.15 * freshness));
+  return {
+    technicalConfidence: technical,
+    patternConfidence: pattern,
+    dataFreshnessScore: freshness,
+    finalConfidence
+  };
+}
+
+function refreshFinalConfidenceDisplay() {
+  const breakdown = computeFinalConfidence(
+    latestTechnicalConfidence,
+    latestPatternConfidence,
+    latestDataFreshnessScore
+  );
+  latestFinalConfidence = breakdown.finalConfidence;
+  if (confidenceScore) confidenceScore.textContent = `${breakdown.finalConfidence}%`;
+  if (weightGrid) {
+    weightGrid.innerHTML = [
+      `Technical 55% -> ${breakdown.technicalConfidence}`,
+      `Pattern 30% -> ${breakdown.patternConfidence}`,
+      `Freshness 15% -> ${breakdown.dataFreshnessScore}`,
+      `Final = 0.55T + 0.30P + 0.15F -> ${breakdown.finalConfidence}`
+    ].map((line) => `<div class='weight-item'><div class='kpi-label'>${line}</div></div>`).join("");
+  }
+  return breakdown;
+}
+
+function assertFinalConfidenceFormula(breakdown) {
+  const expected = Math.round(
+    (0.55 * Number(breakdown.technicalConfidence || 0)) +
+    (0.30 * Number(breakdown.patternConfidence || 0)) +
+    (0.15 * Number(breakdown.dataFreshnessScore || 0))
+  );
+  if (Math.abs(expected - Number(breakdown.finalConfidence || 0)) > 0) {
+    throw new Error("Final confidence weighted formula mismatch.");
+  }
 }
 
 function freshnessLabel(snapshot) {
@@ -163,13 +220,36 @@ function describeFreshness(snapshot) {
 
 function assertMarketSnapshotConsistency(snapshot) {
   const quote = snapshot?.quote || {};
+  const ai = snapshot?.ai || {};
   const signal = snapshot?.ai?.signal || {};
+  const indicators = ai?.indicators || {};
+  const metrics = ai?.metrics || {};
   const numericQuote = Number(quote.price);
   if (!Number.isFinite(numericQuote) || numericQuote <= 0) {
     throw new Error("Snapshot quote price is invalid.");
   }
   if (Number.isFinite(Number(quote.marketCap)) && Number(quote.marketCap) < 0) {
     throw new Error("Snapshot market cap is invalid.");
+  }
+  const atr = Number(indicators.atr);
+  const atrPct = Number(indicators.atrPct);
+  const indicatorClose = Number(metrics.indicatorClose);
+  if (Number.isFinite(atr) && Number.isFinite(atrPct) && Number.isFinite(indicatorClose) && indicatorClose > 0) {
+    const expectedAtrPct = (atr / indicatorClose) * 100;
+    if (Math.abs(expectedAtrPct - atrPct) > 0.25) {
+      throw new Error("ATR% formula mismatch.");
+    }
+  }
+  const macdValue = Number(indicators?.macd?.value);
+  const macdSignal = Number(indicators?.macd?.signal);
+  const hist = Number(indicators?.macd?.histogram);
+  const histPolarity = String(indicators?.macd?.histogramPolarity || "").toLowerCase();
+  if (Number.isFinite(hist)) {
+    if (hist > 0 && histPolarity && histPolarity !== "positive") throw new Error("MACD polarity mismatch.");
+    if (hist < 0 && histPolarity && histPolarity !== "negative") throw new Error("MACD polarity mismatch.");
+    if (hist < 0 && Number.isFinite(macdValue) && Number.isFinite(macdSignal) && !(macdValue < macdSignal)) {
+      throw new Error("MACD bearish condition mismatch.");
+    }
   }
   if (signal.trend === "range" && signal.action === "SELL" && Number(signal.confidence) > 70) {
     throw new Error("AI signal is contradictory.");
@@ -204,6 +284,9 @@ function renderQuoteSummary(snapshot) {
   }
   if (stockHeaderMarketCap) {
     stockHeaderMarketCap.innerHTML = formatMarketCap(quote.marketCap, marketCapWarning);
+    if (Number.isFinite(Number(quote.marketCap)) && Number(quote.marketCap) > 0 && /Unavailable/i.test(stockHeaderMarketCap.textContent || "")) {
+      throw new Error("Market cap exists but UI rendered Unavailable.");
+    }
   }
   if (stockSideQuotePrice) stockSideQuotePrice.textContent = formatMoney(quote.price, 4);
   if (stockSideQuoteMeta) {
@@ -310,7 +393,7 @@ function setForecastPattern(pattern) {
 
 function renderForecastKeypoints(forecast, source) {
   if (!forecastKeypoints) return;
-  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.lastClose };
+  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.expectedClose || forecast.stats.lastClose };
   const directionLabel = forecast.pattern.direction.includes("bear")
     ? "Bearish pressure"
     : forecast.pattern.direction.includes("bull")
@@ -325,21 +408,21 @@ function renderForecastKeypoints(forecast, source) {
     ? "Built from live daily candles."
     : "Built from local fallback candles.";
   const moveLabel = `${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}%`;
-  const rangeLabel = `${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 2)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 2)}`;
+  const rangeLabel = `${formatMoney(forecast.stats.band68?.low, 2)} to ${formatMoney(forecast.stats.band68?.high, 2)}`;
 
   forecastKeypoints.innerHTML = [
     {
       eyebrow: "Directional Read",
       title: "Bias",
-      body: `${directionLabel}. Expected move is ${moveLabel} over the selected horizon.`,
+      body: `${directionLabel}. Expected move is ${moveLabel} over ${forecast.stats.horizonDays}D.`,
       tag: moveLabel,
       tone: forecast.pattern.direction.includes("bear") ? "negative" : forecast.pattern.direction.includes("bull") ? "positive" : "neutral"
     },
     {
       eyebrow: "Projected Zone",
       title: "Target Zone",
-      body: `Projected close is near ${formatMoney(lastProjection.close, 4)} with a range from ${formatMoney(forecast.lowerBand[forecast.lowerBand.length - 1], 4)} to ${formatMoney(forecast.upperBand[forecast.upperBand.length - 1], 4)}.`,
-      tag: rangeLabel,
+      body: `Projected close is near ${formatMoney(lastProjection.close, 4)}. 68% interval: ${rangeLabel}. 95% interval: ${formatMoney(forecast.stats.band95?.low, 2)} to ${formatMoney(forecast.stats.band95?.high, 2)}.`,
+      tag: `68% ${rangeLabel}`,
       tone: "neutral"
     },
     {
@@ -370,12 +453,12 @@ function renderForecastKeypoints(forecast, source) {
 
 function renderForecastVisualDeck(forecast, source) {
   if (!forecastVisualDeck) return;
-  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.lastClose };
+  const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.expectedClose || forecast.stats.lastClose };
   const movePct = Number(forecast.stats.expectedMovePct || 0);
   const direction = String(forecast.pattern?.direction || "neutral").toLowerCase();
   const sourceLabel = source === "yahoo" ? "Live market candles" : "Local fallback model";
-  const upperEnd = Number(forecast.upperBand[forecast.upperBand.length - 1] || lastProjection.close || 0);
-  const lowerEnd = Number(forecast.lowerBand[forecast.lowerBand.length - 1] || lastProjection.close || 0);
+  const upperEnd = Number(forecast.stats.band68?.high || forecast.upperBand[forecast.upperBand.length - 1] || lastProjection.close || 0);
+  const lowerEnd = Number(forecast.stats.band68?.low || forecast.lowerBand[forecast.lowerBand.length - 1] || lastProjection.close || 0);
   const lastClose = Number(forecast.stats.lastClose || 0);
   const upsidePct = lastClose > 0 ? Math.max(0, ((upperEnd - lastClose) / lastClose) * 100) : 0;
   const downsidePct = lastClose > 0 ? Math.max(0, ((lastClose - lowerEnd) / lastClose) * 100) : 0;
@@ -388,7 +471,7 @@ function renderForecastVisualDeck(forecast, source) {
   const badges = [
     forecast.pattern?.name || "Pattern",
     `${forecast.pattern?.probability || 0}% confidence`,
-    `${forecastHorizonSelect?.value || 14}D horizon`,
+    `${forecast.stats.horizonDays || forecastHorizonSelect?.value || 14}D horizon`,
     source === "yahoo" ? "Live feed" : "Fallback feed"
   ];
 
@@ -426,18 +509,18 @@ function renderForecastVisualDeck(forecast, source) {
     </div>
     <div class="forecast-target-ribbon">
       <div class="forecast-ribbon-top">
-        <span class="forecast-visual-label">Target Zone Ribbon</span>
+        <span class="forecast-visual-label">Target Zone Ribbon (68%)</span>
         <span class="forecast-visual-value">${formatMoney(lowerEnd, 2)} to ${formatMoney(upperEnd, 2)}</span>
       </div>
       <div class="forecast-ribbon-values">
         <span>Now ${formatMoney(lastClose, 2)}</span>
-        <span>Target ${formatMoney(lastProjection.close, 2)}</span>
+        <span>Target ${formatMoney(forecast.stats.expectedClose, 2)}</span>
         <span>Range ${formatMoney(lowerEnd, 2)} / ${formatMoney(upperEnd, 2)}</span>
       </div>
     </div>
     <div class="forecast-takeaway-panel">
       <span class="forecast-visual-label">AI Takeaway Panel</span>
-      <p>${takeawayLead} ${takeawayTone}. The model sees a ${movePct > 0 ? "rise" : "pullback"} toward ${formatMoney(lastProjection.close, 2)} over the selected horizon.</p>
+      <p>${takeawayLead} ${takeawayTone}. Horizon: ${forecast.stats.horizonDays}D. Expected move: ${movePct > 0 ? "+" : ""}${movePct}%. 95% interval ends near ${formatMoney(forecast.stats.band95?.low, 2)} to ${formatMoney(forecast.stats.band95?.high, 2)}.</p>
     </div>
     <div class="forecast-lower-grid">
       <div class="forecast-mini-path">
@@ -712,24 +795,30 @@ function buildForecast(rows, horizon) {
     neutral: 0
   };
   const patternBias = patternBiasMap[pattern.direction] || 0;
-  const dailyDrift = clamp(meanReturn + trendComponent + patternBias, -0.045, 0.045);
+  const dailyDrift = clamp((meanReturn * 0.7) + (trendComponent * 0.9) + patternBias, -0.018, 0.018);
   const projections = [];
   const upperBand = [];
   const lowerBand = [];
+  const upperBand95 = [];
+  const lowerBand95 = [];
   let price = lastClose;
+  const sigmaDaily = clamp(volatility || 0, 0.0035, 0.08);
 
   for (let day = 1; day <= horizon; day += 1) {
-    const damping = clamp(1 - (day / Math.max(horizon * 1.6, 1)), 0.4, 1);
-    const drift = dailyDrift * damping;
-    const volatilityBias = volatility * (pattern.direction.includes("bear") ? -0.2 : 0.2);
-    price = Math.max(0.01, price * (1 + drift + volatilityBias));
-    const bandWidth = Math.max(lastClose * 0.006, price * volatility * Math.sqrt(day) * 1.35);
+    const meanReversion = clamp(1 - (day / Math.max(horizon * 2.4, 1)), 0.62, 1);
+    const drift = dailyDrift * meanReversion;
+    price = Math.max(0.01, price * (1 + drift));
+    const sigmaAbs = Math.max(lastClose * 0.004, price * sigmaDaily * Math.sqrt(day));
+    const bandWidth68 = sigmaAbs;
+    const bandWidth95 = sigmaAbs * 1.96;
     projections.push({
       day,
       close: Number(price.toFixed(4))
     });
-    upperBand.push(Number((price + bandWidth).toFixed(4)));
-    lowerBand.push(Number(Math.max(0.01, price - bandWidth).toFixed(4)));
+    upperBand.push(Number((price + bandWidth68).toFixed(4)));
+    lowerBand.push(Number(Math.max(0.01, price - bandWidth68).toFixed(4)));
+    upperBand95.push(Number((price + bandWidth95).toFixed(4)));
+    lowerBand95.push(Number(Math.max(0.01, price - bandWidth95).toFixed(4)));
   }
 
   const probability = Math.round(clamp(
@@ -743,11 +832,23 @@ function buildForecast(rows, horizon) {
     projection: projections,
     upperBand,
     lowerBand,
+    upperBand95,
+    lowerBand95,
     stats: {
       lastClose: Number(lastClose.toFixed(4)),
+      expectedClose: Number((projections[projections.length - 1]?.close || lastClose).toFixed(4)),
       expectedMovePct: Number((((projections[projections.length - 1]?.close || lastClose) - lastClose) / Math.max(lastClose, 0.0001) * 100).toFixed(2)),
       volatilityPct: Number((volatility * 100).toFixed(2)),
-      dataPoints: rows.length
+      dataPoints: rows.length,
+      horizonDays: horizon,
+      band68: {
+        low: Number(lowerBand[lowerBand.length - 1] || lastClose),
+        high: Number(upperBand[upperBand.length - 1] || lastClose)
+      },
+      band95: {
+        low: Number(lowerBand95[lowerBand95.length - 1] || lastClose),
+        high: Number(upperBand95[upperBand95.length - 1] || lastClose)
+      }
     }
   };
 }
@@ -1125,12 +1226,32 @@ function renderForecastStats(stats, source) {
   const sourceLabel = source === "yahoo" ? "Live" : source === "fallback" ? "Local" : (source || "-");
   forecastStats.innerHTML = [
     kpi("Last Close", formatMoney(stats.lastClose, 4)),
-    kpi("Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
+    kpi("Expected Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
+    kpi("Expected Close", formatMoney(stats.expectedClose, 4)),
+    kpi("Band 68%", `${formatMoney(stats.band68?.low, 2)} - ${formatMoney(stats.band68?.high, 2)}`),
+    kpi("Band 95%", `${formatMoney(stats.band95?.low, 2)} - ${formatMoney(stats.band95?.high, 2)}`),
     kpi("Volatility", `${stats.volatilityPct}%`),
     kpi("Candles", formatNumber(stats.dataPoints, 0)),
     kpi("Source", sourceLabel),
-    kpi("Horizon", `${forecastHorizonSelect?.value || 14}D`)
+    kpi("Horizon", `${stats.horizonDays || forecastHorizonSelect?.value || 14}D`)
   ].join("");
+}
+
+function assertForecastConsistency(forecast, horizonDays) {
+  const lastProjection = Number(forecast?.projection?.[forecast.projection.length - 1]?.close);
+  const expectedClose = Number(forecast?.stats?.expectedClose);
+  const expectedMove = Number(forecast?.stats?.expectedMovePct);
+  const lastClose = Number(forecast?.stats?.lastClose);
+  if (Number.isFinite(lastProjection) && Number.isFinite(expectedClose) && Math.abs(lastProjection - expectedClose) > 0.02) {
+    throw new Error("Forecast expected close mismatch.");
+  }
+  if (Number.isFinite(lastClose) && Number.isFinite(expectedMove) && Number.isFinite(expectedClose)) {
+    const implied = ((expectedClose - lastClose) / Math.max(lastClose, 0.0001)) * 100;
+    if (Math.abs(implied - expectedMove) > 0.35) throw new Error("Forecast expected move mismatch.");
+  }
+  if (Number(forecast?.stats?.horizonDays || horizonDays) !== Number(horizonDays)) {
+    throw new Error("Forecast horizon mismatch.");
+  }
 }
 
 async function loadForecastWidget() {
@@ -1182,16 +1303,20 @@ async function loadForecastWidget() {
       throw new Error("Not enough daily candles for forecast.");
     }
     const forecast = buildForecast(forecastRows, horizon);
+    assertForecastConsistency(forecast, horizon);
+    latestPatternConfidence = clamp(Number(forecast?.pattern?.probability || 50), 0, 100);
+    assertFinalConfidenceFormula(refreshFinalConfidenceDisplay());
     lastForecastSource = source;
     renderForecastChart(forecastRows, forecast);
     renderForecastVisualDeck(forecast, source);
     renderForecastStats(forecast.stats, source);
     renderForecastKeypoints(forecast, source);
     setForecastPattern(forecast.pattern);
+    const forecastSummary = `Horizon: ${forecast.stats.horizonDays}D | Expected move: ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% | Band: 68% / 95%`;
     if (source === "yahoo") {
-      setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using live Yahoo Finance data.`);
+      setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using live Yahoo Finance data. ${forecastSummary}`);
     } else {
-      setForecastStatus("Using a local fallback projection. Deploy the latest backend to unlock live six-month candle forecasts.", true);
+      setForecastStatus(`Using a local fallback projection. ${forecastSummary}`, true);
     }
   } catch (error) {
     if (forecastStats) forecastStats.innerHTML = `<div class="kpi"><div class="kpi-label">Forecast</div><div class="kpi-value bad">Unavailable</div></div>`;
@@ -1528,6 +1653,16 @@ function formatNumber(value, decimals = 2) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
 }
 
+function formatVolume(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return "-";
+  if (n >= 1e12) return `${(n / 1e12).toFixed(n >= 1e13 ? 1 : 2)}T`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 1 : 2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 1 : 2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(n >= 1e4 ? 1 : 2)}K`;
+  return formatNumber(n, 0);
+}
+
 function getSymbolMarketType() {
   if (SYMBOL.startsWith("FX:")) return "forex";
   if (SYMBOL.startsWith("BINANCE:")) return "crypto";
@@ -1602,7 +1737,7 @@ function normalizeAllocation(buy, hold, sell) {
 function deriveAllocationFromAi(aiData) {
   if (!aiData) return { buy: 34, hold: 33, sell: 33 };
 
-  const confidence = clamp(Number(aiData?.confidence?.score || 50), 0, 100);
+  const confidence = clamp(Number(aiData?.confidence?.finalConfidence ?? aiData?.confidence?.score ?? 50), 0, 100);
   const riskLevel = String(aiData?.risk?.level || "").toLowerCase();
   const action = String(aiData?.suggestion?.action || "").toLowerCase();
   const sentimentLabel = String(aiData?.sentiment?.label || "").toLowerCase();
@@ -1917,10 +2052,9 @@ function renderAiPayload(snapshot, warningText = "") {
   const sentiment = safeData.sentiment || {};
   const backtest = safeData.backtest || {};
   const confidence = safeData.confidence || {};
-  const weights = confidence.components || {};
   const marketCapWarning = safeSnapshot?.warnings?.find((item) => String(item || "").toLowerCase().includes("market cap")) || "";
   const reasonsCard = Array.isArray(signal.reasons) && signal.reasons.length
-    ? `<div class="kpi"><div class="kpi-label">Signal Reasons</div><div class="kpi-value">${signal.reasons.map((item) => `<div>${escapeHtml(item)}</div>`).join("")}</div></div>`
+    ? `<div class="kpi kpi-reasons"><div class="kpi-label">Signal Reasons</div><div class="kpi-value kpi-reasons-list">${signal.reasons.map((item) => `<div class="kpi-reasons-item">${escapeHtml(item)}</div>`).join("")}</div></div>`
     : "";
   const mergedWarningText = warningText || safeSnapshot?.freshness?.warning || "";
   const warningCard = mergedWarningText
@@ -1931,11 +2065,14 @@ function renderAiPayload(snapshot, warningText = "") {
   currentRealtimePrice = Number(quote.price ?? metrics.realtimePrice);
   renderQuoteSummary(safeSnapshot);
 
+  latestTechnicalConfidence = clamp(Number(confidence.technicalConfidence ?? confidence.score ?? 50), 0, 100);
+  latestDataFreshnessScore = computeFreshnessScore(safeSnapshot);
+
   aiPrimary.innerHTML = [
     warningCard,
     kpi("Current Price", formatMoney(quote.price ?? metrics.realtimePrice, 4)),
     kpi("Session Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
-    kpi("Volume", formatNumber(quote.volume ?? metrics.volume, 0)),
+    kpi("Volume", formatVolume(quote.volume ?? metrics.volume)),
     kpi("Session High", formatMoney(quote.high ?? metrics.high24h, 4)),
     kpi("Session Low", formatMoney(quote.low ?? metrics.low24h, 4)),
     kpi("Market Cap", formatMarketCap(quote.marketCap ?? metrics.marketCap, marketCapWarning)),
@@ -1946,7 +2083,8 @@ function renderAiPayload(snapshot, warningText = "") {
     kpi("RSI", formatNumber(indicators.rsi, 2)),
     kpi("EMA Crossover", indicators.emaCrossover || "N/A"),
     kpi("EMA 20 / 50 / 200", `${formatNumber(indicators.ema20, 2)} / ${formatNumber(indicators.ema50, 2)} / ${formatNumber(indicators.ema200, 2)}`),
-    kpi("MACD", `${formatNumber(indicators.macd?.value, 3)} / ${indicators.macd?.state || "N/A"}`),
+    kpi("MACD", `${formatNumber(indicators.macd?.value, 2)} (${escapeHtml(indicators.macd?.relation || "vs signal n/a")})`),
+    kpi("Histogram", `${escapeHtml(indicators.macd?.histogramPolarity || "N/A")} (${formatNumber(indicators.macd?.histogram, 2)})`),
     kpi("Bollinger", indicators.bollinger?.state || "N/A"),
     kpi("Volume Signal", indicators.volumeSignal || "N/A"),
     kpi("Risk", safeData.risk?.level || "Unknown"),
@@ -1965,17 +2103,12 @@ function renderAiPayload(snapshot, warningText = "") {
     kpi("News", sentiment.label || "Neutral")
   ].join("");
 
-  confidenceScore.textContent = Number.isFinite(Number(confidence.score)) ? `${confidence.score}%` : "-";
+  const finalBreakdown = refreshFinalConfidenceDisplay();
+  assertFinalConfidenceFormula(finalBreakdown);
+  safeData.confidence = safeData.confidence || {};
+  safeData.confidence.finalConfidence = finalBreakdown.finalConfidence;
   marketModeBadge.textContent = signal.trend || safeData.marketMode || "Neutral";
   marketModeBadge.className = `status ${statusClass(signal.trend || safeData.marketMode || "Neutral")}`;
-
-  weightGrid.innerHTML = [
-    `Trend ${weights.trend?.weight || 0}% -> ${weights.trend?.score ?? "-"}`,
-    `Momentum ${weights.momentum?.weight || 0}% -> ${weights.momentum?.score ?? "-"}`,
-    `Volatility ${weights.volatility?.weight || 0}% -> ${weights.volatility?.score ?? "-"}`,
-    `Volume ${weights.volume?.weight || 0}% -> ${weights.volume?.score ?? "-"}`,
-    `News ${weights.news?.weight || 0}% -> ${weights.news?.score ?? "-"}`
-  ].map((line) => `<div class="weight-item"><div class="kpi-label">${line}</div></div>`).join("");
 
   aiBacktest.innerHTML = [
     kpi("Win rate", `${formatNumber(backtest.winRate, 1)}%`),
