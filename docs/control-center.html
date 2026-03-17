@@ -13,188 +13,547 @@
 </head>
 <body class="page-dashboard">
   <section class="panel app-shell app-shell-dashboard">
-    <header class="page-head">
+    <header class="page-head control-head">
       <div>
-        <span class="page-flag">Preferences and audit</span>
+        <span class="page-flag">Command settings and diagnostics</span>
         <h2 class="brand-title dashboard-title">Control Center</h2>
-        <p class="brand-sub">Theme, workspaces, and audit activity timeline</p>
+        <p class="brand-sub">Account, alerts, trading defaults, workspaces, system health, and appearance controls in one console.</p>
       </div>
       <div class="page-actions">
+        <button class="btn ghost btn-auto" type="button" id="controlRefreshBtn">Refresh Diagnostics</button>
         <button class="btn ghost btn-auto" type="button" onclick="window.location='dashboard.html'">Back</button>
       </div>
     </header>
 
-    <main class="page-main stack control-center-main">
-      <section class="card control-section">
+    <main class="page-main stack control-console">
+      <section class="card control-overview-card">
         <div class="row space section-head">
-          <h3 class="section-title">Theme</h3>
-          <div class="row">
-            <button class="btn ghost btn-auto" type="button" id="themeLoadBtn">Load Theme</button>
-            <button class="btn ghost btn-auto" type="button" id="themeSaveBtn">Save Theme</button>
-          </div>
-        </div>
-        <div class="planner-fields control-primary-grid">
-          <select id="themePick">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="neon">Neon</option>
-          </select>
-        </div>
-        <div class="row space section-head" style="margin-top:18px;">
           <div>
-            <h3 class="section-title">Custom Colors</h3>
-            <p class="brand-sub">Override the site palette with your own colors.</p>
+            <span class="stock-eyebrow">Overview</span>
+            <h3 class="section-title">Workspace And Session Snapshot</h3>
+            <p class="brand-sub" id="controlStatusLine">Loading Control Center...</p>
           </div>
           <div class="row">
-            <button class="btn ghost btn-auto" type="button" id="colorsLoadBtn">Load Colors</button>
-            <button class="btn ghost btn-auto" type="button" id="colorsResetBtn">Reset Colors</button>
-            <button class="btn ghost btn-auto" type="button" id="colorsSaveBtn">Save Colors</button>
+            <span class="technical-badge" id="controlOverviewTheme">Theme</span>
+            <span class="technical-badge" id="controlOverviewHealth">Checking backend</span>
           </div>
         </div>
-        <div class="color-grid" id="customColorGrid">
-          <label class="color-field">
-            <span class="color-label">Background 1</span>
-            <input class="color-swatch-input" id="colorBg0" type="color" value="#07111f">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Background 2</span>
-            <input class="color-swatch-input" id="colorBg1" type="color" value="#0f1c30">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Background 3</span>
-            <input class="color-swatch-input" id="colorBg2" type="color" value="#17263f">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Card</span>
-            <input class="color-swatch-input" id="colorCard" type="color" value="#091222">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Card Strong</span>
-            <input class="color-swatch-input" id="colorCardStrong" type="color" value="#0d182c">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Text</span>
-            <input class="color-swatch-input" id="colorText" type="color" value="#edf3ff">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Muted Text</span>
-            <input class="color-swatch-input" id="colorMuted" type="color" value="#92a8c8">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Border</span>
-            <input class="color-swatch-input" id="colorLine" type="color" value="#8aacd6">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Border Strong</span>
-            <input class="color-swatch-input" id="colorLineStrong" type="color" value="#85c0ff">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Accent 1</span>
-            <input class="color-swatch-input" id="colorAccent" type="color" value="#65c3ff">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Accent 2</span>
-            <input class="color-swatch-input" id="colorAccent2" type="color" value="#ffd07a">
-          </label>
-          <label class="color-field">
-            <span class="color-label">Accent 3</span>
-            <input class="color-swatch-input" id="colorAccent3" type="color" value="#83f0d0">
-          </label>
-        </div>
-        <div class="row space section-head" style="margin-top:18px;">
+        <div class="control-overview-grid" id="controlOverviewGrid"></div>
+      </section>
+
+      <section class="control-toolbar">
+        <nav class="control-tabs" id="controlTabs" aria-label="Control Center sections">
+          <button class="control-tab active" type="button" data-tab="appearance">Appearance</button>
+          <button class="control-tab" type="button" data-tab="account">Account</button>
+          <button class="control-tab" type="button" data-tab="notifications">Notifications</button>
+          <button class="control-tab" type="button" data-tab="trading">Trading</button>
+          <button class="control-tab" type="button" data-tab="workspace">Workspace</button>
+          <button class="control-tab" type="button" data-tab="system">System</button>
+        </nav>
+        <div class="control-savebar" id="settingsSaveBar">
           <div>
-            <h3 class="section-title">Interface Tuning</h3>
-            <p class="brand-sub">Adjust spacing, motion, blur, rounded corners, and layout width.</p>
+            <strong id="settingsSaveTitle">Preferences Clean</strong>
+            <p class="brand-sub" id="settingsSaveStatus">No pending preference changes.</p>
           </div>
           <div class="row">
-            <button class="btn ghost btn-auto" type="button" id="uiLoadBtn">Load UI</button>
-            <button class="btn ghost btn-auto" type="button" id="uiResetBtn">Reset UI</button>
-            <button class="btn ghost btn-auto" type="button" id="uiSaveBtn">Save UI</button>
+            <button class="btn ghost btn-auto" type="button" id="settingsDiscardBtn">Discard</button>
+            <button class="btn btn-auto" type="button" id="settingsSaveBtn">Save Preferences</button>
           </div>
         </div>
-        <div class="ui-tuning-grid">
-          <label class="ui-field">
-            <span class="color-label">Density</span>
-            <select id="uiDensity">
-              <option value="compact">Compact</option>
-              <option value="comfortable" selected>Comfortable</option>
-              <option value="spacious">Spacious</option>
-            </select>
-          </label>
-          <label class="ui-field">
-            <span class="color-label">Motion</span>
-            <select id="uiMotion">
-              <option value="full" selected>Full</option>
-              <option value="reduced">Reduced</option>
-              <option value="off">Off</option>
-            </select>
-          </label>
-          <label class="ui-field">
-            <span class="color-label">Panel Radius</span>
-            <input id="uiPanelRadius" type="range" min="12" max="40" value="28">
-            <span class="ui-value" id="uiPanelRadiusValue">28px</span>
-          </label>
-          <label class="ui-field">
-            <span class="color-label">Card Radius</span>
-            <input id="uiCardRadius" type="range" min="10" max="34" value="24">
-            <span class="ui-value" id="uiCardRadiusValue">24px</span>
-          </label>
-          <label class="ui-field">
-            <span class="color-label">Input Radius</span>
-            <input id="uiInputRadius" type="range" min="8" max="28" value="16">
-            <span class="ui-value" id="uiInputRadiusValue">16px</span>
-          </label>
-          <label class="ui-field">
-            <span class="color-label">Glass Blur</span>
-            <input id="uiBlur" type="range" min="0" max="28" value="18">
-            <span class="ui-value" id="uiBlurValue">18px</span>
-          </label>
-          <label class="ui-field ui-field-wide">
-            <span class="color-label">Max Layout Width</span>
-            <input id="uiShellWidth" type="range" min="1180" max="1880" step="20" value="1680">
-            <span class="ui-value" id="uiShellWidthValue">1680px</span>
-          </label>
+      </section>
+
+      <section class="control-tab-panel active" data-tab-panel="appearance">
+        <div class="control-grid-2">
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Appearance</span>
+                <h3 class="section-title">Theme</h3>
+              </div>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="themeLoadBtn">Load Theme</button>
+                <button class="btn ghost btn-auto" type="button" id="themeSaveBtn">Save Theme</button>
+              </div>
+            </div>
+            <div class="planner-fields control-primary-grid">
+              <select id="themePick">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="neon">Neon</option>
+              </select>
+              <span class="brand-sub" id="themeStatus">Theme sync ready.</span>
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Preview</span>
+                <h3 class="section-title">Live Appearance Preview</h3>
+              </div>
+            </div>
+            <div class="control-preview-card" id="appearancePreviewCard">
+              <div class="control-preview-top">
+                <span class="page-chip">Preview</span>
+                <span class="page-chip">Theme</span>
+                <span class="page-chip">Layout</span>
+              </div>
+              <h4>TradePro Preview Shell</h4>
+              <p class="brand-sub">Custom colors, rounded corners, blur, and density update live while you tune the UI.</p>
+              <div class="control-preview-metrics">
+                <div class="kpi"><div class="kpi-label">Density</div><div class="kpi-value" id="previewDensityValue">comfortable</div></div>
+                <div class="kpi"><div class="kpi-label">Motion</div><div class="kpi-value" id="previewMotionValue">full</div></div>
+                <div class="kpi"><div class="kpi-label">Shell Width</div><div class="kpi-value" id="previewShellWidthValue">1680px</div></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Palette</span>
+                <h3 class="section-title">Custom Colors</h3>
+                <p class="brand-sub">Override the site palette with your own colors.</p>
+              </div>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="colorsLoadBtn">Load Colors</button>
+                <button class="btn ghost btn-auto" type="button" id="colorsResetBtn">Reset Colors</button>
+                <button class="btn ghost btn-auto" type="button" id="colorsSaveBtn">Save Colors</button>
+              </div>
+            </div>
+            <div class="color-grid" id="customColorGrid">
+              <label class="color-field"><span class="color-label">Background 1</span><input class="color-swatch-input" id="colorBg0" type="color" value="#07111f"></label>
+              <label class="color-field"><span class="color-label">Background 2</span><input class="color-swatch-input" id="colorBg1" type="color" value="#0f1c30"></label>
+              <label class="color-field"><span class="color-label">Background 3</span><input class="color-swatch-input" id="colorBg2" type="color" value="#17263f"></label>
+              <label class="color-field"><span class="color-label">Card</span><input class="color-swatch-input" id="colorCard" type="color" value="#091222"></label>
+              <label class="color-field"><span class="color-label">Card Strong</span><input class="color-swatch-input" id="colorCardStrong" type="color" value="#0d182c"></label>
+              <label class="color-field"><span class="color-label">Text</span><input class="color-swatch-input" id="colorText" type="color" value="#edf3ff"></label>
+              <label class="color-field"><span class="color-label">Muted Text</span><input class="color-swatch-input" id="colorMuted" type="color" value="#92a8c8"></label>
+              <label class="color-field"><span class="color-label">Border</span><input class="color-swatch-input" id="colorLine" type="color" value="#8aacd6"></label>
+              <label class="color-field"><span class="color-label">Border Strong</span><input class="color-swatch-input" id="colorLineStrong" type="color" value="#85c0ff"></label>
+              <label class="color-field"><span class="color-label">Accent 1</span><input class="color-swatch-input" id="colorAccent" type="color" value="#65c3ff"></label>
+              <label class="color-field"><span class="color-label">Accent 2</span><input class="color-swatch-input" id="colorAccent2" type="color" value="#ffd07a"></label>
+              <label class="color-field"><span class="color-label">Accent 3</span><input class="color-swatch-input" id="colorAccent3" type="color" value="#83f0d0"></label>
+            </div>
+          </section>
+
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Layout</span>
+                <h3 class="section-title">Interface Tuning</h3>
+                <p class="brand-sub">Adjust spacing, motion, blur, rounded corners, and layout width.</p>
+              </div>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="uiLoadBtn">Load UI</button>
+                <button class="btn ghost btn-auto" type="button" id="uiResetBtn">Reset UI</button>
+                <button class="btn ghost btn-auto" type="button" id="uiSaveBtn">Save UI</button>
+              </div>
+            </div>
+            <div class="ui-tuning-grid">
+              <label class="ui-field"><span class="color-label">Density</span><select id="uiDensity"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="spacious">Spacious</option></select></label>
+              <label class="ui-field"><span class="color-label">Motion</span><select id="uiMotion"><option value="full" selected>Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select></label>
+              <label class="ui-field"><span class="color-label">Panel Radius</span><input id="uiPanelRadius" type="range" min="12" max="40" value="28"><span class="ui-value" id="uiPanelRadiusValue">28px</span></label>
+              <label class="ui-field"><span class="color-label">Card Radius</span><input id="uiCardRadius" type="range" min="10" max="34" value="24"><span class="ui-value" id="uiCardRadiusValue">24px</span></label>
+              <label class="ui-field"><span class="color-label">Input Radius</span><input id="uiInputRadius" type="range" min="8" max="28" value="16"><span class="ui-value" id="uiInputRadiusValue">16px</span></label>
+              <label class="ui-field"><span class="color-label">Glass Blur</span><input id="uiBlur" type="range" min="0" max="28" value="18"><span class="ui-value" id="uiBlurValue">18px</span></label>
+              <label class="ui-field ui-field-wide"><span class="color-label">Max Layout Width</span><input id="uiShellWidth" type="range" min="1180" max="1880" step="20" value="1680"><span class="ui-value" id="uiShellWidthValue">1680px</span></label>
+            </div>
+          </section>
+
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Presets</span>
+                <h3 class="section-title">Appearance Presets</h3>
+                <p class="brand-sub">Save and reapply named combinations of theme, colors, and interface tuning.</p>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-3">
+              <input class="input" id="appearancePresetName" placeholder="Preset name">
+              <select id="appearancePresetSelect"></select>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="appearancePresetSaveBtn">Save Current</button>
+                <button class="btn ghost btn-auto" type="button" id="appearancePresetApplyBtn">Apply</button>
+                <button class="btn ghost btn-auto" type="button" id="appearancePresetDeleteBtn">Delete</button>
+              </div>
+            </div>
+            <div class="news-list control-feed" id="appearancePresetList"></div>
+          </section>
         </div>
       </section>
 
-      <section class="card control-section">
-        <div class="row space section-head">
-          <h3 class="section-title">Workspaces</h3>
-          <button class="btn ghost btn-auto" id="workspaceRefreshBtn" type="button">Refresh</button>
-        </div>
-        <div class="planner-fields control-primary-grid">
-          <input class="input" id="workspaceName" placeholder="Workspace name">
-          <button class="btn btn-auto" id="workspaceCreateBtn" type="button">Create</button>
-        </div>
-        <div class="news-list control-feed" id="workspaceList"></div>
-        <div class="planner-fields control-actions-grid">
-          <input class="input" id="workspaceRenameInput" placeholder="Rename active workspace to...">
-          <button class="btn ghost btn-auto" id="workspaceRenameBtn" type="button">Rename Active</button>
-          <button class="btn ghost btn-auto" id="workspaceDuplicateBtn" type="button">Duplicate Active</button>
-        </div>
-        <div class="planner-fields control-actions-grid">
-          <button class="btn ghost btn-auto" id="workspaceExportBtn" type="button">Export Workspaces JSON</button>
-          <button class="btn ghost btn-auto" id="workspaceImportBtn" type="button">Import Workspaces JSON</button>
-          <input class="input" id="workspaceImportInput" placeholder="Paste workspace JSON array/object">
+      <section class="control-tab-panel" data-tab-panel="account">
+        <div class="control-grid-2">
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Account</span>
+                <h3 class="section-title">Profile</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="accountProfileSaveBtn">Save Profile</button>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Display Name</span><input class="input" id="accountDisplayName" type="text"></label>
+              <label><span class="color-label">Email</span><input class="input" id="accountEmail" type="email"></label>
+              <label><span class="color-label">Username</span><input class="input control-readonly" id="accountUsername" type="text" readonly></label>
+              <label><span class="color-label">Role</span><input class="input control-readonly" id="accountRole" type="text" readonly></label>
+              <label><span class="color-label">Linked Provider</span><input class="input control-readonly" id="accountProvider" type="text" readonly></label>
+              <label><span class="color-label">Created</span><input class="input control-readonly" id="accountCreatedAt" type="text" readonly></label>
+            </div>
+            <p class="brand-sub" id="accountProfileStatus">Profile ready.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Security</span>
+                <h3 class="section-title">Session And Access</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="securityRefreshBtn">Refresh</button>
+            </div>
+            <div class="control-meta-grid">
+              <div class="kpi"><div class="kpi-label">Last Login</div><div class="kpi-value" id="accountLastLoginAt">-</div></div>
+              <div class="kpi"><div class="kpi-label">Access Token</div><div class="kpi-value" id="sessionAccessExpiry">-</div></div>
+              <div class="kpi"><div class="kpi-label">Refresh Token</div><div class="kpi-value" id="sessionRefreshPresent">-</div></div>
+              <div class="kpi"><div class="kpi-label">Token Version</div><div class="kpi-value" id="sessionVersionValue">-</div></div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label class="toggle-chip" for="securityTrustedDevice"><input id="securityTrustedDevice" type="checkbox" data-pref-path="securitySettings.trustedDevice"><span>Trusted Device</span></label>
+              <label><span class="color-label">Re-auth Every Hours</span><input class="input" id="securityReauthHours" type="number" min="1" max="168" data-pref-path="securitySettings.reauthHours"></label>
+            </div>
+            <div class="row">
+              <button class="btn ghost btn-auto" type="button" id="forceReauthBtn">Force Re-Auth</button>
+              <button class="btn ghost btn-auto" type="button" id="logoutAllBtn">Log Out All Devices</button>
+            </div>
+            <p class="brand-sub" id="securityStatus">Session controls ready.</p>
+          </section>
+
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Password</span>
+                <h3 class="section-title">Change Password</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="passwordChangeBtn">Update Password</button>
+            </div>
+            <div class="control-form-grid control-form-grid-3">
+              <label><span class="color-label">Current Password</span><input class="input" id="currentPasswordInput" type="password" autocomplete="current-password"></label>
+              <label><span class="color-label">New Password</span><input class="input" id="newPasswordInput" type="password" autocomplete="new-password"></label>
+              <label><span class="color-label">Confirm Password</span><input class="input" id="confirmPasswordInput" type="password" autocomplete="new-password"></label>
+            </div>
+            <p class="brand-sub" id="passwordStatus">Use at least 8 characters with letters and numbers.</p>
+          </section>
         </div>
       </section>
 
-      <section class="card control-section control-section-wide">
-        <div class="row space section-head">
-          <h3 class="section-title">Audit Timeline</h3>
-          <div class="row">
-            <button class="btn ghost btn-auto" type="button" id="auditRefreshBtn">Refresh</button>
-            <button class="btn ghost btn-auto" type="button" id="auditDownloadBtn">Download CSV</button>
-          </div>
+      <section class="control-tab-panel" data-tab-panel="notifications">
+        <div class="control-grid-2">
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Notifications</span>
+                <h3 class="section-title">Delivery Preferences</h3>
+                <p class="brand-sub">Quiet hours, default channels, and digest cadence.</p>
+              </div>
+            </div>
+            <div class="control-toggle-grid">
+              <label class="toggle-chip" for="notifEmailAlerts"><input id="notifEmailAlerts" type="checkbox" data-pref-path="notificationSettings.emailAlerts"><span>Email Alerts</span></label>
+              <label class="toggle-chip" for="notifInAppAlerts"><input id="notifInAppAlerts" type="checkbox" data-pref-path="notificationSettings.inAppAlerts"><span>In-App Alerts</span></label>
+              <label class="toggle-chip" for="notifTelegramAlerts"><input id="notifTelegramAlerts" type="checkbox" data-pref-path="notificationSettings.telegramAlerts"><span>Telegram</span></label>
+              <label class="toggle-chip" for="notifWhatsappAlerts"><input id="notifWhatsappAlerts" type="checkbox" data-pref-path="notificationSettings.whatsappAlerts"><span>WhatsApp</span></label>
+              <label class="toggle-chip" for="notifDailyDigest"><input id="notifDailyDigest" type="checkbox" data-pref-path="notificationSettings.dailyDigest"><span>Daily Digest</span></label>
+            </div>
+            <div class="control-form-grid control-form-grid-3">
+              <label><span class="color-label">Quiet Hours Start</span><input class="input" id="notifQuietHoursStart" type="time" data-pref-path="notificationSettings.quietHoursStart"></label>
+              <label><span class="color-label">Quiet Hours End</span><input class="input" id="notifQuietHoursEnd" type="time" data-pref-path="notificationSettings.quietHoursEnd"></label>
+              <label><span class="color-label">Digest Frequency</span><select id="notifDigestFrequency" data-pref-path="notificationSettings.digestFrequency"><option value="daily">Daily</option><option value="weekdays">Weekdays</option><option value="weekly">Weekly</option></select></label>
+              <label><span class="color-label">Default Cooldown</span><input class="input" id="notifDefaultCooldown" type="number" min="30" step="30" data-pref-path="notificationSettings.defaultCooldown"></label>
+              <label><span class="color-label">Notification Status</span><input class="input control-readonly" id="notifEmailReady" type="text" readonly></label>
+              <label><span class="color-label">Recipient</span><input class="input control-readonly" id="notifRecipientEmail" type="text" readonly></label>
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Test</span>
+                <h3 class="section-title">Send Test Notification</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="notifTestBtn">Send Test</button>
+            </div>
+            <p class="brand-sub" id="notifTestStatus">This sends an in-app log and email test when SMTP is configured.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Alerts</span>
+                <h3 class="section-title">Alert Engine</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="alertEvaluateBtn">Run Evaluation</button>
+            </div>
+            <div class="control-meta-grid">
+              <div class="kpi"><div class="kpi-label">Active Alerts</div><div class="kpi-value" id="alertCountValue">0</div></div>
+              <div class="kpi"><div class="kpi-label">Recent Events</div><div class="kpi-value" id="alertEventCountValue">0</div></div>
+            </div>
+            <p class="brand-sub" id="alertEvaluateStatus">Manual evaluation is ready.</p>
+          </section>
         </div>
-        <div class="planner-fields control-audit-grid">
-          <input class="input" id="auditFilterInput" placeholder="Filter logs by type/path/status text">
-          <button class="btn ghost btn-auto" type="button" id="auditFilterBtn">Apply Filter</button>
-          <button class="btn ghost btn-auto" type="button" id="auditClearFilterBtn">Clear Filter</button>
-        </div>
-        <div class="news-list control-feed control-feed-tall" id="auditList"></div>
       </section>
 
+      <section class="control-tab-panel" data-tab-panel="trading">
+        <div class="control-grid-2">
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Market Data</span>
+                <h3 class="section-title">Data Defaults</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Default Symbol</span><input class="input" id="marketDefaultSymbol" type="text" data-pref-path="marketDataSettings.defaultSymbol"></label>
+              <label><span class="color-label">Default Timeframe</span><select id="marketDefaultTf" data-pref-path="marketDataSettings.defaultTimeframe"><option value="1m">1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="1h">1h</option><option value="4h">4h</option><option value="1D">1D</option></select></label>
+              <label><span class="color-label">Auto Refresh</span><select id="marketAutoRefreshMs" data-pref-path="marketDataSettings.autoRefreshMs"><option value="0">Off</option><option value="15000">15s</option><option value="30000">30s</option><option value="60000">1m</option></select></label>
+              <label><span class="color-label">Stale Tolerance</span><select id="marketStaleTolerance" data-pref-path="marketDataSettings.staleTolerance"><option value="strict">Strict</option><option value="balanced">Balanced</option><option value="relaxed">Relaxed</option></select></label>
+              <label><span class="color-label">Provider Mode</span><select id="marketProviderMode" data-pref-path="marketDataSettings.providerMode"><option value="auto">Auto</option><option value="prefer_live">Prefer Live</option><option value="prefer_resilient">Prefer Resilient</option></select></label>
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Trading</span>
+                <h3 class="section-title">Trading Defaults</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Default Strategy</span><select id="tradeDefaultStrategy" data-pref-path="tradingSettings.defaultStrategy"><option value="scalping">Scalping</option><option value="swing">Swing</option><option value="long-term">Long-term</option></select></label>
+              <label><span class="color-label">Risk Per Trade %</span><input class="input" id="tradeRiskPerTrade" type="number" min="0.1" step="0.1" data-pref-path="tradingSettings.riskPerTradePct"></label>
+              <label><span class="color-label">Stop Model</span><select id="tradeStopModel" data-pref-path="tradingSettings.stopModel"><option value="atr">ATR</option><option value="swing_low">Swing Low/High</option><option value="fixed_pct">Fixed %</option></select></label>
+              <label><span class="color-label">Target Model</span><select id="tradeTargetModel" data-pref-path="tradingSettings.targetModel"><option value="rr_2">2R</option><option value="rr_3">3R</option><option value="next_resistance">Next Resistance</option></select></label>
+              <label><span class="color-label">Fees %</span><input class="input" id="tradeFeePct" type="number" min="0" step="0.01" data-pref-path="tradingSettings.feePct"></label>
+              <label><span class="color-label">Slippage %</span><input class="input" id="tradeSlippagePct" type="number" min="0" step="0.01" data-pref-path="tradingSettings.slippagePct"></label>
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Alerts</span>
+                <h3 class="section-title">Alert Defaults</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Default Logic</span><select id="alertDefaultLogic" data-pref-path="alertDefaults.logic"><option value="AND">AND</option><option value="OR">OR</option></select></label>
+              <label><span class="color-label">Cooldown Seconds</span><input class="input" id="alertDefaultCooldown" type="number" min="30" step="30" data-pref-path="alertDefaults.cooldownSec"></label>
+              <label><span class="color-label">Template Name</span><input class="input" id="alertTemplateName" type="text" data-pref-path="alertDefaults.templateName"></label>
+            </div>
+            <div class="control-toggle-grid">
+              <label class="toggle-chip" for="alertChannelInApp"><input id="alertChannelInApp" type="checkbox" data-pref-path="alertDefaults.channelInApp"><span>In-App</span></label>
+              <label class="toggle-chip" for="alertChannelEmail"><input id="alertChannelEmail" type="checkbox" data-pref-path="alertDefaults.channelEmail"><span>Email</span></label>
+              <label class="toggle-chip" for="alertChannelTelegram"><input id="alertChannelTelegram" type="checkbox" data-pref-path="alertDefaults.channelTelegram"><span>Telegram</span></label>
+              <label class="toggle-chip" for="alertChannelWhatsapp"><input id="alertChannelWhatsapp" type="checkbox" data-pref-path="alertDefaults.channelWhatsapp"><span>WhatsApp</span></label>
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">AI</span>
+                <h3 class="section-title">AI Settings</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">AI Mode</span><select id="aiMode" data-pref-path="aiSettings.mode"><option value="conservative">Conservative</option><option value="balanced">Balanced</option><option value="aggressive">Aggressive</option></select></label>
+              <label><span class="color-label">Min Confidence</span><input class="input" id="aiMinConfidence" type="number" min="1" max="99" data-pref-path="aiSettings.minConfidence"></label>
+              <label><span class="color-label">Preferred TF</span><select id="aiPreferredTf" data-pref-path="aiSettings.preferredTimeframe"><option value="1m">1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="1h">1h</option><option value="4h">4h</option><option value="1D">1D</option></select></label>
+              <label><span class="color-label">Fallback Behavior</span><select id="aiFallbackBehavior" data-pref-path="aiSettings.fallbackBehavior"><option value="strict">Strict</option><option value="hybrid">Hybrid</option><option value="always_resilient">Always Resilient</option></select></label>
+              <label><span class="color-label">Explanation Depth</span><select id="aiExplainDepth" data-pref-path="aiSettings.explainDepth"><option value="brief">Brief</option><option value="standard">Standard</option><option value="deep">Deep</option></select></label>
+            </div>
+          </section>
+
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Broker</span>
+                <h3 class="section-title">Broker Sandbox</h3>
+              </div>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="brokerRefreshBtn">Refresh</button>
+                <button class="btn ghost btn-auto" type="button" id="brokerSyncBtn">Sync</button>
+              </div>
+            </div>
+            <div class="control-meta-grid">
+              <div class="kpi"><div class="kpi-label">Status</div><div class="kpi-value" id="brokerStatusValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Provider</div><div class="kpi-value" id="brokerProviderValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Account</div><div class="kpi-value" id="brokerAccountValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Buying Power</div><div class="kpi-value" id="brokerBuyingPowerValue">-</div></div>
+            </div>
+            <div class="control-form-grid control-form-grid-4">
+              <label><span class="color-label">Provider</span><select id="brokerProviderSelect"></select></label>
+              <label><span class="color-label">Account ID</span><input class="input" id="brokerAccountIdInput" type="text"></label>
+              <label><span class="color-label">Buying Power</span><input class="input" id="brokerBuyingPowerInput" type="number" min="1000" step="100"></label>
+              <label><span class="color-label">Max Order Value %</span><input class="input" id="brokerMaxOrderPctInput" type="number" min="1" max="100" step="1"></label>
+            </div>
+            <div class="row">
+              <button class="btn ghost btn-auto" type="button" id="brokerConnectBtn">Connect</button>
+              <button class="btn ghost btn-auto" type="button" id="brokerDisconnectBtn">Disconnect</button>
+            </div>
+            <p class="brand-sub" id="brokerStatusLine">Broker sandbox status will appear here.</p>
+          </section>
+        </div>
+      </section>
+
+      <section class="control-tab-panel" data-tab-panel="workspace">
+        <div class="control-grid-2">
+          <section class="card control-card control-card-wide">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Workspaces</span>
+                <h3 class="section-title">Workspace Library</h3>
+              </div>
+              <button class="btn ghost btn-auto" id="workspaceRefreshBtn" type="button">Refresh</button>
+            </div>
+            <div class="planner-fields control-primary-grid">
+              <input class="input" id="workspaceName" placeholder="Workspace name">
+              <button class="btn btn-auto" id="workspaceCreateBtn" type="button">Create</button>
+            </div>
+            <div class="news-list control-feed" id="workspaceList"></div>
+            <div class="planner-fields control-actions-grid">
+              <input class="input" id="workspaceRenameInput" placeholder="Rename active workspace to...">
+              <button class="btn ghost btn-auto" id="workspaceRenameBtn" type="button">Rename Active</button>
+              <button class="btn ghost btn-auto" id="workspaceDuplicateBtn" type="button">Duplicate Active</button>
+              <button class="btn ghost btn-auto" id="workspaceResetLayoutBtn" type="button">Reset Active Layout</button>
+            </div>
+            <div class="planner-fields control-actions-grid">
+              <button class="btn ghost btn-auto" id="workspaceExportBtn" type="button">Export Workspaces JSON</button>
+              <button class="btn ghost btn-auto" id="workspaceImportBtn" type="button">Import Workspaces JSON</button>
+              <input class="input" id="workspaceImportInput" placeholder="Paste workspace JSON array/object">
+            </div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Workspace Defaults</span>
+                <h3 class="section-title">Workspace Presets</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Landing Page</span><select id="workspaceLandingPage" data-pref-path="workspacePresets.landingPage"><option value="dashboard.html">Dashboard</option><option value="stock.html">Stock Detail</option><option value="notes.html">Notes</option><option value="execution-lab.html">Execution Lab</option></select></label>
+              <label><span class="color-label">Default Density</span><select id="workspaceDefaultDensity" data-pref-path="workspacePresets.defaultDensity"><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></select></label>
+            </div>
+            <div class="control-toggle-grid">
+              <label class="toggle-chip" for="workspacePanelWatchlist"><input id="workspacePanelWatchlist" type="checkbox"><span>Watchlist Panel</span></label>
+              <label class="toggle-chip" for="workspacePanelRisk"><input id="workspacePanelRisk" type="checkbox"><span>Risk Heatmap</span></label>
+              <label class="toggle-chip" for="workspacePanelPlanning"><input id="workspacePanelPlanning" type="checkbox"><span>Planning Tools</span></label>
+              <label class="toggle-chip" for="workspacePanelSummary"><input id="workspacePanelSummary" type="checkbox"><span>Summary Strip</span></label>
+            </div>
+            <p class="brand-sub" id="workspacePresetStatus">Panel presets follow the active workspace reset action.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Watchlist</span>
+                <h3 class="section-title">Watchlist Preferences</h3>
+              </div>
+            </div>
+            <div class="control-form-grid control-form-grid-2">
+              <label><span class="color-label">Preferred Market</span><select id="watchlistPreferredMarket" data-pref-path="watchlistPreferences.preferredMarket"><option value="auto">Auto</option><option value="stock">Stocks</option><option value="forex">Forex</option><option value="crypto">Crypto</option><option value="futures">Futures</option><option value="options">Options</option></select></label>
+              <label><span class="color-label">Preferred Exchange</span><input class="input" id="watchlistPreferredExchange" type="text" data-pref-path="watchlistPreferences.preferredExchange"></label>
+              <label><span class="color-label">Max Recent Symbols</span><input class="input" id="watchlistMaxRecent" type="number" min="5" max="50" data-pref-path="watchlistPreferences.maxRecentSymbols"></label>
+              <label class="toggle-chip" for="watchlistGroupByMarket"><input id="watchlistGroupByMarket" type="checkbox" data-pref-path="watchlistPreferences.groupByMarket"><span>Group By Market</span></label>
+              <label class="toggle-chip" for="watchlistServerSync"><input id="watchlistServerSync" type="checkbox" data-pref-path="watchlistPreferences.syncToServer"><span>Sync To Server</span></label>
+            </div>
+            <p class="brand-sub" id="watchlistStatus">Watchlist defaults are preference-backed.</p>
+          </section>
+        </div>
+      </section>
+
+      <section class="control-tab-panel" data-tab-panel="system">
+        <div class="control-grid-2">
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Connection</span>
+                <h3 class="section-title">API And Health</h3>
+              </div>
+              <div class="row">
+                <button class="btn ghost btn-auto" type="button" id="systemPingBtn">Ping Backend</button>
+                <button class="btn ghost btn-auto" type="button" id="systemRefreshBtn">Refresh</button>
+              </div>
+            </div>
+            <div class="control-meta-grid">
+              <div class="kpi"><div class="kpi-label">API Base</div><div class="kpi-value mono" id="systemApiBase">-</div></div>
+              <div class="kpi"><div class="kpi-label">Backend Health</div><div class="kpi-value" id="systemBackendHealth">-</div></div>
+              <div class="kpi"><div class="kpi-label">Backend Time</div><div class="kpi-value" id="systemBackendTime">-</div></div>
+              <div class="kpi"><div class="kpi-label">Market Feed</div><div class="kpi-value" id="systemProviderHealth">-</div></div>
+              <div class="kpi"><div class="kpi-label">Service Worker</div><div class="kpi-value" id="systemServiceWorker">-</div></div>
+            </div>
+            <p class="brand-sub" id="systemConnectionStatus">Diagnostics will appear here.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Diagnostics</span>
+                <h3 class="section-title">Quick Diagnostics</h3>
+              </div>
+            </div>
+            <div class="control-diag-grid" id="controlDiagnosticsGrid"></div>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Paper</span>
+                <h3 class="section-title">Paper Trading Status</h3>
+              </div>
+              <button class="btn ghost btn-auto" type="button" id="paperRefreshBtn">Refresh</button>
+            </div>
+            <div class="control-meta-grid">
+              <div class="kpi"><div class="kpi-label">Equity</div><div class="kpi-value" id="paperEquityValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Cash</div><div class="kpi-value" id="paperCashValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Positions</div><div class="kpi-value" id="paperPositionsValue">-</div></div>
+              <div class="kpi"><div class="kpi-label">Open Orders</div><div class="kpi-value" id="paperOrdersValue">-</div></div>
+            </div>
+            <p class="brand-sub" id="paperStatusLine">Paper summary will appear here.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Export</span>
+                <h3 class="section-title">Data Export</h3>
+              </div>
+            </div>
+            <div class="row row-wrap">
+              <button class="btn ghost btn-auto" type="button" id="exportBundleBtn">Export Full Bundle</button>
+              <button class="btn ghost btn-auto" type="button" id="exportPrefsBtn">Export Preferences</button>
+              <button class="btn ghost btn-auto" type="button" id="exportDiagnosticsBtn">Export Diagnostics</button>
+            </div>
+            <p class="brand-sub" id="exportStatus">Bundle includes profile, preferences, workspaces, alerts, notes snapshot, and diagnostics.</p>
+          </section>
+
+          <section class="card control-card">
+            <div class="row space section-head">
+              <div>
+                <span class="stock-eyebrow">Storage</span>
+                <h3 class="section-title">Storage Tools</h3>
+              </div>
+            </div>
+            <div class="row row-wrap">
+              <button class="btn ghost btn-auto" type="button" id="storageClearCachesBtn">Clear Caches</button>
+              <button class="btn ghost btn-auto" type="button" id="storageClearUiBtn">Reset Local UI</button>
+              <button class="btn ghost btn-auto" type="button" id="storageClearNotesBtn">Clear Local Notes</button>
+              <button class="btn ghost btn-auto" type="button" id="storageFullResetBtn">Full Local Reset</button>
+            </div>
+            <p class="brand-sub" id="storageStatus">Local cleanup tools clear caches and non-auth workspace browser state.</p>
+          </section>
+        </div>
+      </section>
     </main>
   </section>
 

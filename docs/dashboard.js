@@ -5,11 +5,14 @@ const API_BASE =
   document.querySelector('meta[name="tradepro-api-base"]')?.content ||
   "https://tradingcopy-0p0k.onrender.com";
 
-if (window.TradeProCore && window.TradeProCore.hasSession()) {
-  window.TradeProCore.ensureAuthenticated().catch(() => {
+const authBootstrapPromise = window.TradeProCore && window.TradeProCore.hasSession()
+  ? window.TradeProCore.ensureAuthenticated().catch(() => {
     window.location = "index.html";
-  });
-} else if (localStorage.getItem("auth") !== "true" && sessionStorage.getItem("auth") !== "true") {
+    return null;
+  })
+  : null;
+
+if (!authBootstrapPromise && localStorage.getItem("auth") !== "true" && sessionStorage.getItem("auth") !== "true") {
   window.location = "index.html";
 }
 
@@ -67,6 +70,8 @@ const searchStatusEl = document.getElementById("searchStatus");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const dashboardSummaryEl = document.getElementById("dashboardSummary");
 const dashboardSummaryStatusEl = document.getElementById("dashboardSummaryStatus");
+const dashboardGreetingEl = document.getElementById("dashboardGreeting");
+const dashboardGreetingNameEl = document.getElementById("dashboardGreetingName");
 const onboardingCardEl = document.getElementById("onboardingCard");
 const onboardingStepsEl = document.getElementById("onboardingSteps");
 const dismissOnboardingBtn = document.getElementById("dismissOnboardingBtn");
@@ -80,6 +85,46 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function normalizeGreetingName(value) {
+  const cleaned = String(value || "")
+    .trim()
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  if (!cleaned) return "Trader";
+
+  return cleaned
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function getGreetingName(user = {}) {
+  return normalizeGreetingName(
+    user.displayName ||
+    user.username ||
+    String(user.email || "").split("@")[0] ||
+    "Trader"
+  );
+}
+
+function renderDashboardGreeting(user = {}, animate = false) {
+  if (!dashboardGreetingEl || !dashboardGreetingNameEl) return;
+  const name = getGreetingName(user);
+  dashboardGreetingNameEl.textContent = name;
+  dashboardGreetingEl.classList.remove("is-visible", "is-settled");
+  if (!animate) {
+    dashboardGreetingEl.classList.add("is-visible", "is-settled");
+    return;
+  }
+  void dashboardGreetingEl.offsetWidth;
+  dashboardGreetingEl.classList.add("is-visible");
+  window.setTimeout(() => {
+    dashboardGreetingEl.classList.add("is-settled");
+  }, 820);
 }
 
 function setSearchStatus(message, isError = false) {
@@ -575,6 +620,11 @@ if (themeSelectEl && window.TradeProCore) {
     window.TradeProCore.setTheme?.(themeSelectEl.value);
   });
 }
+
+renderDashboardGreeting(window.TradeProCore?.getUser?.() || {}, false);
+authBootstrapPromise?.then((data) => {
+  if (data?.user) renderDashboardGreeting(data.user, true);
+});
 
 clearListBtn?.addEventListener("click", () => {
   setStoredWatchlist([]);

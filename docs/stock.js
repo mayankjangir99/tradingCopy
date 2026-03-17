@@ -124,7 +124,7 @@ function updateLastUpdated(ts = Date.now()) {
   if (!stockLastUpdated) return;
   const date = new Date(ts);
   if (!Number.isFinite(date.getTime())) {
-    stockLastUpdated.textContent = "Last updated unavailable";
+    stockLastUpdated.textContent = "Last update pending...";
     return;
   }
   stockLastUpdated.textContent = `Last updated ${date.toLocaleString()}`;
@@ -139,14 +139,131 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function isFiniteNumber(value) {
+  return Number.isFinite(Number(value));
+}
+
+function isPositiveNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0;
+}
+
 function formatMarketCap(value, unavailableReason = "") {
   const n = Number(value);
   if (Number.isFinite(n) && n > 0) {
     return formatMoney(n, 0);
   }
-  const reason = unavailableReason || "Market cap not returned by Binance; fallback provider failed.";
+  const marketType = getSymbolMarketType();
+  const fallbackLabel = marketType === "forex"
+    ? "FX pair"
+    : marketType === "futures"
+      ? "Futures contract"
+      : marketType === "options"
+        ? "Options contract"
+        : marketType === "crypto"
+          ? "Spot asset"
+          : "Fundamentals pending";
+  const reason = unavailableReason || "Market cap feed is still synchronizing.";
   const title = ` title="${escapeHtml(reason)}"`;
-  return `<span${title}>Unavailable</span>`;
+  return `<span${title}>${fallbackLabel}</span>`;
+}
+
+async function fetchLiveQuote(symbol) {
+  try {
+    const response = await fetch(`${API_BASE}/api/market/quote?symbol=${encodeURIComponent(symbol)}`);
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => null);
+    return data && typeof data === "object" ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchLiveFundamentals(symbol) {
+  try {
+    const response = await fetch(`${API_BASE}/api/market/fundamentals?symbol=${encodeURIComponent(symbol)}`);
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => null);
+    return data && typeof data === "object" ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function mergeLiveWarnings(snapshot, nextQuote, nextFundamentals) {
+  const warnings = Array.isArray(snapshot?.warnings) ? [...snapshot.warnings] : [];
+  const hasMarketCap = isPositiveNumber(nextQuote?.marketCap) || isPositiveNumber(nextFundamentals?.marketCap);
+  if (hasMarketCap) {
+    return warnings.filter((item) => !/market cap/i.test(String(item || "")));
+  }
+  return warnings;
+}
+
+function buildFreshnessFromQuote(quote, snapshot) {
+  const quoteTs = quote?.timestamp ? new Date(quote.timestamp).getTime() : Number.NaN;
+  const quoteAgeMs = Number.isFinite(quoteTs) && quoteTs > 0 ? Math.max(0, Date.now() - quoteTs) : Math.max(0, Number(snapshot?.freshness?.quoteAgeMs || 0));
+  const warning = quoteAgeMs > 120000 ? "Data may be delayed." : "";
+  return {
+    ...(snapshot?.freshness || {}),
+    lastUpdated: quote?.timestamp || snapshot?.freshness?.lastUpdated || Date.now(),
+    quoteAgeMs,
+    dataFreshnessScore: Math.round(clamp(100 - (quoteAgeMs / 3000), 20, 100)),
+    isRealtime: Boolean(quote?.stale === false && quoteAgeMs <= 120000),
+    delayed: Boolean(quote?.stale || quoteAgeMs > 120000),
+    warning
+  };
+}
+
+async function ensureLiveSnapshot(snapshot) {
+  if (!snapshot || !snapshot.quote) return snapshot;
+  const baseQuote = snapshot.quote || {};
+  const [liveQuote, liveFundamentals] = await Promise.all([
+    fetchLiveQuote(SYMBOL),
+    fetchLiveFundamentals(SYMBOL)
+  ]);
+
+  if (!liveQuote && !liveFundamentals) return snapshot;
+
+  const nextQuote = { ...baseQuote };
+
+  if (liveQuote) {
+    if (isPositiveNumber(liveQuote.price)) nextQuote.price = liveQuote.price;
+    if (isFiniteNumber(liveQuote.change)) nextQuote.change = liveQuote.change;
+    if (isFiniteNumber(liveQuote.changePercent)) nextQuote.changePercent = liveQuote.changePercent;
+    if (isFiniteNumber(liveQuote.high)) nextQuote.high = liveQuote.high;
+    if (isFiniteNumber(liveQuote.low)) nextQuote.low = liveQuote.low;
+    if (isFiniteNumber(liveQuote.volume)) nextQuote.volume = liveQuote.volume;
+    if (isPositiveNumber(liveQuote.marketCap)) nextQuote.marketCap = liveQuote.marketCap;
+    if (liveQuote.providerName) nextQuote.providerName = liveQuote.providerName;
+    if (liveQuote.timestamp) nextQuote.timestamp = liveQuote.timestamp;
+    if (typeof liveQuote.stale === "boolean") nextQuote.stale = liveQuote.stale;
+    if (typeof liveQuote.isRealtime === "boolean") nextQuote.isRealtime = liveQuote.isRealtime;
+    if (typeof liveQuote.delayed === "boolean") nextQuote.delayed = liveQuote.delayed;
+    if (isFiniteNumber(liveQuote.ageMs)) nextQuote.ageMs = Number(liveQuote.ageMs);
+  }
+
+  if (!isPositiveNumber(nextQuote.marketCap) && isPositiveNumber(liveFundamentals?.marketCap)) {
+    nextQuote.marketCap = liveFundamentals.marketCap;
+  }
+
+  const nextFundamentals = {
+    ...(snapshot.fundamentals || {}),
+    ...(liveFundamentals || {})
+  };
+  if (isPositiveNumber(nextQuote.marketCap)) {
+    nextFundamentals.marketCap = nextQuote.marketCap;
+  }
+
+  const nextSnapshot = {
+    ...snapshot,
+    providerName: nextQuote.providerName || snapshot.providerName,
+    stale: Boolean((liveQuote && liveQuote.stale) || (liveFundamentals && liveFundamentals.stale) || false),
+    quote: nextQuote,
+    fundamentals: nextFundamentals,
+    freshness: buildFreshnessFromQuote(nextQuote, snapshot),
+    warnings: mergeLiveWarnings(snapshot, nextQuote, nextFundamentals)
+  };
+  return nextSnapshot;
 }
 
 function computeFreshnessScore(snapshot) {
@@ -274,13 +391,13 @@ function renderQuoteSummary(snapshot) {
   const quote = snapshot?.quote || {};
   const freshness = snapshot?.freshness || {};
   const marketCapWarning = snapshot?.warnings?.find((item) => String(item || "").toLowerCase().includes("market cap")) || "";
-  const changeText = `${formatMoney(quote.change, 2)} (${formatPercent(quote.changePercent)})`;
-  const changeClass = Number(quote.change) >= 0 ? "good" : "bad";
+  const changeText = formatChangeSummary(quote.change, quote.changePercent);
+  const changeClass = Number.isFinite(Number(quote.change)) ? (Number(quote.change) >= 0 ? "good" : "bad") : "";
 
-  if (stockHeaderPrice) stockHeaderPrice.textContent = formatMoney(quote.price, 4);
+  if (stockHeaderPrice) stockHeaderPrice.textContent = metricMoney(quote.price, 4);
   if (stockHeaderChange) {
     stockHeaderChange.textContent = changeText;
-    stockHeaderChange.className = `stock-strip-price ${changeClass}`;
+    stockHeaderChange.className = `stock-strip-price ${changeClass}`.trim();
   }
   if (stockHeaderMarketCap) {
     stockHeaderMarketCap.innerHTML = formatMarketCap(quote.marketCap, marketCapWarning);
@@ -288,9 +405,9 @@ function renderQuoteSummary(snapshot) {
       throw new Error("Market cap exists but UI rendered Unavailable.");
     }
   }
-  if (stockSideQuotePrice) stockSideQuotePrice.textContent = formatMoney(quote.price, 4);
+  if (stockSideQuotePrice) stockSideQuotePrice.textContent = metricMoney(quote.price, 4);
   if (stockSideQuoteMeta) {
-    stockSideQuoteMeta.textContent = freshness.warning || describeFreshness(snapshot);
+    stockSideQuoteMeta.textContent = metricText(freshness.warning || describeFreshness(snapshot), "Syncing market feed...");
   }
 }
 
@@ -406,7 +523,9 @@ function renderForecastKeypoints(forecast, source) {
       : "Baseline projection";
   const sourceText = source === "yahoo"
     ? "Built from live daily candles."
-    : "Built from local fallback candles.";
+    : source === "hybrid"
+      ? "Built from live daily candles with locally backfilled history."
+      : "Built from local fallback candles.";
   const moveLabel = `${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}%`;
   const rangeLabel = `${formatMoney(forecast.stats.band68?.low, 2)} to ${formatMoney(forecast.stats.band68?.high, 2)}`;
 
@@ -456,7 +575,11 @@ function renderForecastVisualDeck(forecast, source) {
   const lastProjection = forecast.projection[forecast.projection.length - 1] || { close: forecast.stats.expectedClose || forecast.stats.lastClose };
   const movePct = Number(forecast.stats.expectedMovePct || 0);
   const direction = String(forecast.pattern?.direction || "neutral").toLowerCase();
-  const sourceLabel = source === "yahoo" ? "Live market candles" : "Local fallback model";
+  const sourceLabel = source === "yahoo"
+    ? "Live market candles"
+    : source === "hybrid"
+      ? "Live + backfilled history"
+      : "Local fallback model";
   const upperEnd = Number(forecast.stats.band68?.high || forecast.upperBand[forecast.upperBand.length - 1] || lastProjection.close || 0);
   const lowerEnd = Number(forecast.stats.band68?.low || forecast.lowerBand[forecast.lowerBand.length - 1] || lastProjection.close || 0);
   const lastClose = Number(forecast.stats.lastClose || 0);
@@ -472,7 +595,7 @@ function renderForecastVisualDeck(forecast, source) {
     forecast.pattern?.name || "Pattern",
     `${forecast.pattern?.probability || 0}% confidence`,
     `${forecast.stats.horizonDays || forecastHorizonSelect?.value || 14}D horizon`,
-    source === "yahoo" ? "Live feed" : "Fallback feed"
+    source === "yahoo" ? "Live feed" : source === "hybrid" ? "Hybrid feed" : "Fallback feed"
   ];
 
   const rawBull = Math.max(8, 46 + (movePct * 4.5) + (direction.includes("bull") ? 12 : 0));
@@ -1223,17 +1346,17 @@ function renderForecastChart(rows, forecast) {
 
 function renderForecastStats(stats, source) {
   if (!forecastStats) return;
-  const sourceLabel = source === "yahoo" ? "Live" : source === "fallback" ? "Local" : (source || "-");
+  const sourceLabel = source === "yahoo" ? "Live" : source === "hybrid" ? "Hybrid" : source === "fallback" ? "Local" : (source || "-");
   forecastStats.innerHTML = [
-    kpi("Last Close", formatMoney(stats.lastClose, 4)),
-    kpi("Expected Move", `${stats.expectedMovePct > 0 ? "+" : ""}${stats.expectedMovePct}%`, stats.expectedMovePct >= 0 ? "good" : "bad"),
-    kpi("Expected Close", formatMoney(stats.expectedClose, 4)),
-    kpi("Band 68%", `${formatMoney(stats.band68?.low, 2)} - ${formatMoney(stats.band68?.high, 2)}`),
-    kpi("Band 95%", `${formatMoney(stats.band95?.low, 2)} - ${formatMoney(stats.band95?.high, 2)}`),
-    kpi("Volatility", `${stats.volatilityPct}%`),
-    kpi("Candles", formatNumber(stats.dataPoints, 0)),
-    kpi("Source", sourceLabel),
-    kpi("Horizon", `${stats.horizonDays || forecastHorizonSelect?.value || 14}D`)
+    kpi("Last Close", metricMoney(stats.lastClose, 4)),
+    kpi("Expected Move", metricPercent(stats.expectedMovePct), Number(stats.expectedMovePct) >= 0 ? "good" : "bad"),
+    kpi("Expected Close", metricMoney(stats.expectedClose, 4)),
+    kpi("Band 68%", `${metricMoney(stats.band68?.low, 2)} - ${metricMoney(stats.band68?.high, 2)}`),
+    kpi("Band 95%", `${metricMoney(stats.band95?.low, 2)} - ${metricMoney(stats.band95?.high, 2)}`),
+    kpi("Volatility", metricPercent(stats.volatilityPct)),
+    kpi("Candles", metricNumber(stats.dataPoints, 0)),
+    kpi("Source", metricText(sourceLabel, "Local")),
+    kpi("Horizon", metricText(`${stats.horizonDays || forecastHorizonSelect?.value || 14}D`, "14D"))
   ].join("");
 }
 
@@ -1254,56 +1377,112 @@ function assertForecastConsistency(forecast, horizonDays) {
   }
 }
 
+function buildFallbackForecastRows(minRows = 130, targetClose = Number.NaN) {
+  const count = Math.max(60, Number(minRows || 0), 130);
+  const basePrice = Number.isFinite(targetClose) && targetClose > 0
+    ? Number(targetClose)
+    : Number.isFinite(currentRealtimePrice) && currentRealtimePrice > 0
+      ? Number(currentRealtimePrice)
+      : Number(lastAiSnapshot?.metrics?.realtimePrice || 0) || 100;
+  const growthSeries = Array.isArray(lastAiSnapshot?.growth?.pricePct) && lastAiSnapshot.growth.pricePct.length
+    ? lastAiSnapshot.growth.pricePct
+    : [0.22, 0.14, -0.07, 0.12, 0.17, -0.03, 0.08, 0.11];
+  const syntheticRows = [];
+  const nowTs = Math.floor(Date.now() / 1000);
+  let rollingPrice = Math.max(0.01, basePrice * 0.92);
+  for (let i = 0; i < count; i += 1) {
+    const growthSeed = Number(growthSeries[i % growthSeries.length] || 0) / 100;
+    const drift = growthSeed * 0.08;
+    const open = rollingPrice;
+    const close = Math.max(0.01, open * (1 + drift));
+    const high = Math.max(open, close) * 1.01;
+    const low = Math.min(open, close) * 0.99;
+    syntheticRows.push({
+      ts: nowTs - ((count - 1 - i) * 86400),
+      open,
+      high,
+      low,
+      close,
+      volume: 100000 + (i * 2500)
+    });
+    rollingPrice = close;
+  }
+  return syntheticRows;
+}
+
+function ensureForecastHistory(rows, minRows = 130) {
+  const cleanRows = Array.isArray(rows)
+    ? rows.filter((row) => Number.isFinite(Number(row?.close)))
+    : [];
+  const required = Math.max(40, Number(minRows || 0));
+  if (cleanRows.length >= required) {
+    return { rows: cleanRows, source: "yahoo", rebuilt: false };
+  }
+
+  if (!cleanRows.length) {
+    return {
+      rows: buildFallbackForecastRows(required),
+      source: "fallback",
+      rebuilt: true
+    };
+  }
+
+  const needed = Math.max(0, required - cleanRows.length);
+  const firstReal = cleanRows[0];
+  const anchorPrice = Number(firstReal.open || firstReal.close || cleanRows[cleanRows.length - 1]?.close || currentRealtimePrice);
+  const fallbackRows = buildFallbackForecastRows(Math.max(required, needed + 30), anchorPrice);
+  const prefix = fallbackRows
+    .slice(-needed)
+    .map((row, index) => ({
+      ...row,
+      ts: Number(firstReal.ts || Math.floor(Date.now() / 1000)) - ((needed - index) * 86400)
+    }));
+
+  return {
+    rows: [...prefix, ...cleanRows],
+    source: "hybrid",
+    rebuilt: prefix.length > 0
+  };
+}
+
 async function loadForecastWidget() {
   const horizon = Math.max(7, Number(forecastHorizonSelect?.value || 14));
   setForecastStatus("Loading six-month daily candles...");
   try {
-    let data = null;
     let source = "fallback";
+    let statusLead = "";
     try {
-      data = await apiFetchJson(`/api/forecast/candles/${encodeURIComponent(SYMBOL)}`);
+      const data = await apiFetchJson(`/api/forecast/candles/${encodeURIComponent(SYMBOL)}`);
       source = data.source || "yahoo";
       forecastRows = Array.isArray(data.rows) ? data.rows : [];
     } catch (error) {
-      if (String(error.message || "").includes("404")) {
-        const basePrice = Number.isFinite(currentRealtimePrice) && currentRealtimePrice > 0
-          ? Number(currentRealtimePrice)
-          : Number(lastAiSnapshot?.metrics?.realtimePrice || 0) || 100;
-        const growthSeries = Array.isArray(lastAiSnapshot?.growth?.pricePct) && lastAiSnapshot.growth.pricePct.length
-          ? lastAiSnapshot.growth.pricePct
-          : [0.2, 0.15, -0.08, 0.11, 0.18, -0.04, 0.09, 0.13];
-        const syntheticRows = [];
-        const nowTs = Math.floor(Date.now() / 1000);
-        let rollingPrice = basePrice * 0.92;
-        for (let i = 0; i < 130; i += 1) {
-          const growthSeed = Number(growthSeries[i % growthSeries.length] || 0) / 100;
-          const drift = growthSeed * 0.08;
-          const open = rollingPrice;
-          const close = Math.max(0.01, open * (1 + drift));
-          const high = Math.max(open, close) * 1.01;
-          const low = Math.min(open, close) * 0.99;
-          syntheticRows.push({
-            ts: nowTs - ((129 - i) * 86400),
-            open,
-            high,
-            low,
-            close,
-            volume: 100000 + (i * 2500)
-          });
-          rollingPrice = close;
-        }
-        forecastRows = syntheticRows;
-        source = "fallback";
-        setForecastStatus("Backend forecast route is not live yet. Showing a local fallback projection from current analytics.", true);
-      } else {
-        throw error;
-      }
+      forecastRows = [];
+      source = "fallback";
+      statusLead = String(error.message || "").includes("404")
+        ? "Forecast endpoint is not live on the backend yet."
+        : `Live forecast fetch failed: ${error.message}.`;
     }
-    if (forecastRows.length < 40) {
-      throw new Error("Not enough daily candles for forecast.");
+
+    const forecastHistory = ensureForecastHistory(forecastRows, 130);
+    forecastRows = forecastHistory.rows;
+    if (forecastHistory.source === "fallback") {
+      source = "fallback";
+    } else if (forecastHistory.source === "hybrid" && source === "yahoo") {
+      source = "hybrid";
+      statusLead = statusLead || "Daily candle history was thin, so older rows were backfilled locally.";
     }
-    const forecast = buildForecast(forecastRows, horizon);
-    assertForecastConsistency(forecast, horizon);
+
+    let forecast;
+    try {
+      forecast = buildForecast(forecastRows, horizon);
+      assertForecastConsistency(forecast, horizon);
+    } catch (error) {
+      source = "fallback";
+      statusLead = `Forecast model rebuilt locally after ${error.message}.`;
+      forecastRows = buildFallbackForecastRows(130);
+      forecast = buildForecast(forecastRows, horizon);
+      assertForecastConsistency(forecast, horizon);
+    }
     latestPatternConfidence = clamp(Number(forecast?.pattern?.probability || 50), 0, 100);
     assertFinalConfidenceFormula(refreshFinalConfidenceDisplay());
     lastForecastSource = source;
@@ -1315,43 +1494,22 @@ async function loadForecastWidget() {
     const forecastSummary = `Horizon: ${forecast.stats.horizonDays}D | Expected move: ${forecast.stats.expectedMovePct > 0 ? "+" : ""}${forecast.stats.expectedMovePct}% | Band: 68% / 95%`;
     if (source === "yahoo") {
       setForecastStatus(`Forecast built from ${forecastRows.length} daily candles using live Yahoo Finance data. ${forecastSummary}`);
+    } else if (source === "hybrid") {
+      setForecastStatus(`${statusLead || "Live daily candles were extended with local history."} ${forecastSummary}`, true);
     } else {
-      setForecastStatus(`Using a local fallback projection. ${forecastSummary}`, true);
+      setForecastStatus(`${statusLead || "Using a local fallback projection from current analytics."} ${forecastSummary}`, true);
     }
   } catch (error) {
-    if (forecastStats) forecastStats.innerHTML = `<div class="kpi"><div class="kpi-label">Forecast</div><div class="kpi-value bad">Unavailable</div></div>`;
-    if (forecastVisualDeck) {
-      forecastVisualDeck.innerHTML = `
-        <div class="forecast-takeaway-panel">
-          <span class="forecast-visual-label">Forecast Feed</span>
-          <p class="bad">Unavailable right now. The visual deck will return once enough forecast data is loaded.</p>
-        </div>
-      `;
-    }
-    if (forecastKeypoints) {
-      forecastKeypoints.innerHTML = `
-        <div class="forecast-keypoint">
-          <h4>Why it is unavailable</h4>
-          <p>${String(error.message || "Could not load enough daily candle data to build the forecast widget.")}</p>
-        </div>
-      `;
-    }
-    setForecastPattern({
-      name: "Unavailable",
-      probability: 0,
-      explanations: [
-        "Could not load enough daily candle data to build the forecast widget.",
-        "If you just added this feature, redeploy the backend so the new forecast route becomes available."
-      ]
-    });
-    setForecastStatus(
-      String(error.message || "").includes("404")
-        ? "Forecast service not found on backend yet. Redeploy backend to enable it."
-        : error.message,
-      true
-    );
-    forecastChart?.destroy();
-    forecastChart = null;
+    const fallbackRows = buildFallbackForecastRows(130);
+    const fallbackForecast = buildForecast(fallbackRows, horizon);
+    forecastRows = fallbackRows;
+    lastForecastSource = "fallback";
+    renderForecastChart(fallbackRows, fallbackForecast);
+    renderForecastVisualDeck(fallbackForecast, "fallback");
+    renderForecastStats(fallbackForecast.stats, "fallback");
+    renderForecastKeypoints(fallbackForecast, "fallback");
+    setForecastPattern(fallbackForecast.pattern);
+    setForecastStatus(`Forecast recovered with a local fallback model after: ${error.message}`, true);
   }
 }
 
@@ -1360,7 +1518,7 @@ async function validateCurrentSymbol() {
     const data = await apiFetchJson(`/api/symbol/resolve?symbol=${encodeURIComponent(SYMBOL)}`);
     if (!data.valid) throw new Error(data.error || "Invalid symbol.");
     if (!data.available) {
-      setStockPageStatus(data.error || "Live data is temporarily unavailable. Showing fallback experience.", true);
+      setStockPageStatus(data.error || "Live data feed is temporarily offline. Showing fallback experience.", true);
       setStockHealthStatus("Provider Degraded", "negative");
     } else {
       setStockPageStatus(`Validated ${data.normalizedSymbol}.`);
@@ -1705,6 +1863,44 @@ function formatPercent(value) {
   if (!Number.isFinite(n)) return "-";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toFixed(2)}%`;
+}
+
+function hasMetricText(value) {
+  const text = String(value ?? "").trim();
+  return Boolean(text && text !== "-" && text.toLowerCase() !== "n/a" && text.toLowerCase() !== "unavailable");
+}
+
+function metricText(value, fallback = "Computing...") {
+  return hasMetricText(value) ? String(value) : fallback;
+}
+
+function metricMoney(value, decimals = 2, fallback = "Pending feed") {
+  const formatted = formatMoney(value, decimals);
+  return hasMetricText(formatted) ? formatted : fallback;
+}
+
+function metricNumber(value, decimals = 2, fallback = "Pending feed") {
+  const formatted = formatNumber(value, decimals);
+  return hasMetricText(formatted) ? formatted : fallback;
+}
+
+function metricPercent(value, fallback = "Pending feed") {
+  const formatted = formatPercent(value);
+  return hasMetricText(formatted) ? formatted : fallback;
+}
+
+function metricVolume(value, fallback = "Pending feed") {
+  const formatted = formatVolume(value);
+  return hasMetricText(formatted) ? formatted : fallback;
+}
+
+function formatChangeSummary(changeValue, changePercentValue) {
+  const changeText = metricMoney(changeValue, 2, "Pending");
+  const percentText = metricPercent(changePercentValue, "Pending");
+  if (changeText === "Pending" && percentText === "Pending") {
+    return "Computing...";
+  }
+  return `${changeText} (${percentText})`;
 }
 
 function kpi(label, value, className = "") {
@@ -2070,37 +2266,37 @@ function renderAiPayload(snapshot, warningText = "") {
 
   aiPrimary.innerHTML = [
     warningCard,
-    kpi("Current Price", formatMoney(quote.price ?? metrics.realtimePrice, 4)),
-    kpi("Session Change", formatPercent(ch), ch >= 0 ? "good" : "bad"),
-    kpi("Volume", formatVolume(quote.volume ?? metrics.volume)),
-    kpi("Session High", formatMoney(quote.high ?? metrics.high24h, 4)),
-    kpi("Session Low", formatMoney(quote.low ?? metrics.low24h, 4)),
+    kpi("Current Price", metricMoney(quote.price ?? metrics.realtimePrice, 4)),
+    kpi("Session Change", metricPercent(ch), Number.isFinite(ch) ? (ch >= 0 ? "good" : "bad") : ""),
+    kpi("Volume", metricVolume(quote.volume ?? metrics.volume)),
+    kpi("Session High", metricMoney(quote.high ?? metrics.high24h, 4)),
+    kpi("Session Low", metricMoney(quote.low ?? metrics.low24h, 4)),
     kpi("Market Cap", formatMarketCap(quote.marketCap ?? metrics.marketCap, marketCapWarning)),
-    kpi("Feed", `${safeSnapshot.freshness?.isRealtime ? "Live" : "Delayed"} / ${escapeHtml(quote.providerName || safeSnapshot.providerName || "Provider")}`)
+    kpi("Feed", metricText(`${safeSnapshot.freshness?.isRealtime ? "Live" : "Delayed"} / ${escapeHtml(quote.providerName || safeSnapshot.providerName || "Provider")}`, "Feed syncing..."))
   ].join("");
 
   aiIndicators.innerHTML = [
-    kpi("RSI", formatNumber(indicators.rsi, 2)),
-    kpi("EMA Crossover", indicators.emaCrossover || "N/A"),
-    kpi("EMA 20 / 50 / 200", `${formatNumber(indicators.ema20, 2)} / ${formatNumber(indicators.ema50, 2)} / ${formatNumber(indicators.ema200, 2)}`),
-    kpi("MACD", `${formatNumber(indicators.macd?.value, 2)} (${escapeHtml(indicators.macd?.relation || "vs signal n/a")})`),
-    kpi("Histogram", `${escapeHtml(indicators.macd?.histogramPolarity || "N/A")} (${formatNumber(indicators.macd?.histogram, 2)})`),
-    kpi("Bollinger", indicators.bollinger?.state || "N/A"),
-    kpi("Volume Signal", indicators.volumeSignal || "N/A"),
-    kpi("Risk", safeData.risk?.level || "Unknown"),
+    kpi("RSI", metricNumber(indicators.rsi, 2)),
+    kpi("EMA Crossover", metricText(indicators.emaCrossover, "Model alignment pending")),
+    kpi("EMA 20 / 50 / 200", `${metricNumber(indicators.ema20, 2)} / ${metricNumber(indicators.ema50, 2)} / ${metricNumber(indicators.ema200, 2)}`),
+    kpi("MACD", `${metricNumber(indicators.macd?.value, 2)} (${metricText(escapeHtml(indicators.macd?.relation || ""), "signal relation pending")})`),
+    kpi("Histogram", `${metricText(escapeHtml(indicators.macd?.histogramPolarity || ""), "Trend pending")} (${metricNumber(indicators.macd?.histogram, 2)})`),
+    kpi("Bollinger", metricText(indicators.bollinger?.state, "Band position pending")),
+    kpi("Volume Signal", metricText(indicators.volumeSignal, "Volume sync pending")),
+    kpi("Risk", metricText(safeData.risk?.level, "Risk model pending")),
     reasonsCard
   ].join("");
 
   aiSignals.innerHTML = [
-    kpi("Trend", signal.trend || safeData.marketMode || "-"),
-    kpi("Momentum", signal.momentum || "-"),
-    kpi("Volatility", signal.volatility || "-"),
-    kpi("Strategy", signal.strategy || safeData.strategy || "-"),
-    kpi("Action", signal.action || suggestion.action || "-"),
-    kpi(suggestion.label || "Suggested Entry", formatMoney(suggestion.entry, 4)),
-    kpi("Stoploss", formatMoney(suggestion.stopLoss, 4)),
-    kpi("Target", formatMoney(suggestion.target, 4)),
-    kpi("News", sentiment.label || "Neutral")
+    kpi("Trend", metricText(signal.trend || safeData.marketMode, "Trend pending")),
+    kpi("Momentum", metricText(signal.momentum, "Momentum pending")),
+    kpi("Volatility", metricText(signal.volatility, "Volatility pending")),
+    kpi("Strategy", metricText(signal.strategy || safeData.strategy, "Strategy pending")),
+    kpi("Action", metricText(signal.action || suggestion.action, "Action pending")),
+    kpi(suggestion.label || "Suggested Entry", metricMoney(suggestion.entry, 4)),
+    kpi("Stoploss", metricMoney(suggestion.stopLoss, 4)),
+    kpi("Target", metricMoney(suggestion.target, 4)),
+    kpi("News", metricText(sentiment.label, "Neutral"))
   ].join("");
 
   const finalBreakdown = refreshFinalConfidenceDisplay();
@@ -2111,12 +2307,12 @@ function renderAiPayload(snapshot, warningText = "") {
   marketModeBadge.className = `status ${statusClass(signal.trend || safeData.marketMode || "Neutral")}`;
 
   aiBacktest.innerHTML = [
-    kpi("Win rate", `${formatNumber(backtest.winRate, 1)}%`),
-    kpi("Profit %", `${formatNumber(backtest.profitPct, 2)}%`, Number(backtest.profitPct) >= 0 ? "good" : "bad"),
-    kpi("Max drawdown", `${formatNumber(backtest.maxDrawdownPct, 2)}%`),
-    kpi("Trades", formatNumber(backtest.trades, 0)),
-    kpi("Trend", signal.trend || safeData.marketMode || "-"),
-    kpi("Sentiment + / -", `${sentiment.positive ?? 0} / ${sentiment.negative ?? 0}`)
+    kpi("Win rate", metricPercent(backtest.winRate)),
+    kpi("Profit %", metricPercent(backtest.profitPct), Number.isFinite(Number(backtest.profitPct)) ? (Number(backtest.profitPct) >= 0 ? "good" : "bad") : ""),
+    kpi("Max drawdown", metricPercent(backtest.maxDrawdownPct)),
+    kpi("Trades", metricNumber(backtest.trades, 0)),
+    kpi("Trend", metricText(signal.trend || safeData.marketMode, "Trend pending")),
+    kpi("Sentiment + / -", `${metricNumber(sentiment.positive ?? 0, 0, "0")} / ${metricNumber(sentiment.negative ?? 0, 0, "0")}`)
   ].join("");
 
   renderAllocationPie(safeData);
@@ -2149,6 +2345,7 @@ async function loadAiData(options = {}) {
         console.log("Market snapshot warning:", firstError.message);
         data = await fetchMarketSnapshotOnce(strategy);
       }
+      data = await ensureLiveSnapshot(data);
       assertMarketSnapshotConsistency(data);
       currentMarketSnapshot = data;
       lastAiSnapshot = data.ai;
@@ -2182,7 +2379,7 @@ async function loadAiData(options = {}) {
       renderAreaChart(null);
       currentMarketSnapshot = null;
       lastAiSnapshot = null;
-      setStockDataMode("Unavailable", "negative");
+      setStockDataMode("Fallback Feed", "negative");
       setStockHealthStatus("Provider Error", "negative");
       setStockPageStatus(error.message, true);
       throw error;
@@ -2311,7 +2508,7 @@ async function bootstrapStockPage() {
     await validateCurrentSymbol();
   } catch {
     if (chartEl) {
-      chartEl.innerHTML = "<div class='empty-state'>This symbol is invalid or unavailable right now. Try opening it from Dashboard search so it can be validated first.</div>";
+      chartEl.innerHTML = "<div class='empty-state'>This symbol is invalid or the live feed is offline right now. Try opening it from Dashboard search so it can be validated first.</div>";
     }
     return;
   }
