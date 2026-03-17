@@ -248,7 +248,12 @@
       }
       throw new Error(`Auth check failed (${response.status})`);
     }
-    return response.json();
+    const data = await response.json();
+    if (data && data.user) {
+      const persist = Boolean(localStorage.getItem(REFRESH_KEY) || localStorage.getItem(ACCESS_KEY) || localStorage.getItem(USER_KEY));
+      writeStorage(USER_KEY, JSON.stringify(data.user || {}), persist);
+    }
+    return data;
   }
 
   async function logout() {

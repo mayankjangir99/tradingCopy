@@ -89,6 +89,7 @@ const MARKET_INTERVAL_CONFIG = {
 const QUOTE_CACHE_TTL_MS = 30000;
 const FUNDAMENTALS_CACHE_TTL_MS = 30 * 60 * 1000;
 const SNAPSHOT_CACHE_TTL_MS = 15000;
+const MIN_AI_CANDLE_ROWS = 210;
 const CRYPTO_QUOTE_SUFFIXES = ["USDT", "USDC", "BUSD", "USD", "BTC", "ETH", "EUR", "GBP", "JPY", "AUD", "CAD", "TRY"];
 const CRYPTO_TO_COINGECKO_ID = {
   BTC: "bitcoin",
@@ -232,7 +233,9 @@ function buildDefaultAdminUser() {
     username: DEFAULT_ADMIN_USERNAME,
     passwordHash: hashPassword(DEFAULT_ADMIN_PASSWORD),
     role: "admin",
-    displayName: "Admin Trader"
+    displayName: "Admin Trader",
+    createdAt: Date.now(),
+    sessionVersion: 1
   };
 }
 
@@ -374,7 +377,12 @@ function sanitizeUser(user) {
     username: user.username,
     role: user.role || "user",
     displayName: user.displayName || user.username,
-    email: user.email || ""
+    email: user.email || "",
+    authProvider: user.authProvider || "",
+    hasPassword: Boolean(user.passwordHash),
+    createdAt: Number(user.createdAt || 0),
+    lastLoginAt: Number(user.lastLoginAt || 0),
+    passwordChangedAt: Number(user.passwordChangedAt || 0)
   };
 }
 
@@ -382,9 +390,41 @@ function isEmailDeliveryConfigured() {
   return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && SMTP_FROM);
 }
 
-function issueTokens(userId, username, role) {
-  const accessToken = signToken({ sub: userId, username, role, tokenType: "access" }, ACCESS_TTL_SECONDS);
-  const refreshToken = signToken({ sub: userId, username, role, tokenType: "refresh" }, REFRESH_TTL_SECONDS);
+function getUserSessionVersion(user) {
+  const n = Number(user?.sessionVersion);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+}
+
+function ensureUserIdentityShape(user, timestamp = Date.now()) {
+  if (!user || typeof user !== "object") return user;
+  if (!Number.isFinite(Number(user.createdAt)) || Number(user.createdAt) <= 0) {
+    user.createdAt = timestamp;
+  }
+  if (!Number.isFinite(Number(user.sessionVersion)) || Number(user.sessionVersion) < 1) {
+    user.sessionVersion = 1;
+  }
+  return user;
+}
+
+function markUserLogin(user, timestamp = Date.now()) {
+  ensureUserIdentityShape(user, timestamp);
+  user.lastLoginAt = timestamp;
+  return user;
+}
+
+function normalizeOptionalEmail(value) {
+  const email = String(value || "").trim().toLowerCase();
+  if (!email) return "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("Enter a valid email address");
+  }
+  return email;
+}
+
+function issueTokens(userId, username, role, sessionVersion = 1) {
+  const safeSessionVersion = Math.max(1, Number(sessionVersion || 1));
+  const accessToken = signToken({ sub: userId, username, role, sv: safeSessionVersion, tokenType: "access" }, ACCESS_TTL_SECONDS);
+  const refreshToken = signToken({ sub: userId, username, role, sv: safeSessionVersion, tokenType: "refresh" }, REFRESH_TTL_SECONDS);
   return { accessToken, refreshToken, expiresIn: ACCESS_TTL_SECONDS };
 }
 
@@ -400,7 +440,17 @@ function authRequired(req, res, next) {
   if (!payload || payload.tokenType !== "access") {
     return res.status(401).json({ error: "Unauthorized" });
   }
+  const db = readDb();
+  const user = db.users.find((item) => item.id === payload.sub);
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const sessionVersion = getUserSessionVersion(user);
+  if (Number(payload.sv || 0) !== sessionVersion) {
+    return res.status(401).json({ error: "Session expired" });
+  }
   req.user = payload;
+  req.userRecord = user;
   next();
 }
 
@@ -618,6 +668,7 @@ function ensureSocialUser(db, provider, firebaseUser) {
     findUserBySocialIdentity(db, provider, providerUserId) ||
     (email ? db.users.find((u) => String(u.email || "").toLowerCase() === email) : null);
   if (user) {
+    ensureUserIdentityShape(user);
     if (!user.authProvider) user.authProvider = provider;
     if (!user.authProviderUserId) user.authProviderUserId = providerUserId;
     if (!user.email && email) user.email = email;
@@ -634,7 +685,9 @@ function ensureSocialUser(db, provider, firebaseUser) {
     displayName: displayName || username,
     email,
     authProvider: provider,
-    authProviderUserId: providerUserId
+    authProviderUserId: providerUserId,
+    createdAt: Date.now(),
+    sessionVersion: 1
   };
   db.users.push(user);
   db.watchlists[user.id] = [];
@@ -1105,6 +1158,73 @@ function generateSyntheticCandles(yahooTicker, tf) {
   };
 }
 
+function scaleRowsToTargetClose(rows, targetClose) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const nextClose = Number(targetClose);
+  if (!safeRows.length || !Number.isFinite(nextClose) || nextClose <= 0) {
+    return safeRows.map((row) => ({ ...row }));
+  }
+
+  const lastClose = Number(safeRows[safeRows.length - 1]?.close || 0);
+  if (!Number.isFinite(lastClose) || lastClose <= 0) {
+    return safeRows.map((row) => ({ ...row }));
+  }
+
+  const ratio = nextClose / lastClose;
+  return safeRows.map((row) => {
+    const open = Math.max(0.000001, Number(row.open || row.close || nextClose) * ratio);
+    const close = Math.max(0.000001, Number(row.close || row.open || nextClose) * ratio);
+    const highBase = Math.max(Number(row.high || row.close || row.open || nextClose), Number(row.low || row.close || row.open || nextClose));
+    const lowBase = Math.min(Number(row.low || row.close || row.open || nextClose), Number(row.high || row.close || row.open || nextClose));
+    const high = Math.max(open, close, Math.max(0.000001, highBase * ratio));
+    const low = Math.max(0.000001, Math.min(open, close, lowBase * ratio));
+    return {
+      ...row,
+      open: toFixedNumber(open, 6),
+      high: toFixedNumber(high, 6),
+      low: toFixedNumber(low, 6),
+      close: toFixedNumber(close, 6)
+    };
+  });
+}
+
+function ensureMinimumHistoryRows(rows, symbolInfo, tf, minRows, anchorPrice = Number.NaN) {
+  const safeRows = Array.isArray(rows)
+    ? rows.filter((row) => Number.isFinite(Number(row?.close)))
+    : [];
+  const required = Math.max(2, Number(minRows || 0));
+  if (safeRows.length >= required) {
+    return { rows: safeRows, backfilled: false };
+  }
+
+  const synthetic = generateSyntheticCandles(toYahooTicker(symbolInfo), tf);
+  const stepSeconds = Math.max(60, Math.round(timeframeStepMs(tf) / 1000));
+
+  if (!safeRows.length) {
+    const seeded = scaleRowsToTargetClose(synthetic.rows, anchorPrice);
+    return {
+      rows: seeded.slice(-Math.max(required, Math.min(required + 40, seeded.length))),
+      backfilled: true
+    };
+  }
+
+  const firstReal = safeRows[0];
+  const anchor = Number(firstReal.open || firstReal.close || anchorPrice);
+  const needed = Math.max(0, required - safeRows.length);
+  const scaledSynthetic = scaleRowsToTargetClose(synthetic.rows, anchor);
+  const prefix = scaledSynthetic
+    .slice(-needed)
+    .map((row, index) => ({
+      ...row,
+      ts: Number(firstReal.ts || Math.floor(Date.now() / 1000)) - ((needed - index) * stepSeconds)
+    }));
+
+  return {
+    rows: [...prefix, ...safeRows],
+    backfilled: prefix.length > 0
+  };
+}
+
 async function fetchYahooCandlesWithFallback(yahooTicker, tf) {
   try {
     const result = await fetchYahooCandles(yahooTicker, tf);
@@ -1202,7 +1322,7 @@ function buildAuthoritativeQuote(symbolInfo, chart, intervalKey = "1m") {
     volume: toFixedNumber(volume, 0),
     marketCap: null,
     timestamp,
-    providerName: "Yahoo Finance",
+    providerName: meta.synthetic ? "Synthetic" : "Yahoo Finance",
     isRealtime: freshness.isRealtime,
     delayed: freshness.delayed,
     ageMs: freshness.ageMs
@@ -1213,23 +1333,42 @@ async function fetchStockFundamentals(yahooTicker) {
   // Yahoo quoteSummary intermittently omits marketCap for some equities. Fall back to /v7/finance/quote.
   try {
     const response = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooTicker)}`, {
-      params: { modules: "price,summaryDetail,defaultKeyStatistics" },
+      params: { modules: "price,summaryDetail,defaultKeyStatistics,financialData" },
       timeout: 10000
     });
     const result = response.data?.quoteSummary?.result?.[0] || {};
     const priceModule = result.price || {};
     const summaryDetail = result.summaryDetail || {};
     const defaultKeyStatistics = result.defaultKeyStatistics || {};
+    const financialData = result.financialData || {};
     const marketCap =
       priceModule?.marketCap?.raw ??
       summaryDetail?.marketCap?.raw ??
       defaultKeyStatistics?.marketCap?.raw ??
+      null;
+    const sharesOutstanding =
+      priceModule?.sharesOutstanding?.raw ??
+      defaultKeyStatistics?.sharesOutstanding?.raw ??
+      defaultKeyStatistics?.impliedSharesOutstanding?.raw ??
+      defaultKeyStatistics?.floatShares?.raw ??
+      financialData?.sharesOutstanding?.raw ??
       null;
     if (Number.isFinite(Number(marketCap))) {
       return {
         marketCap: Number(marketCap),
         circulatingSupply: null,
         totalSupply: null,
+        sharesOutstanding: Number.isFinite(Number(sharesOutstanding)) ? Number(sharesOutstanding) : null,
+        providerName: "Yahoo Finance",
+        timestamp: Date.now()
+      };
+    }
+    if (Number.isFinite(Number(sharesOutstanding)) && Number(sharesOutstanding) > 0) {
+      return {
+        marketCap: null,
+        circulatingSupply: null,
+        totalSupply: null,
+        sharesOutstanding: Number(sharesOutstanding),
         providerName: "Yahoo Finance",
         timestamp: Date.now()
       };
@@ -1243,11 +1382,14 @@ async function fetchStockFundamentals(yahooTicker) {
       params: { symbols: yahooTicker },
       timeout: 10000
     });
-    const marketCap = quoteResponse.data?.quoteResponse?.result?.[0]?.marketCap ?? null;
+    const quoteResult = quoteResponse.data?.quoteResponse?.result?.[0] || {};
+    const marketCap = quoteResult?.marketCap ?? null;
+    const sharesOutstanding = quoteResult?.sharesOutstanding ?? quoteResult?.floatShares ?? null;
     return {
       marketCap: Number.isFinite(Number(marketCap)) ? Number(marketCap) : null,
       circulatingSupply: null,
       totalSupply: null,
+      sharesOutstanding: Number.isFinite(Number(sharesOutstanding)) ? Number(sharesOutstanding) : null,
       providerName: "Yahoo Finance",
       timestamp: Date.now()
     };
@@ -1256,7 +1398,8 @@ async function fetchStockFundamentals(yahooTicker) {
       marketCap: null,
       circulatingSupply: null,
       totalSupply: null,
-      providerName: "Yahoo Finance",
+      sharesOutstanding: null,
+      providerName: "Provider pending",
       timestamp: Date.now()
     };
   }
@@ -1285,6 +1428,7 @@ async function fetchCryptoFundamentals(symbolInfo) {
           marketCap,
           circulatingSupply: Number.isFinite(circulatingSupply) ? circulatingSupply : null,
           totalSupply,
+          sharesOutstanding: null,
           providerName: "CoinGecko",
           timestamp: Date.now()
         };
@@ -1312,6 +1456,7 @@ async function fetchCryptoFundamentals(symbolInfo) {
           marketCap,
           circulatingSupply: Number.isFinite(supply) ? supply : null,
           totalSupply: null,
+          sharesOutstanding: null,
           providerName: "CryptoCompare",
           timestamp: Date.now()
         };
@@ -1325,7 +1470,8 @@ async function fetchCryptoFundamentals(symbolInfo) {
     marketCap: null,
     circulatingSupply: null,
     totalSupply: null,
-    providerName: "Fallback unavailable",
+    sharesOutstanding: null,
+    providerName: "Provider pending",
     timestamp: Date.now()
   };
 }
@@ -1340,11 +1486,61 @@ async function fetchMarketFundamentals(symbolInfo) {
       marketCap: null,
       circulatingSupply: null,
       totalSupply: null,
-      providerName: "Not supported",
+      sharesOutstanding: null,
+      providerName: "Not applicable",
       timestamp: Date.now()
     };
   }
   return fetchStockFundamentals(yahooTicker);
+}
+
+function resolveMarketCapValue(symbolInfo, fundamentals, quote = null) {
+  const directMarketCap = Number(fundamentals?.marketCap);
+  if (Number.isFinite(directMarketCap) && directMarketCap > 0) {
+    return {
+      value: directMarketCap,
+      derived: false,
+      reason: "",
+      sourceLabel: String(fundamentals?.providerName || "Provider")
+    };
+  }
+
+  const price = Number(quote?.price);
+  if (!Number.isFinite(price) || price <= 0) {
+    return { value: null, derived: false, reason: "", sourceLabel: String(fundamentals?.providerName || "Provider") };
+  }
+
+  if (symbolInfo.marketType === "stock") {
+    const sharesOutstanding = Number(fundamentals?.sharesOutstanding);
+    if (Number.isFinite(sharesOutstanding) && sharesOutstanding > 0) {
+      return {
+        value: price * sharesOutstanding,
+        derived: true,
+        reason: "Market cap derived from shares outstanding and current price.",
+        sourceLabel: `${String(fundamentals?.providerName || "Provider")} (derived)`
+      };
+    }
+  }
+
+  if (symbolInfo.marketType === "crypto") {
+    const circulatingSupply = Number(fundamentals?.circulatingSupply);
+    const totalSupply = Number(fundamentals?.totalSupply);
+    const supply = Number.isFinite(circulatingSupply) && circulatingSupply > 0
+      ? circulatingSupply
+      : Number.isFinite(totalSupply) && totalSupply > 0
+        ? totalSupply
+        : Number.NaN;
+    if (Number.isFinite(supply) && supply > 0) {
+      return {
+        value: price * supply,
+        derived: true,
+        reason: `Market cap derived from ${Number.isFinite(circulatingSupply) && circulatingSupply > 0 ? "circulating" : "total"} supply and current price.`,
+        sourceLabel: `${String(fundamentals?.providerName || "Provider")} (derived)`
+      };
+    }
+  }
+
+  return { value: null, derived: false, reason: "", sourceLabel: String(fundamentals?.providerName || "Provider") };
 }
 
 async function fetchMarketCap(yahooTicker, marketType) {
@@ -1364,7 +1560,13 @@ async function getAuthoritativeQuote(symbolInfo) {
     cacheKey,
     QUOTE_CACHE_TTL_MS,
     async () => {
-      const chart = await fetchYahooChart(yahooTicker, { interval: "1m", range: "5d", minRows: 2 });
+      let chart;
+      try {
+        chart = await fetchYahooChart(yahooTicker, { interval: "1m", range: "5d", minRows: 2 });
+      } catch (error) {
+        logProviderError("Quote provider warning", error);
+        chart = generateSyntheticCandles(yahooTicker, "1m");
+      }
       return buildAuthoritativeQuote(symbolInfo, chart, "1m");
     },
     "Quote provider"
@@ -1388,11 +1590,18 @@ async function getAuthoritativeCandles(symbolInfo, rawInterval = "1d", rawRange 
     marketDataCaches.candles,
     cacheKey,
     intervalCfg.cacheTtlMs,
-    async () => fetchYahooChart(yahooTicker, {
-      interval: intervalCfg.interval,
-      range,
-      minRows: intervalKey === "1d" ? 40 : 20
-    }),
+    async () => {
+      try {
+        return await fetchYahooChart(yahooTicker, {
+          interval: intervalCfg.interval,
+          range,
+          minRows: intervalKey === "1d" ? 40 : 20
+        });
+      } catch (error) {
+        logProviderError("Candles provider warning", error);
+        return generateSyntheticCandles(yahooTicker, intervalKey === "1d" ? "1D" : rawInterval);
+      }
+    },
     "Candles provider"
   );
 
@@ -1407,7 +1616,7 @@ async function getAuthoritativeCandles(symbolInfo, rawInterval = "1d", rawRange 
     range,
     rows,
     timestamp,
-    providerName: "Yahoo Finance",
+    providerName: cached.data?.meta?.synthetic ? "Synthetic" : "Yahoo Finance",
     isRealtime: freshness.isRealtime,
     delayed: freshness.delayed,
     ageMs: freshness.ageMs,
@@ -2685,7 +2894,7 @@ function normalizeSignalOutput(signal) {
 }
 
 function computeAiPayload(rows, tf, strategy, newsSentiment, marketCap, symbolInfo, quote = null) {
-  if (!Array.isArray(rows) || rows.length < 210) {
+  if (!Array.isArray(rows) || rows.length < MIN_AI_CANDLE_ROWS) {
     throw new Error("Not enough candle data for AI analytics");
   }
 
@@ -3025,7 +3234,7 @@ function buildFallbackAiPayload(symbolInfo, tf, strategy, reason = "") {
   );
   payload.dataSource = synthetic.source;
   payload.degraded = true;
-  payload.warning = reason || "Live analytics source is unavailable. Showing fallback analytics.";
+  payload.warning = reason || "Live analytics source is temporarily offline. Showing fallback analytics.";
   payload.providerHealth = getProviderHealthSnapshot();
   payload.symbol = symbolInfo.original;
   return payload;
@@ -3095,7 +3304,8 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
         marketCap: null,
         circulatingSupply: null,
         totalSupply: null,
-        providerName: "Unavailable",
+        sharesOutstanding: null,
+        providerName: "Provider pending",
         timestamp: Date.now(),
         stale: false
       };
@@ -3125,24 +3335,22 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
       }
 
       if (!candles?.rows?.length) {
-        if (quote) {
-          throw new Error("Candle data unavailable");
-        }
         const synthetic = generateSyntheticCandles(toYahooTicker(symbolInfo), normalizedTf);
+        const anchoredRows = scaleRowsToTargetClose(synthetic.rows, Number(quote?.price));
         candles = {
           symbol: symbolInfo.original,
           interval: candleInterval,
           range: candleRange,
-          rows: synthetic.rows,
-          timestamp: new Date(Number(synthetic.rows[synthetic.rows.length - 1]?.ts || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+          rows: anchoredRows,
+          timestamp: new Date(Number(anchoredRows[anchoredRows.length - 1]?.ts || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
           providerName: "Synthetic",
           isRealtime: false,
           delayed: true,
           ageMs: Number.POSITIVE_INFINITY,
           stale: true
         };
-        quote = quote || quoteFromSynthetic(synthetic.rows, symbolInfo);
-        warnings.push("Live market data unavailable. Showing fallback snapshot.");
+        quote = quote || quoteFromSynthetic(anchoredRows, symbolInfo);
+        warnings.push("Live market data feed is temporarily offline. Showing fallback snapshot.");
       }
 
       if (!quote) {
@@ -3151,8 +3359,18 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
         warnings.push("Quote derived from last available candle.");
       }
 
-      const marketCap = Number.isFinite(Number(fundamentals.marketCap))
-        ? Number(fundamentals.marketCap)
+      const history = ensureMinimumHistoryRows(candles.rows, symbolInfo, normalizedTf, MIN_AI_CANDLE_ROWS, Number(quote?.price));
+      candles.rows = history.rows;
+      if (history.backfilled) {
+        candles.stale = true;
+        if (!warnings.includes("Historical candle data was backfilled from the fallback model.")) {
+          warnings.push("Historical candle data was backfilled from the fallback model.");
+        }
+      }
+
+      const marketCapResolution = resolveMarketCapValue(symbolInfo, fundamentals, quote);
+      const marketCap = Number.isFinite(Number(marketCapResolution.value))
+        ? Number(marketCapResolution.value)
         : null;
       const quoteWithMarketCap = {
         ...quote,
@@ -3162,9 +3380,12 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
       if (quote.stale) warnings.push("Quote provider returned cached data.");
       if (candles.stale) warnings.push("Candle provider returned cached data.");
       if (fundamentals.stale) warnings.push("Fundamentals provider returned cached data.");
-      if (marketCap === null && symbolInfo.marketType === "stock") warnings.push("Market cap is unavailable from the provider right now.");
+      if (marketCapResolution.derived && marketCapResolution.reason) {
+        warnings.push(marketCapResolution.reason);
+      }
+      if (marketCap === null && symbolInfo.marketType === "stock") warnings.push("Market cap feed is still pending for this stock.");
       if (marketCap === null && symbolInfo.marketType === "crypto") {
-        warnings.push("Market cap not returned by Binance; fallback provider failed.");
+        warnings.push("Crypto market cap feed is still pending for this asset.");
       }
 
       const ai = computeAiPayload(
@@ -3206,7 +3427,9 @@ async function buildMarketSnapshot(symbolInfo, tf = "1D", strategy = "swing") {
           marketCap,
           circulatingSupply: Number.isFinite(Number(fundamentals.circulatingSupply)) ? Number(fundamentals.circulatingSupply) : null,
           totalSupply: Number.isFinite(Number(fundamentals.totalSupply)) ? Number(fundamentals.totalSupply) : null,
-          providerName: fundamentals.providerName || "Unavailable",
+          sharesOutstanding: Number.isFinite(Number(fundamentals.sharesOutstanding)) ? Number(fundamentals.sharesOutstanding) : null,
+          marketCapDerived: Boolean(marketCapResolution.derived),
+          providerName: marketCapResolution.sourceLabel || fundamentals.providerName || "Provider pending",
           timestamp: Number(fundamentals.timestamp || Date.now()),
           stale: Boolean(fundamentals.stale)
         },
@@ -3292,11 +3515,12 @@ app.post("/api/auth/login", (req, res) => {
     if (!user || user.passwordHash !== hashPassword(password)) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+    markUserLogin(user);
     ensureUserFeatureState(db, user.id);
     pushActivityLog(db, user.id, { type: "login_success" });
     writeDb(db);
 
-    const tokens = issueTokens(user.id, user.username, user.role || "user");
+    const tokens = issueTokens(user.id, user.username, user.role || "user", getUserSessionVersion(user));
     res.json({
       ...tokens,
       user: sanitizeUser(user),
@@ -3335,8 +3559,11 @@ app.post("/api/auth/register", (req, res) => {
       username,
       passwordHash: hashPassword(password),
       role: "user",
-      displayName: displayNameRaw || username
+      displayName: displayNameRaw || username,
+      createdAt: Date.now(),
+      sessionVersion: 1
     };
+    markUserLogin(newUser);
 
     db.users.push(newUser);
     db.watchlists[newUser.id] = [];
@@ -3360,7 +3587,7 @@ app.post("/api/auth/register", (req, res) => {
     writeDb(db);
     appendRegistrationExport(newUser);
 
-    const tokens = issueTokens(newUser.id, newUser.username, newUser.role);
+    const tokens = issueTokens(newUser.id, newUser.username, newUser.role, getUserSessionVersion(newUser));
     res.status(201).json({
       ...tokens,
       user: sanitizeUser(newUser),
@@ -3387,11 +3614,12 @@ app.post("/api/auth/social", async (req, res) => {
 
     const db = readDb();
     const user = ensureSocialUser(db, provider, firebaseUser);
+    markUserLogin(user);
     ensureUserFeatureState(db, user.id);
     pushActivityLog(db, user.id, { type: "social_login_success", provider });
     writeDb(db);
 
-    const tokens = issueTokens(user.id, user.username, user.role || "user");
+    const tokens = issueTokens(user.id, user.username, user.role || "user", getUserSessionVersion(user));
     res.json({
       ...tokens,
       user: sanitizeUser(user),
@@ -3417,9 +3645,12 @@ app.post("/api/auth/refresh", (req, res) => {
     const db = readDb();
     const user = db.users.find((u) => u.id === payload.sub);
     if (!user) return res.status(401).json({ error: "User not found" });
+    if (Number(payload.sv || 0) !== getUserSessionVersion(user)) {
+      return res.status(401).json({ error: "Refresh token expired" });
+    }
 
     const accessToken = signToken(
-      { sub: user.id, username: user.username, role: user.role || "user", tokenType: "access" },
+      { sub: user.id, username: user.username, role: user.role || "user", sv: getUserSessionVersion(user), tokenType: "access" },
       ACCESS_TTL_SECONDS
     );
     res.json({ accessToken, expiresIn: ACCESS_TTL_SECONDS });
@@ -3452,8 +3683,101 @@ app.get("/api/auth/me", authRequired, (req, res) => {
   res.json({
     user: sanitizeUser(user),
     watchlist: db.watchlists[user.id] || [],
-    preferences: db.preferences[user.id] || {}
+    preferences: db.preferences[user.id] || {},
+    session: {
+      tokenVersion: getUserSessionVersion(user),
+      accessTtlSeconds: ACCESS_TTL_SECONDS,
+      refreshTtlSeconds: REFRESH_TTL_SECONDS
+    }
   });
+});
+
+app.get("/api/auth/profile", authRequired, (req, res) => {
+  const db = readDb();
+  const user = db.users.find((u) => u.id === req.user.sub);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({
+    user: sanitizeUser(user),
+    session: {
+      tokenVersion: getUserSessionVersion(user),
+      accessTtlSeconds: ACCESS_TTL_SECONDS,
+      refreshTtlSeconds: REFRESH_TTL_SECONDS
+    }
+  });
+});
+
+app.put("/api/auth/profile", authRequired, (req, res) => {
+  try {
+    const db = readDb();
+    const user = db.users.find((u) => u.id === req.user.sub);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const displayName = String(req.body?.displayName || "").trim().slice(0, 50);
+    const email = normalizeOptionalEmail(req.body?.email);
+    if (!displayName) {
+      return res.status(400).json({ error: "Display name is required" });
+    }
+
+    const emailTaken = email
+      ? db.users.some((item) => item.id !== user.id && String(item.email || "").toLowerCase() === email)
+      : false;
+    if (emailTaken) {
+      return res.status(409).json({ error: "Email already belongs to another account" });
+    }
+
+    ensureUserIdentityShape(user);
+    user.displayName = displayName;
+    user.email = email;
+    pushActivityLog(db, req.user.sub, { type: "profile_updated", displayName, hasEmail: Boolean(email) });
+    writeDb(db);
+    res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Profile update failed" });
+  }
+});
+
+app.post("/api/auth/password", authRequired, (req, res) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newPassword = String(req.body?.newPassword || "");
+    if (!newPassword) {
+      return res.status(400).json({ error: "newPassword is required" });
+    }
+
+    const validationError = validateRegistrationInput("account", newPassword);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    const db = readDb();
+    const user = db.users.find((u) => u.id === req.user.sub);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (user.passwordHash && user.passwordHash !== hashPassword(currentPassword)) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    ensureUserIdentityShape(user);
+    user.passwordHash = hashPassword(newPassword);
+    user.passwordChangedAt = Date.now();
+    user.sessionVersion = getUserSessionVersion(user) + 1;
+    pushActivityLog(db, req.user.sub, { type: "password_changed" });
+    writeDb(db);
+    res.json({ ok: true, forceRelogin: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Password update failed" });
+  }
+});
+
+app.post("/api/auth/logout-all", authRequired, (req, res) => {
+  const db = readDb();
+  const user = db.users.find((u) => u.id === req.user.sub);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  ensureUserIdentityShape(user);
+  user.sessionVersion = getUserSessionVersion(user) + 1;
+  pushActivityLog(db, req.user.sub, { type: "logout_all_sessions" });
+  writeDb(db);
+  res.json({ ok: true, forceRelogin: true });
 });
 
 app.get("/api/watchlist", authRequired, (req, res) => {
@@ -3958,6 +4282,63 @@ app.get("/api/alerts", authRequired, (req, res) => {
   });
 });
 
+app.post("/api/notifications/test", authRequired, async (req, res) => {
+  try {
+    const db = readDb();
+    ensureUserFeatureState(db, req.user.sub);
+    const user = db.users.find((item) => item.id === req.user.sub) || null;
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const result = {
+      inApp: "logged",
+      email: "disabled"
+    };
+    const recipientEmail = String(user.email || "").trim().toLowerCase();
+    if (!recipientEmail) {
+      result.email = "no_recipient";
+    } else if (!isEmailDeliveryConfigured()) {
+      result.email = "not_configured";
+    } else {
+      await sendEmailViaSmtp({
+        to: recipientEmail,
+        subject: "TradePro Test Notification",
+        text: [
+          "TradePro Test Notification",
+          `User: ${user.username}`,
+          `Triggered At: ${new Date().toISOString()}`,
+          "This is a test email from the Control Center."
+        ].join("\n"),
+        html: `
+          <div style="margin:0;padding:28px;background:#f4f7ff;">
+            <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dce6ff;border-radius:14px;overflow:hidden;">
+              <div style="padding:18px 22px;background:linear-gradient(135deg,#0a1d45,#0f3b8f);color:#f7fbff;font-family:Segoe UI,Arial,sans-serif;">
+                <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">TradePro Control Center</div>
+                <h2 style="margin:8px 0 0;font-size:22px;line-height:1.3;">Test Notification</h2>
+              </div>
+              <div style="padding:22px;font-family:Segoe UI,Arial,sans-serif;color:#13203a;line-height:1.55;">
+                <p style="margin:0 0 10px;">This is a test notification for <strong>${escapeHtml(user.username)}</strong>.</p>
+                <p style="margin:0;">Generated at ${escapeHtml(new Date().toISOString())}.</p>
+              </div>
+            </div>
+          </div>
+        `
+      });
+      result.email = "delivered";
+    }
+
+    pushActivityLog(db, req.user.sub, { type: "notification_test", email: result.email });
+    writeDb(db);
+    res.json({
+      ok: true,
+      recipientEmail,
+      emailDeliveryReady: Boolean(recipientEmail && isEmailDeliveryConfigured()),
+      result
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || "Test notification failed" });
+  }
+});
+
 app.post("/api/alerts", authRequired, (req, res) => {
   const db = readDb();
   ensureUserFeatureState(db, req.user.sub);
@@ -4150,7 +4531,7 @@ app.get("/api/symbol/resolve", authRequired, async (req, res) => {
       marketType: symbolInfo.marketType,
       available: false,
       lastPrice: null,
-      error: "The symbol format is valid, but live data is temporarily unavailable.",
+      error: "The symbol format is valid, but the live data feed is temporarily offline.",
       providerHealth: getProviderHealthSnapshot()
     });
   }
@@ -4534,7 +4915,7 @@ app.get("/api/fx/latest", async (_req, res) => {
     });
   } catch (error) {
     console.log("FX rates error:", error.response?.data || error.message);
-    res.status(502).json({ error: "FX rates unavailable" });
+    res.status(502).json({ error: "FX rates feed offline" });
   }
 });
 
@@ -4550,14 +4931,16 @@ app.get("/api/market/quote", async (req, res) => {
       logProviderError("Market quote fundamentals warning", error);
       return { marketCap: null, stale: true };
     });
+    const marketCapResolution = resolveMarketCapValue(symbolInfo, fundamentals, quote);
     const payload = {
       ...quote,
-      marketCap: Number.isFinite(Number(fundamentals.marketCap)) ? Number(fundamentals.marketCap) : null
+      marketCap: Number.isFinite(Number(marketCapResolution.value)) ? Number(marketCapResolution.value) : null,
+      marketCapDerived: Boolean(marketCapResolution.derived)
     };
     return res.json(payload);
   } catch (error) {
     logProviderError("Market quote error", error);
-    return res.status(502).json({ error: "Market quote unavailable" });
+    return res.status(502).json({ error: "Market quote feed offline" });
   }
 });
 
@@ -4572,19 +4955,26 @@ app.get("/api/market/fundamentals", async (req, res) => {
   }
   try {
     const fundamentals = await getAuthoritativeFundamentals(symbolInfo);
+    let marketCapResolution = resolveMarketCapValue(symbolInfo, fundamentals, null);
+    if (marketCapResolution.value === null && ["stock", "crypto"].includes(symbolInfo.marketType)) {
+      const quote = await getAuthoritativeQuote(symbolInfo).catch(() => null);
+      marketCapResolution = resolveMarketCapValue(symbolInfo, fundamentals, quote);
+    }
     return res.json({
       symbol: symbolInfo.original,
       marketType: symbolInfo.marketType,
-      marketCap: Number.isFinite(Number(fundamentals.marketCap)) ? Number(fundamentals.marketCap) : null,
+      marketCap: Number.isFinite(Number(marketCapResolution.value)) ? Number(marketCapResolution.value) : null,
       circulatingSupply: Number.isFinite(Number(fundamentals.circulatingSupply)) ? Number(fundamentals.circulatingSupply) : null,
       totalSupply: Number.isFinite(Number(fundamentals.totalSupply)) ? Number(fundamentals.totalSupply) : null,
-      providerName: String(fundamentals.providerName || "Unavailable"),
+      sharesOutstanding: Number.isFinite(Number(fundamentals.sharesOutstanding)) ? Number(fundamentals.sharesOutstanding) : null,
+      marketCapDerived: Boolean(marketCapResolution.derived),
+      providerName: String(marketCapResolution.sourceLabel || fundamentals.providerName || "Provider pending"),
       timestamp: Number(fundamentals.timestamp || Date.now()),
       stale: Boolean(fundamentals.stale)
     });
   } catch (error) {
     logProviderError("Market fundamentals error", error);
-    return res.status(502).json({ error: "Market fundamentals unavailable" });
+    return res.status(502).json({ error: "Market fundamentals feed offline" });
   }
 });
 
@@ -4599,7 +4989,7 @@ app.get("/api/market/candles", async (req, res) => {
     return res.json(candles);
   } catch (error) {
     logProviderError("Market candles error", error);
-    return res.status(502).json({ error: "Market candles unavailable" });
+    return res.status(502).json({ error: "Market candles feed offline" });
   }
 });
 
@@ -4616,7 +5006,7 @@ app.get("/api/market/snapshot", async (req, res) => {
     return res.json(snapshot);
   } catch (error) {
     logProviderError("Market snapshot error", error);
-    return res.status(502).json({ error: "Market snapshot unavailable" });
+    return res.status(502).json({ error: "Market snapshot feed offline" });
   }
 });
 
@@ -4631,7 +5021,7 @@ app.get("/api/quote/:symbol", async (req, res) => {
     });
   } catch (error) {
     logProviderError("Legacy quote error", error);
-    res.status(502).json({ error: "Quote unavailable" });
+    res.status(502).json({ error: "Quote feed offline" });
   }
 });
 
@@ -4739,7 +5129,7 @@ app.get("/api/forecast/candles/:symbol", authRequired, async (req, res) => {
     });
   } catch (error) {
     logProviderError("Forecast Candles Error", error);
-    res.status(500).json({ error: "Forecast candles unavailable" });
+    res.status(500).json({ error: "Forecast candle feed offline" });
   }
 });
 
@@ -4767,7 +5157,7 @@ app.get("/api/ai/:symbol", async (req, res) => {
     const tfMap = { "1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "4h", "1d": "1D", "1D": "1D" };
     const tf = tfMap[rawTf] || "1D";
     const strategy = String(req.query.strategy || "swing").toLowerCase();
-    res.json(buildFallbackAiPayload(symbolInfo, tf, strategy, "Live analytics source is unavailable. Showing fallback analytics."));
+    res.json(buildFallbackAiPayload(symbolInfo, tf, strategy, "Live analytics source is temporarily offline. Showing fallback analytics."));
   }
 });
 
@@ -4970,5 +5360,3 @@ module.exports = {
   normalizeSignalOutput,
   assertMarketSnapshotInvariants
 };
-
-
