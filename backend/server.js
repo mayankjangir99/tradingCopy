@@ -34,6 +34,15 @@ const DB_FILE = path.resolve(process.env.DB_FILE_PATH || path.join(DATA_DIR, "ap
 const REGISTER_EXPORT_FILE = path.resolve(
   process.env.REGISTER_EXPORT_FILE_PATH || path.join(DATA_DIR, "registered-users.csv")
 );
+const FRONTEND_DIR_CANDIDATES = [
+  path.resolve(__dirname, "..", "docs"),
+  path.resolve(__dirname, "..")
+];
+const FRONTEND_DIR = FRONTEND_DIR_CANDIDATES.find((dir) => (
+  fs.existsSync(path.join(dir, "index.html")) &&
+  fs.existsSync(path.join(dir, "app-core.js")) &&
+  fs.existsSync(path.join(dir, "style.css"))
+)) || null;
 function normalizeSmtpPassword(host, password) {
   const cleanHost = String(host || "").trim().toLowerCase();
   const cleanPassword = String(password || "").trim();
@@ -142,6 +151,13 @@ app.use(cors({
   }
 }));
 app.use(express.json());
+
+if (FRONTEND_DIR) {
+  app.use(express.static(FRONTEND_DIR, {
+    extensions: ["html"],
+    index: false
+  }));
+}
 
 const requestBuckets = new Map();
 const revokedRefreshTokens = new Set();
@@ -4922,7 +4938,10 @@ app.delete("/api/team/watchlists/:id/items/:symbol", authRequired, (req, res) =>
 });
 
 app.get("/", (_req, res) => {
-  res.send("NEW VERSION LIVE 🔥");
+  if (!FRONTEND_DIR) {
+    return res.status(503).send("Frontend build not found");
+  }
+  return res.sendFile(path.join(FRONTEND_DIR, "index.html"));
 });
 
 app.get("/api/fx/latest", async (_req, res) => {
