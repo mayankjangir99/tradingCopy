@@ -1584,13 +1584,23 @@ function renderStockAlerts(alerts = [], events = []) {
         </div>
       </div>
     `),
-    ...events.slice(0, 4).map((event) => `
-      <div class="news-item">
-        <h4>Triggered ${new Date(event.triggeredAt).toLocaleString()}</h4>
-        <p>${event.conditionResults?.map((item) => `${item.label || item.type}: observed ${item.observedText || item.observedValue} vs target ${Number.isFinite(Number(item.targetValue)) ? item.targetValue : "-"}`).join(" | ") || event.reason}</p>
-        <p>Email ${event.channels?.email || "disabled"}${event.emailRecipient ? ` to ${event.emailRecipient}` : ""}</p>
-      </div>
-    `)
+    ...events.slice(0, 4).map((event) => {
+      const emailStatus = event.channels?.email || "disabled";
+      const emailDetail = event.emailError
+        ? ` | ${escapeHtml(event.emailError)}`
+        : emailStatus === "no_recipient"
+          ? " | Save an account email in Control Center."
+          : emailStatus === "not_configured"
+            ? " | Backend SMTP is not configured."
+            : "";
+      return `
+        <div class="news-item">
+          <h4>Triggered ${new Date(event.triggeredAt).toLocaleString()}</h4>
+          <p>${event.conditionResults?.map((item) => `${item.label || item.type}: observed ${item.observedText || item.observedValue} vs target ${Number.isFinite(Number(item.targetValue)) ? item.targetValue : "-"}`).join(" | ") || event.reason}</p>
+          <p>Email ${escapeHtml(emailStatus)}${event.emailRecipient ? ` to ${escapeHtml(event.emailRecipient)}` : ""}${emailDetail}</p>
+        </div>
+      `;
+    })
   ].join("");
 }
 

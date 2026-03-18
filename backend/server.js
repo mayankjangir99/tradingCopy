@@ -10,7 +10,7 @@ const tls = require("tls");
 const PDFDocument = require("pdfkit");
 const { RSI, EMA, MACD, BollingerBands, ATR } = require("technicalindicators");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -34,11 +34,33 @@ const DB_FILE = path.resolve(process.env.DB_FILE_PATH || path.join(DATA_DIR, "ap
 const REGISTER_EXPORT_FILE = path.resolve(
   process.env.REGISTER_EXPORT_FILE_PATH || path.join(DATA_DIR, "registered-users.csv")
 );
+function normalizeSmtpPassword(host, password) {
+  const cleanHost = String(host || "").trim().toLowerCase();
+  const cleanPassword = String(password || "").trim();
+  if (!cleanPassword) return "";
+  if (cleanHost.includes("gmail")) {
+    return cleanPassword.replace(/\s+/g, "");
+  }
+  return cleanPassword;
+}
+
+function explainSmtpError(error, host = SMTP_HOST) {
+  const message = String(error?.message || error || "SMTP delivery failed").trim();
+  if (/badcredentials|username and password not accepted|5\.7\.8/i.test(message)) {
+    return "Gmail rejected the SMTP login. Use a Gmail App Password for SMTP_PASS and paste it without spaces.";
+  }
+  if (/econnreset/i.test(message) && /gmail/i.test(String(host || ""))) {
+    return "SMTP connection was reset by Gmail. Try smtp.gmail.com with port 587 and SMTP_SECURE=false, or port 465 with SMTP_SECURE=true.";
+  }
+  return message;
+}
+
 const SMTP_HOST = String(process.env.SMTP_HOST || "").trim();
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || SMTP_PORT === 465;
 const SMTP_USER = String(process.env.SMTP_USER || "").trim();
 const SMTP_PASS = String(process.env.SMTP_PASS || "").trim();
+const SMTP_AUTH_PASS = normalizeSmtpPassword(SMTP_HOST, SMTP_PASS);
 const SMTP_FROM = String(process.env.SMTP_FROM || SMTP_USER).trim();
 const ALERT_EVALUATION_INTERVAL_MS = Math.max(15000, Number(process.env.ALERT_EVALUATION_INTERVAL_MS || 60000));
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
@@ -387,7 +409,7 @@ function sanitizeUser(user) {
 }
 
 function isEmailDeliveryConfigured() {
-  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && SMTP_FROM);
+  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_AUTH_PASS && SMTP_FROM);
 }
 
 function getUserSessionVersion(user) {
@@ -2355,7 +2377,7 @@ async function sendEmailViaSmtp({ to, subject, text, html }) {
 
     await sendSmtpCommand(socket, "AUTH LOGIN", [334]);
     await sendSmtpCommand(socket, Buffer.from(SMTP_USER).toString("base64"), [334]);
-    await sendSmtpCommand(socket, Buffer.from(SMTP_PASS).toString("base64"), [235]);
+    await sendSmtpCommand(socket, Buffer.from(SMTP_AUTH_PASS).toString("base64"), [235]);
     await sendSmtpCommand(socket, `MAIL FROM:<${SMTP_FROM}>`, [250]);
     await sendSmtpCommand(socket, `RCPT TO:<${to}>`, [250, 251]);
     await sendSmtpCommand(socket, "DATA", [354]);
@@ -2372,6 +2394,8 @@ async function sendEmailViaSmtp({ to, subject, text, html }) {
     socket.write(`${encodeSmtpData(message)}\r\n.\r\n`);
     await sendSmtpCommand(socket, null, [250]);
     await sendSmtpCommand(socket, "QUIT", [221]);
+  } catch (error) {
+    throw new Error(explainSmtpError(error));
   } finally {
     socket.destroy();
   }
@@ -5357,6 +5381,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  normalizeSmtpPassword,
+  explainSmtpError,
   normalizeSignalOutput,
   assertMarketSnapshotInvariants
 };

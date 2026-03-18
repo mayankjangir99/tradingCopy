@@ -1,7 +1,20 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeSignalOutput, assertMarketSnapshotInvariants } = require("./server");
+const { normalizeSmtpPassword, explainSmtpError, normalizeSignalOutput, assertMarketSnapshotInvariants } = require("./server");
+
+test("normalizeSmtpPassword removes spaces for Gmail app passwords", () => {
+  assert.equal(normalizeSmtpPassword("smtp.gmail.com", "abcd efgh ijkl mnop"), "abcdefghijklmnop");
+});
+
+test("normalizeSmtpPassword preserves internal spaces for non-Gmail hosts", () => {
+  assert.equal(normalizeSmtpPassword("smtp.office365.com", "ab cd"), "ab cd");
+});
+
+test("explainSmtpError returns a Gmail-specific auth hint", () => {
+  const message = explainSmtpError("SMTP 535: 5.7.8 Username and Password not accepted. BadCredentials", "smtp.gmail.com");
+  assert.match(message, /App Password/i);
+});
 
 test("normalizeSignalOutput collapses contradictory range sell signals", () => {
   const normalized = normalizeSignalOutput({
