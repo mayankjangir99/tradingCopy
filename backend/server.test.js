@@ -1,7 +1,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeSmtpPassword, explainSmtpError, normalizeSignalOutput, assertMarketSnapshotInvariants } = require("./server");
+const {
+  app,
+  buildServiceStatusPayload,
+  normalizeSmtpPassword,
+  explainSmtpError,
+  normalizeSignalOutput,
+  assertMarketSnapshotInvariants
+} = require("./server");
 
 test("normalizeSmtpPassword removes spaces for Gmail app passwords", () => {
   assert.equal(normalizeSmtpPassword("smtp.gmail.com", "abcd efgh ijkl mnop"), "abcdefghijklmnop");
@@ -78,4 +85,25 @@ test("snapshot invariants enforce MACD polarity consistency", () => {
       }
     });
   }, /MACD bearish/i);
+});
+
+test("service status payload stays aligned across health endpoints", () => {
+  const payload = buildServiceStatusPayload();
+
+  assert.equal(payload.ok, true);
+  assert.equal(payload.service, "tradingcopy-api");
+  assert.match(payload.timestamp, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test("root endpoint returns the deployment marker", async (t) => {
+  const server = app.listen(0);
+  t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+
+  const { port } = server.address();
+  const response = await fetch(`http://127.0.0.1:${port}/`);
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /text\/html|text\/plain/i);
+  assert.equal(body, "NEW VERSION LIVE 🔥");
 });

@@ -13,7 +13,7 @@ const { RSI, EMA, MACD, BollingerBands, ATR } = require("technicalindicators");
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
 const FINNHUB_KEY = process.env.FINNHUB_KEY;
 const AUTH_SECRET = process.env.AUTH_SECRET || "tradepro-local-dev-secret";
 const ACCESS_TTL_SECONDS = Number(process.env.ACCESS_TTL_SECONDS || 900);
@@ -155,6 +155,14 @@ const marketDataCaches = {
   fundamentals: new Map(),
   snapshot: new Map()
 };
+
+function buildServiceStatusPayload() {
+  return {
+    ok: true,
+    service: "tradingcopy-api",
+    timestamp: new Date().toISOString()
+  };
+}
 
 function nowSeconds() {
   return Math.floor(Date.now() / 1000);
@@ -4913,8 +4921,8 @@ app.delete("/api/team/watchlists/:id/items/:symbol", authRequired, (req, res) =>
   res.json({ watchlist: access.team.watchlist });
 });
 
-app.get("/", (req, res) => {
-  res.json({ status: "ok", service: "tradepro-ai-backend" });
+app.get("/", (_req, res) => {
+  res.send("NEW VERSION LIVE 🔥");
 });
 
 app.get("/api/fx/latest", async (_req, res) => {
@@ -5357,11 +5365,7 @@ app.post("/api/sip-pdf", (req, res) => {
 });
 
 app.get("/healthz", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "tradingcopy-api",
-    timestamp: new Date().toISOString()
-  });
+  res.json(buildServiceStatusPayload());
 });
 
 if (require.main === module) {
@@ -5381,11 +5385,10 @@ if (require.main === module) {
 }
 
 module.exports = {
+  app,
+  buildServiceStatusPayload,
   normalizeSmtpPassword,
   explainSmtpError,
   normalizeSignalOutput,
   assertMarketSnapshotInvariants
 };
-app.get("/", (req, res) => {
-  res.send("NEW VERSION LIVE 🔥");
-});
