@@ -4284,6 +4284,1071 @@ html[data-theme="light"] .login-orbit__stats article {
   }
 }
 
+/* Login Orbit Refresh */
+body.page-auth {
+  position: relative;
+  overflow-x: hidden;
+}
+
+body.page-auth::before,
+body.page-auth::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(10px);
+  opacity: 0.9;
+  animation: loginGlowFloat 18s ease-in-out infinite alternate;
+}
+
+body.page-auth::before {
+  width: 34vw;
+  height: 34vw;
+  top: -10vw;
+  left: -8vw;
+  background: radial-gradient(circle, rgba(87, 182, 255, 0.24) 0%, rgba(87, 182, 255, 0) 70%);
+}
+
+body.page-auth::after {
+  width: 30vw;
+  height: 30vw;
+  right: -8vw;
+  bottom: -12vw;
+  background: radial-gradient(circle, rgba(108, 247, 212, 0.18) 0%, rgba(108, 247, 212, 0) 72%);
+  animation-duration: 22s;
+}
+
+.page-auth .center-page {
+  position: relative;
+  z-index: 1;
+  padding: clamp(14px, 2vw, 28px);
+}
+
+.page-auth .login-orbit {
+  position: relative;
+  isolation: isolate;
+  width: min(1320px, 100%);
+  min-height: min(860px, calc(100vh - 34px));
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(390px, 0.84fr);
+  gap: 0;
+  border-radius: 32px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(87, 182, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 86% 14%, rgba(255, 208, 122, 0.12), transparent 22%),
+    radial-gradient(circle at 84% 82%, rgba(108, 247, 212, 0.18), transparent 28%),
+    linear-gradient(145deg, rgba(4, 14, 31, 0.98) 0%, rgba(6, 19, 41, 0.97) 48%, rgba(9, 29, 54, 0.96) 100%);
+  box-shadow:
+    0 26px 80px rgba(3, 8, 20, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.page-auth .login-orbit::before,
+.page-auth .login-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page-auth .login-orbit::before {
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.05) 18%, transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%);
+  opacity: 0.9;
+}
+
+.page-auth .login-orbit::after {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 78px
+    );
+  opacity: 0.28;
+  mask-image: linear-gradient(180deg, transparent, black 18%, black 82%, transparent);
+}
+
+.page-auth .login-orbit__story {
+  position: relative;
+  padding: clamp(24px, 3vw, 44px);
+  border-right: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.page-auth .login-orbit__story > * {
+  position: relative;
+  z-index: 1;
+}
+
+.login-orbit__topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.login-orbit__brand-row {
+  align-items: center;
+}
+
+.login-orbit__brand-kicker {
+  margin: 0 0 4px;
+  color: color-mix(in srgb, var(--accent-2) 92%, white 8%);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.login-orbit__brand-title {
+  margin: 0;
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  letter-spacing: -0.05em;
+}
+
+.login-orbit__session-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 76%, transparent);
+  border-radius: 999px;
+  background: rgba(4, 18, 35, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #dff1ff;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-orbit__session-pill span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 8px rgba(108, 247, 212, 0.14);
+  animation: loginOrbitPulse 2.4s ease-in-out infinite;
+}
+
+.login-orbit__ticker {
+  position: relative;
+  overflow: hidden;
+  padding: 6px 0;
+  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+
+.login-orbit__ticker::before,
+.login-orbit__ticker::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.login-orbit__ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(5, 18, 38, 0.95), rgba(5, 18, 38, 0));
+}
+
+.login-orbit__ticker::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(5, 18, 38, 0.95), rgba(5, 18, 38, 0));
+}
+
+.login-orbit__ticker-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  align-items: center;
+  animation: loginOrbitTicker 28s linear infinite;
+}
+
+.login-orbit__ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  background: rgba(4, 18, 35, 0.66);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+
+.login-orbit__ticker-item strong {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.login-orbit__ticker-item em {
+  color: var(--accent-2);
+  font-style: normal;
+  font-size: 11px;
+}
+
+.login-orbit__hero-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.page-auth .login-orbit__eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
+  background: rgba(6, 22, 42, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #cae9ff;
+}
+
+.page-auth .login-orbit__title {
+  margin: 0;
+  max-width: 11.4ch;
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: clamp(2.7rem, 5vw, 5rem);
+  letter-spacing: -0.06em;
+  line-height: 0.92;
+}
+
+.page-auth .login-orbit__copy {
+  margin: 0;
+  max-width: 58ch;
+  color: color-mix(in srgb, var(--text) 78%, #9bbfe0);
+  line-height: 1.72;
+  font-size: 15px;
+}
+
+.login-orbit__hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.34fr) minmax(250px, 0.86fr);
+  gap: 16px;
+}
+
+.page-auth .login-orbit-live,
+.login-orbit__depth-panel,
+.page-auth .login-orbit__board,
+.page-auth .login-orbit__stats article,
+.login-orbit__auth-banner article {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-auth .login-orbit-live {
+  margin-top: 0;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 74%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 22% 18%, rgba(87, 182, 255, 0.14), transparent 34%),
+    rgba(4, 15, 31, 0.82);
+  box-shadow: 0 18px 40px rgba(2, 8, 20, 0.36);
+}
+
+.page-auth .login-orbit-live::before,
+.login-orbit__depth-panel::before,
+.page-auth .login-orbit__board::before,
+.page-auth .login-orbit__card::before {
+  content: "";
+  position: absolute;
+  inset: -22% auto -22% -35%;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transform: rotate(14deg) translateX(-120%);
+  animation: loginCardSheen 9s linear infinite;
+  pointer-events: none;
+}
+
+.page-auth .login-orbit-live__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.page-auth .login-orbit-live__head strong {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d4edff;
+}
+
+.page-auth .login-orbit-live__head span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(3, 14, 28, 0.72);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  color: #b4d7f7;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-auth .login-orbit-live__chart {
+  position: relative;
+  width: 100%;
+  height: 228px;
+  border-radius: 16px;
+  display: block;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(3, 11, 24, 0.92), rgba(6, 18, 36, 0.92));
+  background-size: 26px 26px, 26px 26px, auto;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--line) 66%, transparent),
+    0 18px 26px rgba(2, 10, 23, 0.44);
+}
+
+.page-auth .login-orbit-live__caption {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-orbit__depth-panel {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(108, 247, 212, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%),
+    rgba(4, 15, 31, 0.78);
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 16px 36px rgba(2, 8, 20, 0.32);
+}
+
+.login-orbit__depth-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-orbit__depth-head strong {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d4edff;
+}
+
+.login-orbit__depth-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.login-orbit__depth-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.login-orbit__depth-row {
+  display: grid;
+  grid-template-columns: minmax(82px, max-content) 1fr max-content;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.login-orbit__depth-row span,
+.login-orbit__depth-row strong {
+  position: relative;
+  z-index: 1;
+}
+
+.login-orbit__depth-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.login-orbit__depth-track i {
+  display: block;
+  height: 100%;
+  width: var(--depth-size, 60%);
+  border-radius: inherit;
+  animation: loginDepthMeter 3.6s var(--depth-delay, 0s) ease-in-out infinite;
+}
+
+.login-orbit__depth-row--buy i {
+  background: linear-gradient(90deg, rgba(87, 182, 255, 0.68), rgba(108, 247, 212, 0.95));
+}
+
+.login-orbit__depth-row--neutral i {
+  background: linear-gradient(90deg, rgba(255, 208, 122, 0.54), rgba(87, 182, 255, 0.82));
+}
+
+.login-orbit__depth-row--sell i {
+  background: linear-gradient(90deg, rgba(255, 122, 144, 0.72), rgba(255, 91, 110, 0.94));
+}
+
+.login-orbit__signal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.login-orbit__signal-grid article {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  background: rgba(3, 14, 28, 0.7);
+  display: grid;
+  gap: 5px;
+}
+
+.login-orbit__signal-grid span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-orbit__signal-grid strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.page-auth .login-orbit__board {
+  min-height: 290px;
+  margin-top: 0;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
+  background:
+    radial-gradient(circle at center, rgba(87, 182, 255, 0.1), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 26%),
+    rgba(5, 18, 38, 0.8);
+}
+
+.login-orbit__board-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at center, black 28%, transparent 76%);
+  opacity: 0.55;
+  animation: loginOrbitGrid 18s linear infinite;
+}
+
+.page-auth .login-orbit__ring {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 208px;
+  height: 208px;
+  border: 1px dashed color-mix(in srgb, var(--line-strong) 64%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.login-orbit__ring--inner {
+  width: 124px;
+  height: 124px;
+  border-style: solid;
+  opacity: 0.56;
+}
+
+.login-orbit__beam {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 260px;
+  height: 260px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(87, 182, 255, 0.24), transparent 22%, transparent 72%, rgba(108, 247, 212, 0.28));
+  mix-blend-mode: screen;
+  opacity: 0.88;
+  animation: loginOrbitSweep 8.4s linear infinite;
+}
+
+.page-auth .login-orbit__dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 9px rgba(108, 247, 212, 0.14);
+  animation: loginOrbitPulse 3s ease-in-out infinite;
+}
+
+.page-auth .login-orbit__dot--a {
+  top: 24%;
+  left: 63%;
+}
+
+.page-auth .login-orbit__dot--b {
+  top: 55%;
+  left: 26%;
+  background: var(--accent);
+  box-shadow: 0 0 0 9px rgba(87, 182, 255, 0.14);
+  animation-delay: 0.6s;
+}
+
+.page-auth .login-orbit__dot--c {
+  top: 70%;
+  left: 68%;
+  background: #ffd07a;
+  box-shadow: 0 0 0 9px rgba(255, 208, 122, 0.14);
+  animation-delay: 1.2s;
+}
+
+.page-auth .login-orbit__chip {
+  --login-chip-shift: 0px;
+  position: absolute;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  background: rgba(3, 14, 31, 0.82);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 20px rgba(2, 10, 24, 0.28);
+  transform: translateX(var(--login-chip-shift));
+  animation: loginChipFloat 5.4s ease-in-out infinite;
+}
+
+.page-auth .login-orbit__chip--a {
+  top: 18px;
+  left: 18px;
+}
+
+.page-auth .login-orbit__chip--b {
+  top: 18px;
+  right: 18px;
+  animation-delay: 0.7s;
+}
+
+.page-auth .login-orbit__chip--c {
+  bottom: 18px;
+  left: 50%;
+  --login-chip-shift: -50%;
+  animation-delay: 1.4s;
+}
+
+.login-orbit__board-card {
+  position: absolute;
+  width: min(36%, 220px);
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  background: rgba(3, 14, 31, 0.76);
+  box-shadow: 0 16px 28px rgba(2, 10, 24, 0.28);
+  display: grid;
+  gap: 5px;
+}
+
+.login-orbit__board-card span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-orbit__board-card strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.login-orbit__board-card--north {
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.login-orbit__board-card--east {
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.login-orbit__board-card--south {
+  left: 22px;
+  bottom: 20px;
+}
+
+.page-auth .login-orbit__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.page-auth .login-orbit__stats article {
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(5, 17, 36, 0.7);
+  display: grid;
+  gap: 5px;
+  box-shadow: 0 14px 28px rgba(3, 8, 20, 0.22);
+}
+
+.page-auth .login-orbit__stats span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-auth .login-orbit__stats strong {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.page-auth .login-orbit__auth {
+  position: relative;
+  padding: clamp(24px, 3vw, 40px);
+  display: grid;
+  align-items: center;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(255, 208, 122, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%);
+}
+
+.page-auth .login-orbit__card {
+  position: relative;
+  padding: clamp(22px, 2.5vw, 32px);
+  border-radius: 28px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 76%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 24%),
+    rgba(6, 17, 34, 0.84);
+  box-shadow:
+    0 22px 48px rgba(3, 8, 20, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.page-auth .login-orbit__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.page-auth .login-orbit__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top right, rgba(87, 182, 255, 0.12), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(108, 247, 212, 0.08), transparent 26%);
+}
+
+.login-orbit__auth-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.page-auth .login-orbit__kicker {
+  margin: 0 0 8px;
+  color: var(--accent-2);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.page-auth .login-orbit__heading {
+  margin: 0;
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+}
+
+.login-orbit__auth-copy {
+  margin: 10px 0 0;
+  color: color-mix(in srgb, var(--text) 72%, #9ec1df);
+  line-height: 1.6;
+  font-size: 14px;
+  max-width: 34ch;
+}
+
+.login-orbit__security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  background: rgba(4, 18, 35, 0.74);
+  color: #dff1ff;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.login-orbit__security-pill span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 0 8px rgba(87, 182, 255, 0.14);
+  animation: loginOrbitPulse 2.6s ease-in-out infinite;
+}
+
+.login-orbit__auth-banner {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.login-orbit__auth-banner article {
+  padding: 12px 13px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  background: rgba(4, 16, 30, 0.76);
+  display: grid;
+  gap: 6px;
+  box-shadow: 0 12px 26px rgba(3, 8, 20, 0.22);
+}
+
+.login-orbit__auth-banner span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-orbit__auth-banner strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.login-orbit__status {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: rgba(3, 14, 28, 0.66);
+}
+
+.page-auth .login-orbit__switch {
+  margin-top: 18px;
+  padding: 7px;
+  border-radius: 16px;
+  border-color: color-mix(in srgb, var(--line) 74%, transparent);
+  background: rgba(3, 14, 28, 0.82);
+}
+
+.page-auth .login-orbit__switch .switch-btn {
+  min-height: 44px;
+  border-radius: 12px;
+  background: rgba(8, 20, 36, 0.84);
+}
+
+.page-auth .login-orbit__switch .switch-btn.active {
+  background: linear-gradient(135deg, rgba(87, 182, 255, 0.22), rgba(108, 247, 212, 0.18));
+}
+
+.page-auth .login-orbit__form {
+  margin-top: 16px;
+  gap: 16px;
+}
+
+.page-auth .login-orbit__form .form-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-auth .login-orbit__form .input {
+  min-height: 50px;
+  border-radius: 15px;
+  background: rgba(4, 15, 30, 0.92);
+  border-color: color-mix(in srgb, var(--line) 76%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 24px rgba(3, 8, 20, 0.18);
+}
+
+.page-auth .login-orbit__form .input:focus {
+  box-shadow:
+    0 0 0 3px rgba(87, 182, 255, 0.14),
+    0 16px 26px rgba(6, 18, 39, 0.2);
+}
+
+.page-auth .login-orbit__form .btn {
+  min-height: 50px;
+}
+
+.login-orbit__meta-row {
+  align-items: center;
+}
+
+.page-auth .login-orbit__divider {
+  margin: 4px 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-auth .login-orbit__divider span {
+  background: rgba(6, 17, 34, 0.96);
+}
+
+.page-auth .oauth-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.page-auth .oauth-btn {
+  justify-content: center;
+  border-radius: 15px;
+}
+
+.login-orbit__footnote {
+  padding-top: 2px;
+}
+
+html[data-theme="light"] body.page-auth::before {
+  background: radial-gradient(circle, rgba(35, 113, 216, 0.18) 0%, rgba(35, 113, 216, 0) 70%);
+}
+
+html[data-theme="light"] body.page-auth::after {
+  background: radial-gradient(circle, rgba(23, 167, 138, 0.16) 0%, rgba(23, 167, 138, 0) 72%);
+}
+
+html[data-theme="light"] .page-auth .login-orbit {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(35, 113, 216, 0.16), transparent 30%),
+    radial-gradient(circle at 82% 84%, rgba(23, 167, 138, 0.14), transparent 28%),
+    linear-gradient(145deg, rgba(248, 251, 255, 0.98) 0%, rgba(233, 241, 252, 0.98) 48%, rgba(223, 235, 250, 0.98) 100%);
+  box-shadow: 0 24px 60px rgba(22, 58, 108, 0.18);
+}
+
+html[data-theme="light"] .page-auth .login-orbit::after {
+  opacity: 0.18;
+}
+
+html[data-theme="light"] .page-auth .login-orbit__story,
+html[data-theme="light"] .page-auth .login-orbit__auth {
+  background: transparent;
+}
+
+html[data-theme="light"] .login-orbit__session-pill,
+html[data-theme="light"] .login-orbit__ticker-item,
+html[data-theme="light"] .page-auth .login-orbit-live,
+html[data-theme="light"] .login-orbit__depth-panel,
+html[data-theme="light"] .page-auth .login-orbit__board,
+html[data-theme="light"] .page-auth .login-orbit__stats article,
+html[data-theme="light"] .page-auth .login-orbit__card,
+html[data-theme="light"] .login-orbit__auth-banner article,
+html[data-theme="light"] .login-orbit__signal-grid article,
+html[data-theme="light"] .login-orbit__board-card,
+html[data-theme="light"] .login-orbit__status,
+html[data-theme="light"] .page-auth .login-orbit__switch,
+html[data-theme="light"] .page-auth .login-orbit__switch .switch-btn,
+html[data-theme="light"] .page-auth .login-orbit__form .input,
+html[data-theme="light"] .login-orbit__security-pill {
+  background: rgba(255, 255, 255, 0.84);
+}
+
+html[data-theme="light"] .page-auth .login-orbit__card,
+html[data-theme="light"] .page-auth .login-orbit-live__chart {
+  box-shadow: 0 18px 34px rgba(34, 79, 138, 0.14);
+}
+
+html[data-theme="light"] .login-orbit__ticker::before {
+  background: linear-gradient(90deg, rgba(248, 251, 255, 0.96), rgba(248, 251, 255, 0));
+}
+
+html[data-theme="light"] .login-orbit__ticker::after {
+  background: linear-gradient(270deg, rgba(248, 251, 255, 0.96), rgba(248, 251, 255, 0));
+}
+
+html[data-theme="light"] .page-auth .login-orbit__divider span {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+@media (max-width: 1180px) {
+  .page-auth .login-orbit {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .page-auth .login-orbit__story {
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  }
+}
+
+@media (max-width: 960px) {
+  .login-orbit__hero-grid,
+  .login-orbit__auth-banner,
+  .page-auth .login-orbit__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .login-orbit__auth-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .login-orbit__board-card {
+    width: min(52%, 240px);
+  }
+}
+
+@media (max-width: 640px) {
+  body.page-auth::before,
+  body.page-auth::after {
+    width: 56vw;
+    height: 56vw;
+  }
+
+  .page-auth .center-page {
+    padding: 12px;
+  }
+
+  .page-auth .login-orbit__story,
+  .page-auth .login-orbit__auth {
+    padding: 18px;
+  }
+
+  .page-auth .login-orbit__title {
+    max-width: 12ch;
+    font-size: clamp(2.15rem, 12vw, 3.2rem);
+  }
+
+  .page-auth .login-orbit-live__chart {
+    height: 194px;
+  }
+
+  .page-auth .login-orbit__board {
+    min-height: 238px;
+  }
+
+  .login-orbit__board-card {
+    width: calc(100% - 36px);
+    left: 18px;
+    right: 18px;
+    transform: none;
+  }
+
+  .login-orbit__board-card--north {
+    top: 18px;
+  }
+
+  .login-orbit__board-card--east {
+    top: auto;
+    bottom: 74px;
+  }
+
+  .login-orbit__board-card--south {
+    bottom: 18px;
+  }
+
+  .page-auth .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes loginOrbitTicker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-34%);
+  }
+}
+
+@keyframes loginOrbitPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes loginOrbitSweep {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes loginOrbitGrid {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-17px, 17px, 0);
+  }
+}
+
+@keyframes loginDepthMeter {
+  0%,
+  100% {
+    transform: scaleX(0.96);
+    opacity: 0.78;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes loginGlowFloat {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(2vw, 1.5vw, 0);
+  }
+}
+
+@keyframes loginCardSheen {
+  from {
+    transform: rotate(14deg) translateX(-120%);
+  }
+  to {
+    transform: rotate(14deg) translateX(260%);
+  }
+}
+
+@keyframes loginChipFloat {
+  0%,
+  100% {
+    transform: translateX(var(--login-chip-shift)) translateY(0);
+  }
+  50% {
+    transform: translateX(var(--login-chip-shift)) translateY(-6px);
+  }
+}
+
 /* Stock signal reasons card */
 #aiIndicators .kpi-reasons {
   grid-column: 1 / -1;
@@ -4632,5 +5697,548 @@ html[data-theme="light"] .control-diag-card {
   .control-primary-grid,
   .control-actions-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Market Motion System */
+body.market-motion-active {
+  position: relative;
+  overflow-x: hidden;
+}
+
+body.market-motion-active::before,
+body.market-motion-active::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(14px);
+  opacity: 0.8;
+  animation: marketAmbientFloat 18s ease-in-out infinite alternate;
+}
+
+body.market-motion-active::before {
+  width: 30vw;
+  height: 30vw;
+  top: -10vw;
+  left: -8vw;
+  background: radial-gradient(circle, rgba(87, 182, 255, 0.18) 0%, rgba(87, 182, 255, 0) 72%);
+}
+
+body.market-motion-active::after {
+  width: 26vw;
+  height: 26vw;
+  right: -7vw;
+  bottom: -10vw;
+  background: radial-gradient(circle, rgba(108, 247, 212, 0.14) 0%, rgba(108, 247, 212, 0) 72%);
+  animation-duration: 22s;
+}
+
+body.market-motion-active .panel,
+body.market-motion-active .center-page {
+  position: relative;
+  z-index: 1;
+}
+
+.market-site-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.market-site-bg__glow,
+.market-site-bg__grid,
+.market-site-bg__ribbon,
+.market-site-bg__candles {
+  position: absolute;
+}
+
+.market-site-bg__glow {
+  border-radius: 50%;
+  filter: blur(10px);
+}
+
+.market-site-bg__glow--one {
+  width: 34vw;
+  height: 34vw;
+  top: 8vh;
+  right: -10vw;
+  background: radial-gradient(circle, rgba(255, 208, 122, 0.08) 0%, rgba(255, 208, 122, 0) 76%);
+}
+
+.market-site-bg__glow--two {
+  width: 28vw;
+  height: 28vw;
+  left: -8vw;
+  bottom: 20vh;
+  background: radial-gradient(circle, rgba(87, 182, 255, 0.12) 0%, rgba(87, 182, 255, 0) 74%);
+}
+
+.market-site-bg__grid {
+  inset: -8%;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.34;
+  mask-image: radial-gradient(circle at center, black 34%, transparent 88%);
+  animation: marketGridDrift 20s linear infinite;
+}
+
+.market-site-bg__ribbon {
+  left: -12%;
+  right: -12%;
+  overflow: hidden;
+  opacity: 0.72;
+}
+
+.market-site-bg__ribbon--top {
+  top: 88px;
+}
+
+.market-site-bg__ribbon--bottom {
+  bottom: 42px;
+}
+
+.market-site-bg__track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  animation: marketRibbonMove 34s linear infinite;
+}
+
+.market-site-bg__ribbon--bottom .market-site-bg__track {
+  animation-direction: reverse;
+  animation-duration: 42s;
+}
+
+.market-site-bg__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: color-mix(in srgb, var(--card-strong) 90%, transparent);
+  box-shadow: 0 10px 22px rgba(5, 14, 29, 0.16);
+  white-space: nowrap;
+}
+
+.market-site-bg__item strong,
+.market-head-band__item strong {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.market-site-bg__item em,
+.market-head-band__item em {
+  font-style: normal;
+  font-size: 10px;
+}
+
+.market-site-bg__item.is-up em,
+.market-head-band__item.is-up em {
+  color: var(--accent-2);
+}
+
+.market-site-bg__item.is-down em,
+.market-head-band__item.is-down em {
+  color: #ff8799;
+}
+
+.market-site-bg__item.is-neutral em,
+.market-head-band__item.is-neutral em {
+  color: #ffd07a;
+}
+
+.market-site-bg__candles {
+  left: 4%;
+  right: 4%;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 120px;
+  opacity: 0.48;
+}
+
+.market-site-bg__candle {
+  position: relative;
+  width: 10px;
+  height: var(--candle-height, 48px);
+  animation: marketCandleFloat 4.8s var(--candle-delay, 0s) ease-in-out infinite;
+}
+
+.market-site-bg__candle::before,
+.market-site-bg__candle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.market-site-bg__candle::before {
+  top: -12px;
+  width: 2px;
+  height: calc(var(--candle-height, 48px) + 18px);
+  background: rgba(214, 235, 255, 0.34);
+}
+
+.market-site-bg__candle::after {
+  bottom: 0;
+  width: 10px;
+  height: calc(var(--candle-height, 48px) * var(--candle-body, 0.46));
+  border-radius: 999px;
+}
+
+.market-site-bg__candle.is-up::after {
+  background: linear-gradient(180deg, rgba(87, 182, 255, 0.72), rgba(108, 247, 212, 0.92));
+}
+
+.market-site-bg__candle.is-down::after {
+  background: linear-gradient(180deg, rgba(255, 160, 176, 0.82), rgba(255, 91, 110, 0.94));
+}
+
+.market-head-enhanced {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.market-head-band {
+  order: 3;
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) 120px;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: calc(var(--ui-radius-card) - 4px);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 42%),
+    color-mix(in srgb, var(--card-strong) 92%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  position: relative;
+}
+
+.market-head-band::before {
+  content: "";
+  position: absolute;
+  inset: -20% auto -20% -26%;
+  width: 32%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.11), transparent);
+  transform: rotate(12deg) translateX(-180%);
+  animation: marketCardSweep 8.5s linear infinite;
+  pointer-events: none;
+}
+
+.market-head-band__pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.market-head-band__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 8px rgba(108, 247, 212, 0.12);
+  animation: marketPulseDot 2.3s ease-in-out infinite;
+}
+
+.market-head-band__pulse strong {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.market-head-band__pulse em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 12px;
+}
+
+.market-head-band__ticker {
+  position: relative;
+  overflow: hidden;
+}
+
+.market-head-band__ticker::before,
+.market-head-band__ticker::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.market-head-band__ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--card-strong) 94%, transparent), transparent);
+}
+
+.market-head-band__ticker::after {
+  right: 0;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--card-strong) 94%, transparent), transparent);
+}
+
+.market-head-band__ticker-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  animation: marketRibbonMove 26s linear infinite;
+}
+
+.market-head-band__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  white-space: nowrap;
+}
+
+.market-head-band__spark,
+.market-section-spark,
+.market-inline-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.market-head-band__spark {
+  justify-content: flex-end;
+  height: 28px;
+}
+
+.market-head-band__bar,
+.market-section-spark__bar,
+.market-inline-spark__bar {
+  width: 6px;
+  height: var(--bar-height, 12px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  animation: marketSparkPulse 1.9s var(--bar-delay, 0ms) ease-in-out infinite;
+}
+
+.market-section-spark {
+  margin-left: auto;
+  height: 24px;
+}
+
+.market-inline-spark {
+  margin-top: 10px;
+  height: 18px;
+}
+
+.market-reveal {
+  opacity: 0;
+  transform: translateY(16px) scale(0.988);
+  filter: saturate(0.94);
+  transition:
+    opacity var(--dur-med) var(--ease-smooth),
+    transform var(--dur-slow) var(--ease-smooth),
+    filter var(--dur-med) var(--ease-smooth);
+  transition-delay: var(--market-delay, 0ms);
+}
+
+.market-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.market-frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.market-card-glow {
+  position: absolute;
+  inset: -30% auto -30% -24%;
+  width: 36%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(14deg) translateX(-220%);
+  animation: marketCardSweep 8.8s linear infinite;
+  animation-delay: var(--market-scan-delay, 0ms);
+  pointer-events: none;
+}
+
+body.market-motion-active .card:hover,
+body.market-motion-active .dashboard-meta-card:hover,
+body.market-motion-active .stock-strip-card:hover,
+body.market-motion-active .stock-actions-card:hover,
+body.market-motion-active .stock-hero-note:hover,
+body.market-motion-active .news-item:hover,
+body.market-motion-active .wish:hover,
+body.market-motion-active .risk-item:hover,
+body.market-motion-active .kpi:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 20px 34px rgba(4, 11, 24, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.market-motion-active .tool-grid .btn,
+body.market-motion-active .page-actions .btn {
+  position: relative;
+  overflow: hidden;
+}
+
+body.market-motion-active .tool-grid .btn::after,
+body.market-motion-active .page-actions .btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 24%, rgba(255, 255, 255, 0.14) 48%, transparent 72%);
+  transform: translateX(-120%);
+  animation: marketButtonSweep 7.4s linear infinite;
+  pointer-events: none;
+}
+
+html[data-motion="reduced"] .market-site-bg__track,
+html[data-motion="reduced"] .market-head-band__ticker-track {
+  animation-duration: 44s;
+}
+
+html[data-motion="reduced"] .market-card-glow,
+html[data-motion="reduced"] .market-head-band::before,
+html[data-motion="reduced"] body.market-motion-active .tool-grid .btn::after,
+html[data-motion="reduced"] body.market-motion-active .page-actions .btn::after {
+  opacity: 0.4;
+}
+
+html[data-motion="off"] .market-reveal,
+html[data-motion="off"] .market-reveal.is-visible {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html[data-motion="off"] .market-card-glow,
+html[data-motion="off"] .market-site-bg,
+html[data-motion="off"] .market-head-band::before,
+html[data-motion="off"] body.market-motion-active .tool-grid .btn::after,
+html[data-motion="off"] body.market-motion-active .page-actions .btn::after {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .market-head-band {
+    grid-template-columns: 1fr;
+  }
+
+  .market-head-band__spark,
+  .market-section-spark {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .market-site-bg__ribbon--top {
+    top: 72px;
+  }
+
+  .market-site-bg__ribbon--bottom,
+  .market-site-bg__candles,
+  .market-inline-spark {
+    display: none;
+  }
+
+  .market-head-band {
+    padding: 12px 14px;
+  }
+}
+
+@keyframes marketRibbonMove {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-36%);
+  }
+}
+
+@keyframes marketGridDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-24px, 24px, 0);
+  }
+}
+
+@keyframes marketCandleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes marketCardSweep {
+  from {
+    transform: rotate(14deg) translateX(-220%);
+  }
+  to {
+    transform: rotate(14deg) translateX(360%);
+  }
+}
+
+@keyframes marketSparkPulse {
+  0%,
+  100% {
+    transform: scaleY(0.84);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes marketPulseDot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.94;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes marketButtonSweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(140%);
+  }
+}
+
+@keyframes marketAmbientFloat {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(2vw, 1vw, 0);
   }
 }

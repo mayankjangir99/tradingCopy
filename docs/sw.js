@@ -1,4 +1,4 @@
-const CACHE_NAME = "tradepro-pwa-v6";
+const CACHE_NAME = "tradepro-pwa-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,13 @@ const APP_SHELL = [
   "./platform-suite.html",
   "./control-center.html",
   "./style.css",
-  "./app-core.js"
+  "./app-core.js",
+  "./market-motion.js",
+  "./manifest.webmanifest",
+  "./favicon.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-512-maskable.png"
 ];
 const NETWORK_FIRST_DESTINATIONS = new Set(["document", "script", "style"]);
 

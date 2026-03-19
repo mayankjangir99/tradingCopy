@@ -8,34 +8,126 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%2357b6ff'/%3E%3Cstop offset='1' stop-color='%236cf7d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='26' fill='%230b1220'/%3E%3Cpath d='M64 16l36 20v56l-36 20L28 92V36z' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3Ccircle cx='64' cy='64' r='16' fill='none' stroke='url(%23g)' stroke-width='7'/%3E%3C/svg%3E">
   <title>TradePro AI Login</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260319a">
 </head>
 <body class="page-auth">
   <main class="center-page">
     <section class="panel login-orbit">
       <aside class="login-orbit__story">
-        <span class="login-orbit__eyebrow">TradePro Command Deck</span>
-        <h1 class="login-orbit__title">Market clarity at first glance.</h1>
-        <p class="login-orbit__copy">Operate across stocks, crypto, and forex with one workflow for signal analysis, alerting, and decision logging.</p>
+        <div class="login-orbit__topline">
+          <div class="brand-row brand-row-tight login-orbit__brand-row">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 100 100" fill="none">
+                <path d="M50 10 L85 30 V70 L50 90 L15 70 V30 Z" stroke="#c6edff" stroke-width="4"/>
+                <circle cx="50" cy="50" r="14" stroke="#6cf7d4" stroke-width="5"/>
+                <path d="M50 22 V36 M78 38 L66 45 M78 62 L66 55 M50 78 V64 M22 62 L34 55 M22 38 L34 45" stroke="#57b6ff" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <p class="login-orbit__brand-kicker">TradePro AI</p>
+              <h2 class="brand-title login-orbit__brand-title">Command Deck</h2>
+            </div>
+          </div>
+          <div class="login-orbit__session-pill" aria-hidden="true">
+            <span></span>
+            Market sync online
+          </div>
+        </div>
+
+        <div class="login-orbit__ticker" aria-hidden="true">
+          <div class="login-orbit__ticker-track">
+            <span class="login-orbit__ticker-item"><strong>NVDA</strong><em>+2.48%</em></span>
+            <span class="login-orbit__ticker-item"><strong>BTC</strong><em>+1.12%</em></span>
+            <span class="login-orbit__ticker-item"><strong>EURUSD</strong><em>+0.41%</em></span>
+            <span class="login-orbit__ticker-item"><strong>NIFTY</strong><em>+1.06%</em></span>
+            <span class="login-orbit__ticker-item"><strong>QQQ</strong><em>+0.88%</em></span>
+            <span class="login-orbit__ticker-item"><strong>ETH</strong><em>+1.74%</em></span>
+            <span class="login-orbit__ticker-item"><strong>AAPL</strong><em>+0.57%</em></span>
+            <span class="login-orbit__ticker-item"><strong>GOLD</strong><em>-0.18%</em></span>
+            <span class="login-orbit__ticker-item"><strong>NVDA</strong><em>+2.48%</em></span>
+            <span class="login-orbit__ticker-item"><strong>BTC</strong><em>+1.12%</em></span>
+            <span class="login-orbit__ticker-item"><strong>EURUSD</strong><em>+0.41%</em></span>
+            <span class="login-orbit__ticker-item"><strong>NIFTY</strong><em>+1.06%</em></span>
+          </div>
+        </div>
+
+        <div class="login-orbit__hero-copy">
+          <span class="login-orbit__eyebrow">Opening Bell Workflow</span>
+          <h1 class="login-orbit__title">Start every session inside a live market cockpit.</h1>
+          <p class="login-orbit__copy">Search symbols, track flow, review setups, and jump into your dashboard with one tighter trading workspace built for faster decisions.</p>
+        </div>
+
+        <div class="login-orbit__hero-grid">
+          <section class="login-orbit-live" aria-label="Animated stock market graphics">
+            <div class="login-orbit-live__head">
+              <strong>Market Motion Engine</strong>
+              <span id="loginLivePhase">Initializing...</span>
+            </div>
+            <canvas id="loginLiveChart" class="login-orbit-live__chart" aria-hidden="true"></canvas>
+            <p class="login-orbit-live__caption">Live-style candles, depth bars, ticker flow, and momentum pulses drive the landing screen.</p>
+          </section>
+
+          <section class="login-orbit__depth-panel" aria-hidden="true">
+            <div class="login-orbit__depth-head">
+              <strong>Flow Monitor</strong>
+              <span>Pre-market rotation</span>
+            </div>
+
+            <div class="login-orbit__depth-stack">
+              <div class="login-orbit__depth-row login-orbit__depth-row--buy">
+                <span>Buy pressure</span>
+                <div class="login-orbit__depth-track"><i style="--depth-size: 82%; --depth-delay: 0s;"></i></div>
+                <strong>82%</strong>
+              </div>
+              <div class="login-orbit__depth-row login-orbit__depth-row--neutral">
+                <span>Liquidity</span>
+                <div class="login-orbit__depth-track"><i style="--depth-size: 66%; --depth-delay: 0.5s;"></i></div>
+                <strong>66%</strong>
+              </div>
+              <div class="login-orbit__depth-row login-orbit__depth-row--sell">
+                <span>Hedge flow</span>
+                <div class="login-orbit__depth-track"><i style="--depth-size: 38%; --depth-delay: 1s;"></i></div>
+                <strong>38%</strong>
+              </div>
+            </div>
+
+            <div class="login-orbit__signal-grid">
+              <article>
+                <span>Desk Mode</span>
+                <strong>Scan -> Plan -> Execute</strong>
+              </article>
+              <article>
+                <span>Coverage</span>
+                <strong>Stocks / FX / Crypto</strong>
+              </article>
+            </div>
+          </section>
+        </div>
 
         <div class="login-orbit__board" aria-hidden="true">
+          <div class="login-orbit__board-grid"></div>
           <div class="login-orbit__ring"></div>
+          <div class="login-orbit__ring login-orbit__ring--inner"></div>
+          <div class="login-orbit__beam"></div>
           <div class="login-orbit__dot login-orbit__dot--a"></div>
           <div class="login-orbit__dot login-orbit__dot--b"></div>
           <div class="login-orbit__dot login-orbit__dot--c"></div>
-          <div class="login-orbit__chip">Live feeds</div>
-          <div class="login-orbit__chip">AI outlook</div>
-          <div class="login-orbit__chip">Risk checks</div>
+          <div class="login-orbit__chip login-orbit__chip--a">Live feeds</div>
+          <div class="login-orbit__chip login-orbit__chip--b">AI outlook</div>
+          <div class="login-orbit__chip login-orbit__chip--c">Risk checks</div>
+          <article class="login-orbit__board-card login-orbit__board-card--north">
+            <span>AI Bias</span>
+            <strong>Bullish continuation map</strong>
+          </article>
+          <article class="login-orbit__board-card login-orbit__board-card--east">
+            <span>Risk Engine</span>
+            <strong>Stops + sizing aligned</strong>
+          </article>
+          <article class="login-orbit__board-card login-orbit__board-card--south">
+            <span>Alert Grid</span>
+            <strong>Watchlist pulses live</strong>
+          </article>
         </div>
-
-        <section class="login-orbit-live" aria-label="Animated stock market graphics">
-          <div class="login-orbit-live__head">
-            <strong>Market Motion Engine</strong>
-            <span id="loginLivePhase">Initializing...</span>
-          </div>
-          <canvas id="loginLiveChart" class="login-orbit-live__chart" aria-hidden="true"></canvas>
-          <p class="login-orbit-live__caption">Abstract flow transforms into a live-style stock structure.</p>
-        </section>
 
         <div class="login-orbit__stats" aria-hidden="true">
           <article>
@@ -50,14 +142,43 @@
             <span>Execution</span>
             <strong>Plan, review, and track</strong>
           </article>
+          <article>
+            <span>Review</span>
+            <strong>Notes + checklist + context</strong>
+          </article>
         </div>
       </aside>
 
       <section class="login-orbit__auth">
         <div class="login-orbit__card">
-          <p class="login-orbit__kicker">Secure Access</p>
-          <h2 class="login-orbit__heading">Welcome back</h2>
-          <p class="helper-note" id="authStatus" aria-live="polite">Fastest path: use your last username, then continue to dashboard.</p>
+          <div class="login-orbit__auth-head">
+            <div>
+              <p class="login-orbit__kicker">Secure Access</p>
+              <h2 class="login-orbit__heading">Trade with a faster start.</h2>
+              <p class="login-orbit__auth-copy">Your recent symbols, alerts, notes, and layout preferences are ready the moment you sign in.</p>
+            </div>
+            <div class="login-orbit__security-pill" aria-hidden="true">
+              <span></span>
+              Session shield
+            </div>
+          </div>
+
+          <div class="login-orbit__auth-banner" aria-hidden="true">
+            <article>
+              <span>Workspace</span>
+              <strong>Theme + watchlist sync</strong>
+            </article>
+            <article>
+              <span>Decision Flow</span>
+              <strong>Search -> Analyze -> Review</strong>
+            </article>
+            <article>
+              <span>Speed</span>
+              <strong>One-step dashboard entry</strong>
+            </article>
+          </div>
+
+          <p class="helper-note login-orbit__status" id="authStatus" aria-live="polite">Fastest path: use your last username, then continue to dashboard.</p>
 
           <div class="auth-switch login-orbit__switch" role="tablist" aria-label="Authentication mode">
             <button class="switch-btn active" id="loginTabBtn" type="button" onclick="switchAuthMode('login')">Login</button>
@@ -73,8 +194,9 @@
               <label class="form-label" for="pass">Password</label>
               <input class="input" id="pass" type="password" placeholder="********" autocomplete="current-password" required>
             </div>
-            <div class="mini-row">
+            <div class="mini-row login-orbit__meta-row">
               <label class="checkline"><input id="remember" type="checkbox"> Remember me</label>
+              <span class="helper-note">Resume your last workflow instantly.</span>
             </div>
             <div class="action-grid">
               <button class="btn" type="submit">Enter Dashboard</button>
@@ -97,7 +219,7 @@
               </button>
             </div>
 
-            <p class="helper-note">OAuth requires backend token exchange and Firebase config.</p>
+            <p class="helper-note login-orbit__footnote">OAuth requires backend token exchange and Firebase config.</p>
           </form>
 
           <form class="auth-grid login-orbit__form auth-hidden" id="registerForm" onsubmit="registerUser(event)">
@@ -125,17 +247,15 @@
               <button class="btn" type="submit">Create Account</button>
               <button class="btn ghost" type="button" onclick="switchAuthMode('login')">Back to Login</button>
             </div>
-            <p class="helper-note">Use a strong password. Your recent symbol and account preferences will be remembered after sign-in.</p>
+            <p class="helper-note login-orbit__footnote">Use a strong password. Your recent symbol and account preferences will be remembered after sign-in.</p>
           </form>
         </div>
       </section>
     </section>
   </main>
 
-  <script src="login-live-graphics.js?v=20260305a"></script>
+  <script src="login-live-graphics.js?v=20260319a"></script>
   <script src="app-core.js?v=20260305d"></script>
   <script src="auth.js?v=20260228a"></script>
 </body>
 </html>
-
-

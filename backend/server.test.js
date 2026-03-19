@@ -95,7 +95,7 @@ test("service status payload stays aligned across health endpoints", () => {
   assert.match(payload.timestamp, /^\d{4}-\d{2}-\d{2}T/);
 });
 
-test("root endpoint returns the deployment marker", async (t) => {
+test("root endpoint returns the frontend entry page", async (t) => {
   const server = app.listen(0);
   t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
 
@@ -104,6 +104,20 @@ test("root endpoint returns the deployment marker", async (t) => {
   const body = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") || "", /text\/html|text\/plain/i);
-  assert.equal(body, "NEW VERSION LIVE 🔥");
+  assert.match(response.headers.get("content-type") || "", /text\/html/i);
+  assert.match(body, /<!DOCTYPE html>/i);
+  assert.match(body, /TradePro AI Login|TradePro Command Deck/i);
+});
+
+test("static frontend assets are served by the backend host", async (t) => {
+  const server = app.listen(0);
+  t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+
+  const { port } = server.address();
+  const response = await fetch(`http://127.0.0.1:${port}/style.css`);
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /text\/css/i);
+  assert.match(body, /login-orbit|page-auth|dashboard/i);
 });
